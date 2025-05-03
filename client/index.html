@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Q&A Hub: Connect, ask questions, and share knowledge with our community.">
+  <title>Q&A Hub</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 overflow-x-hidden">
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full w-64 bg-white dark:bg-[#2A2A3C] shadow-lg transform -translate-x-full transition-transform duration-300 z-50">
+    <div class="p-6">
+      <button id="sidebarCloseBtn" class="absolute top-4 right-4 text-gray-500 hover:text-red-500" aria-label="Close sidebar">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      <div class="flex items-center mb-8">
+        <img src="assets/logo.svg" alt="Q&A Hub Logo" class="h-10" onerror="this.src='assets/fallback-logo.png'">
+        <h1 class="ml-4 text-2xl font-bold text-primary">Q&A Hub</h1>
+      </div>
+      <nav class="space-y-4" role="navigation" aria-label="Main navigation">
+        <button id="feedNav" class="sidebar-btn active" aria-current="page">Feed</button>
+        <button id="profileNav" class="sidebar-btn">Profile</button>
+        <button id="postQuestionNav" class="sidebar-btn">Post Question</button>
+        <button id="answerQuestionNav" class="sidebar-btn">Answer Question</button>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Header -->
+  <header id="mainHeader" class="sticky top-0 z-40 bg-white dark:bg-[#2A2A3C] shadow-md py-3 px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center transition-all duration-300">
+    <div class="flex items-center space-x-3 mb-2 sm:mb-0">
+      <button id="sidebarLogoBtn" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="sidebar">
+        <img src="assets/logo.svg" alt="Q&A Hub Logo" class="h-8 md:h-10" onerror="this.src='assets/fallback-logo.png'">
+      </button>
+      <h1 class="text-xl md:text-2xl font-bold text-primary">Q&A Hub</h1>
+    </div>
+    <div class="flex items-center space-x-4 flex-wrap">
+      <div class="relative w-full sm:w-auto">
+        <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input id="globalSearch" type="text" placeholder="Search questions..." class="input w-full sm:w-64 pl-10" aria-label="Search questions">
+        <ul id="searchSuggestions" class="question-list absolute w-full hidden mt-1 bg-white dark:bg-gray-800 shadow-lg rounded-md max-h-60 overflow-y-auto"></ul>
+      </div>
+      <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" aria-label="Toggle light/dark theme">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+        </svg>
+      </button>
+      <div id="userStatus" class="flex items-center space-x-2 sm:space-x-4">
+        <span class="text-gray-700 dark:text-gray-300 truncate max-w-[150px] sm:max-w-[200px]" id="userEmail">Guest</span>
+        <button id="loginBtn" class="btn btn-primary">Login</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content (unchanged) -->
+  <main id="mainContent" class="container mx-auto px-4 sm:px-6 py-12 transition-all duration-300">
+    <!-- Hero Section -->
+    <section class="hero bg-gradient-to-r from-primary to-secondary text-gray-900 dark:text-white py-16 sm:py-20 px-6 text-center rounded-lg shadow-lg">
+      <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 animate-fade-in">Ask, Answer, Connect</h2>
+      <p class="text-base sm:text-lg md:text-xl mb-6">Join our community to share knowledge and solve problems together.</p>
+      <div class="flex justify-center space-x-4">
+        <button id="postQuestionBtn" class="btn btn-primary" aria-label="Post a new question">Post a Question</button>
+        <button id="answerQuestionBtn" class="btn btn-secondary" aria-label="Answer a question">Answer a Question</button>
+      </div>
+    </section>
+
+    <!-- Feed Section -->
+    <section id="feedSection" class="mt-12">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-6">Question Feed</h2>
+      <div id="questionFeed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      <div id="pagination" class="mt-8 flex justify-center space-x-2"></div>
+    </section>
+
+    <!-- Profile Section -->
+    <section id="profileSection" class="mt-12 hidden">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-6">Your Profile</h2>
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h3 id="profileUsername" class="text-xl font-semibold"></h3>
+        <p class="text-gray-600 dark:text-gray-400">Questions Asked: <span id="questionsAsked">0</span></p>
+        <p class="text-gray-600 dark:text-gray-400">Answers Given: <span id="answersGiven">0</span></p>
+      </div>
+    </section>
+
+    <!-- Question Form -->
+    <section id="questionForm" class="mt-12 hidden bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg form-container">
+      <h2 class="text-2xl font-bold mb-4">Post a Question</h2>
+      <form id="postQuestionForm" class="space-y-4">
+        <div>
+          <label for="questionTitle" class="label">Question Title</label>
+          <input type="text" id="questionTitle" name="questionTitle" placeholder="Enter your question" class="input" required aria-label="Question title">
+        </div>
+        <div>
+          <label for="questionContent" class="label">Question Details</label>
+          <textarea id="questionContent" name="questionContent" placeholder="Provide details" class="input" rows="5" required aria-label="Question details"></textarea>
+        </div>
+        <div>
+          <label for="questionTags" class="label">Tags (comma-separated, e.g., javascript, python)</label>
+          <input type="text" id="questionTags" name="questionTags" placeholder="Add tags" class="input" aria-label="Question tags">
+        </div>
+        <button type="submit" class="btn btn-primary w-full" aria-label="Submit question">Submit Question</button>
+      </form>
+    </section>
+
+    <!-- Answer Form -->
+    <section id="answerForm" class="mt-12 hidden bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg form-container">
+      <h2 class="text-2xl font-bold mb-4">Answer a Question</h2>
+      <form id="postAnswerForm" class="space-y-4">
+        <div>
+          <label for="questionSearch" class="label">Search a Question</label>
+          <input type="text" id="questionSearch" name="questionSearch" placeholder="Find a question" class="input" aria-label="Search questions to answer" />
+        </div>
+        <ul id="questionListToAnswer" class="question-list max-h-60 overflow-y-auto"></ul>
+        <input type="hidden" id="questionSelect" name="questionSelect" required />
+        <div>
+          <label for="answerContent" class="label">Your Answer</label>
+          <textarea id="answerContent" name="answerContent" placeholder="Write your answer" class="input" rows="5" required aria-label="Your answer"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" aria-label="Submit answer">
+          <span>Submit Answer</span>
+          <svg id="answerSpinner" class="w-5 h-5 ml-2 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <!-- Auth Popup -->
+  <div id="authPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="popup-content bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in relative">
+      <button id="closePopupBtn" class="absolute top-4 right-4 text-gray-500 hover:text-red-500" aria-label="Close authentication popup">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <div class="flex justify-center mb-6">
+        <div class="bg-gray-100 dark:bg-gray-700 rounded-full p-1 flex">
+          <button id="loginTab" class="px-4 py-2 rounded-full text-sm font-medium bg-primary text-white" aria-label="Switch to login form">Login</button>
+          <button id="registerTab" class="px-4 py-2 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300" aria-label="Switch to register form">Register</button>
+        </div>
+      </div>
+      <h2 id="authTitle" class="text-2xl font-bold text-center mb-6">Login</h2>
+      <form id="authForm" class="space-y-4">
+        <div id="usernameField" class="hidden">
+          <label for="username" class="label">Username</label>
+          <input type="text" id="username" name="username" placeholder="Enter username" class="input" required aria-label="Username">
+        </div>
+        <div>
+          <label for="email" class="label">Email</label>
+          <input type="email" id="email" name="email" placeholder="Enter email" class="input" required aria-label="Email address">
+        </div>
+        <div class="relative">
+          <label for="password" class="label">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter password" class="input pr-10" required aria-label="Password">
+          <button type="button" id="togglePassword" class="absolute right-3 top-10 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" aria-label="Toggle password visibility">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
+        </div>
+        <button type="submit" id="authSubmitBtn" class="btn btn-primary w-full flex items-center justify-center" aria-label="Submit authentication form">
+          <span>Submit</span>
+          <svg id="authSpinner" class="w-5 h-5 ml-2 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      </form>
+      <p id="authMessage" class="text-red-500 mt-4 flex items-center"></p>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+
+</html>

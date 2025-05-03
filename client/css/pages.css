@@ -1,0 +1,43 @@
+/* Hero Section */
+.hero {
+  @apply relative overflow-hidden perspective;
+}
+
+.hero::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-20;
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0% { transform: translateX(0) scale(1); }
+  50% { transform: translateX(50px) scale(1.1); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+/* Feed Section */
+#feedSection {
+  @apply animate-fade-in max-w-7xl mx-auto;
+  padding: 1rem;
+}
+
+/* Profile Section */
+#profileSection {
+  @apply animate-scale-in;
+}
+
+/* Question Details Section */
+#questionDetailsSection {
+  @apply max-w-3xl mx-auto animate-slide-in-up;
+}
+
+/* Hero Buttons */
+.hero .btn {
+  @apply transform-3d;
+}
+
+/* Main Content */
+main {
+  min-height: calc(100vh - 80px);
+  @apply px-4 sm:px-6 py-8 perspective;
+}

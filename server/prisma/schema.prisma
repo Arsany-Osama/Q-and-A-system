@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  username String   @unique
+  email    String   @unique
+  password String
+  questions Question[]
+  answers  Answer[]
+  votes    Vote[]
+}
+
+model Question {
+  id         Int      @id @default(autoincrement())
+  title      String
+  content    String
+  upvotes    Int      @default(0)
+  downvotes  Int      @default(0)
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  answers    Answer[]
+  votes      Vote[]
+  createdAt  DateTime @default(now())
+  tags       String   // Store tags as a JSON string, e.g., '["tag1", "tag2"]'
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  content    String
+  upvotes    Int      @default(0)
+  downvotes  Int      @default(0)
+  userId     Int
+  questionId Int
+  user       User     @relation(fields: [userId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id])
+  votes      Vote[]
+  createdAt  DateTime @default(now())
+}
+
+model Vote {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  questionId Int?     // Nullable, used for question votes
+  answerId   Int?     // Nullable, used for answer votes
+  voteType   String   // "upvote" or "downvote"
+  user       User     @relation(fields: [userId], references: [id])
+  question   Question? @relation(fields: [questionId], references: [id])
+  answer     Answer?   @relation(fields: [answerId], references: [id])
+}
+

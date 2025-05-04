@@ -8,6 +8,7 @@ import { initSearch } from './search.js';
 import { setupVoting } from './vote.js';
 import { initSidebar } from './sidebar.js';
 import { renderFeed } from './feed.js';
+import { initSecurity } from './security.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing main.js');
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupVoting();
   initAnimations();
   renderFeed();
+  initSecurity();
 
   // Function to close the sidebar
   const sidebar = document.getElementById('sidebar');

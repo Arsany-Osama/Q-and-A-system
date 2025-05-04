@@ -88,6 +88,22 @@
   color: #ffffff;
 }
 
+.btn-danger {
+  background: #e53e3e;
+}
+
+.btn-danger:hover {
+  background: #c53030;
+}
+
+.dark .btn-danger {
+  background: #f56565;
+}
+
+.dark .btn-danger:hover {
+  background: #e53e3e;
+}
+
 /* Labels */
 .label {
   display: block;
@@ -441,4 +457,86 @@
   gap: 1rem;
   max-width: 1400px;
   margin: 0 auto;
+}
+
+/* Password requirements */
+#passwordRequirements li.text-green-500 {
+  color: #48bb78;
+}
+
+#passwordRequirements li.text-red-500 {
+  color: #f56565;
+}
+
+.dark #passwordRequirements li.text-green-500 {
+  color: #68d391;
+}
+
+.dark #passwordRequirements li.text-red-500 {
+  color: #fc8181;
+}
+
+/* Security popups */
+.security-step {
+  transition: all 0.3s ease;
+}
+
+.security-question-text {
+  font-weight: 500;
+}
+
+/* Google button */
+#googleLoginBtn {
+  transition: all 0.3s ease;
+}
+
+#googleLoginBtn:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* User menu */
+#userMenu {
+  z-index: 50;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#userMenuBtn {
+  transition: all 0.2s ease;
+}
+
+/* QR code container */
+#qrCodeImage {
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Code input fields */
+input[type="text"][pattern] {
+  font-family: monospace;
+  letter-spacing: 0.25rem;
+  text-align: center;
+}
+
+/* Wizard step indicators */
+.wizard-steps {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.step-indicator {
+  height: 0.5rem;
+  width: 1.5rem;
+  border-radius: 9999px;
+  transition: all 0.3s ease;
+}
+
+.step-indicator.active {
+  background: var(--primary);
+}
+
+.step-indicator.inactive {
+  background: var(--border);
 }

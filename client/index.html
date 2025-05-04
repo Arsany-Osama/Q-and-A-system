@@ -176,14 +176,236 @@
             </svg>
           </button>
         </div>
+        <div id="passwordRequirements" class="text-xs text-gray-600 dark:text-gray-400 hidden">
+          <p>Password must contain:</p>
+          <ul class="list-disc pl-5">
+            <li id="lengthReq" class="text-red-500">At least 8 characters</li>
+            <li id="upperReq" class="text-red-500">At least one uppercase letter</li>
+            <li id="lowerReq" class="text-red-500">At least one lowercase letter</li>
+            <li id="numberReq" class="text-red-500">At least one number</li>
+            <li id="specialReq" class="text-red-500">At least one special character</li>
+          </ul>
+        </div>
         <button type="submit" id="authSubmitBtn" class="btn btn-primary w-full flex items-center justify-center" aria-label="Submit authentication form">
           <span>Submit</span>
           <svg id="authSpinner" class="w-5 h-5 ml-2 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </button>
+        <div id="forgotPasswordLink" class="text-center">
+          <button type="button" id="forgotPasswordBtn" class="text-primary hover:underline text-sm">Forgot password?</button>
+        </div>
       </form>
+      <div class="mt-6">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
+          </div>
+        </div>
+        <div class="mt-6">
+          <button id="googleLoginBtn" class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+            <svg class="h-5 w-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
+                <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z" />
+                <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z" />
+                <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z" />
+                <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
+              </g>
+            </svg>
+            Sign in with Google
+          </button>
+        </div>
+      </div>
       <p id="authMessage" class="text-red-500 mt-4 flex items-center"></p>
+    </div>
+  </div>
+
+  <!-- Two-Factor Authentication Popup -->
+  <div id="twoFactorPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="twoFactorTitle">
+    <div class="popup-content bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in relative">
+      <button id="closeTwoFactorPopupBtn" class="absolute top-4 right-4 text-gray-500 hover:text-red-500" aria-label="Close two-factor authentication popup">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      <h2 id="twoFactorTitle" class="text-2xl font-bold text-center mb-6">Two-Factor Authentication</h2>
+      
+      <!-- Step 1: Setup 2FA -->
+      <div id="twoFactorSetupStep" class="space-y-4">
+        <p class="text-gray-600 dark:text-gray-300">Enhance your account security by enabling two-factor authentication.</p>
+        <div class="flex justify-center">
+          <button id="twoFactorSetupBtn" class="btn btn-primary w-full">Set Up 2FA</button>
+        </div>
+      </div>
+      
+      <!-- Step 2: QR Code -->
+      <div id="twoFactorQRStep" class="space-y-6 hidden">
+        <p class="text-gray-600 dark:text-gray-300">Scan this QR code with your authenticator app or enter the code manually:</p>
+        <div class="flex justify-center">
+          <img id="qrCodeImage" src="" alt="QR Code for 2FA" class="h-48 w-48 bg-white p-2 rounded-md shadow-sm">
+        </div>
+        <p class="text-gray-600 dark:text-gray-300 text-center">Manual entry code:</p>
+        <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded text-center">
+          <code id="secretKey" class="font-mono text-sm break-all"></code>
+        </div>
+        <div class="form-group">
+          <label for="verificationCode" class="label">Enter the 6-digit code from your app</label>
+          <input type="text" id="verificationCode" class="input" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required aria-label="Verification code">
+        </div>
+        <button id="twoFactorVerifyBtn" class="btn btn-primary w-full">Verify and Enable 2FA</button>
+      </div>
+      
+      <!-- Step 3: Disable 2FA -->
+      <div id="twoFactorDisableStep" class="space-y-4 hidden">
+        <p class="text-gray-600 dark:text-gray-300">Two-factor authentication is currently enabled.</p>
+        <div class="form-group">
+          <label for="disableCode" class="label">Enter the 6-digit code from your app to disable 2FA</label>
+          <input type="text" id="disableCode" class="input" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required aria-label="Disable verification code">
+        </div>
+        <button id="twoFactorDisableBtn" class="btn btn-danger w-full">Disable 2FA</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Security Questions Popup -->
+  <div id="securityQuestionsPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="securityQuestionsTitle">
+    <div class="popup-content bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in relative">
+      <button id="closeSecurityQuestionsPopupBtn" class="absolute top-4 right-4 text-gray-500 hover:text-red-500" aria-label="Close security questions popup">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      <h2 id="securityQuestionsTitle" class="text-2xl font-bold text-center mb-6">Security Questions</h2>
+      
+      <form id="securityQuestionsForm" class="space-y-4">
+        <p class="text-gray-600 dark:text-gray-300 mb-4">Set up security questions to help verify your identity in case you need to recover your account.</p>
+        
+        <div class="form-group">
+          <label for="securityQuestion1" class="label">Question 1</label>
+          <select id="securityQuestion1" class="input" required aria-label="Security question 1">
+            <option value="">Select a question</option>
+            <option value="What was your childhood nickname?">What was your childhood nickname?</option>
+            <option value="What is the name of your first pet?">What is the name of your first pet?</option>
+            <option value="In what city were you born?">In what city were you born?</option>
+            <option value="What high school did you attend?">What high school did you attend?</option>
+            <option value="What was your first car?">What was your first car?</option>
+          </select>
+          <input type="text" id="securityAnswer1" class="input mt-2" placeholder="Your answer" required aria-label="Answer for security question 1">
+        </div>
+        
+        <div class="form-group">
+          <label for="securityQuestion2" class="label">Question 2</label>
+          <select id="securityQuestion2" class="input" required aria-label="Security question 2">
+            <option value="">Select a question</option>
+            <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+            <option value="What was the name of your first grade teacher?">What was the name of your first grade teacher?</option>
+            <option value="What was the make of your first car?">What was the make of your first car?</option>
+            <option value="What is your favorite movie?">What is your favorite movie?</option>
+            <option value="What is the name of the street you grew up on?">What is the name of the street you grew up on?</option>
+          </select>
+          <input type="text" id="securityAnswer2" class="input mt-2" placeholder="Your answer" required aria-label="Answer for security question 2">
+        </div>
+        
+        <div class="form-group">
+          <label for="securityQuestion3" class="label">Question 3</label>
+          <select id="securityQuestion3" class="input" required aria-label="Security question 3">
+            <option value="">Select a question</option>
+            <option value="What is the name of your favorite childhood friend?">What is the name of your favorite childhood friend?</option>
+            <option value="What is your father's middle name?">What is your father's middle name?</option>
+            <option value="What was your favorite food as a child?">What was your favorite food as a child?</option>
+            <option value="What was the name of your first boss?">What was the name of your first boss?</option>
+            <option value="What was your childhood phone number?">What was your childhood phone number?</option>
+          </select>
+          <input type="text" id="securityAnswer3" class="input mt-2" placeholder="Your answer" required aria-label="Answer for security question 3">
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-full">Save Security Questions</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Forgot Password Popup -->
+  <div id="forgotPasswordPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="forgotPasswordTitle">
+    <div class="popup-content bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in relative">
+      <button id="closeForgotPasswordPopupBtn" class="absolute top-4 right-4 text-gray-500 hover:text-red-500" aria-label="Close forgot password popup">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      <div class="flex justify-center mb-4">
+        <!-- Wizard Navigation -->
+        <div class="flex space-x-1">
+          <div id="forgotStep1Indicator" class="h-2 w-6 bg-primary rounded-full"></div>
+          <div id="forgotStep2Indicator" class="h-2 w-6 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+          <div id="forgotStep3Indicator" class="h-2 w-6 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+        </div>
+      </div>
+      
+      <h2 id="forgotPasswordTitle" class="text-2xl font-bold text-center mb-6">Recover Your Account</h2>
+      
+      <!-- Step 1: Enter Email -->
+      <div id="forgotPasswordStep" class="space-y-4">
+        <p class="text-gray-600 dark:text-gray-300">Enter your email address and we'll send you instructions to reset your password.</p>
+        <form id="forgotPasswordForm" class="space-y-4">
+          <div class="form-group">
+            <label for="forgotEmail" class="label">Email Address</label>
+            <input type="email" id="forgotEmail" class="input" placeholder="you@example.com" required aria-label="Email address">
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Send Recovery Email</button>
+        </form>
+      </div>
+      
+      <!-- Step 2: Security Questions -->
+      <div id="securityQuestionsStep" class="space-y-4 hidden">
+        <p class="text-gray-600 dark:text-gray-300">Please answer your security questions to verify your identity.</p>
+        <form id="securityQuestionsVerifyForm" class="space-y-4">
+          <div class="form-group">
+            <p class="label security-question-text">Question 1</p>
+            <input type="text" id="securityAnswer1Verify" class="input" placeholder="Your answer" required aria-label="Answer for security question 1">
+          </div>
+          <div class="form-group">
+            <p class="label security-question-text">Question 2</p>
+            <input type="text" id="securityAnswer2Verify" class="input" placeholder="Your answer" required aria-label="Answer for security question 2">
+          </div>
+          <div class="form-group">
+            <p class="label security-question-text">Question 3</p>
+            <input type="text" id="securityAnswer3Verify" class="input" placeholder="Your answer" required aria-label="Answer for security question 3">
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Verify Answers</button>
+        </form>
+      </div>
+      
+      <!-- Step 3: Reset Password -->
+      <div id="resetPasswordStep" class="space-y-4 hidden">
+        <p class="text-gray-600 dark:text-gray-300">Create a new password for your account.</p>
+        <form id="resetPasswordForm" class="space-y-4">
+          <input type="hidden" id="resetToken" value="">
+          <div class="form-group">
+            <label for="newPassword" class="label">New Password</label>
+            <input type="password" id="newPassword" class="input" placeholder="Enter new password" required aria-label="New password">
+          </div>
+          <div class="form-group">
+            <label for="confirmNewPassword" class="label">Confirm New Password</label>
+            <input type="password" id="confirmNewPassword" class="input" placeholder="Confirm new password" required aria-label="Confirm new password">
+          </div>
+          <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+            <p>Password must contain:</p>
+            <ul class="list-disc pl-5">
+              <li>At least 8 characters</li>
+              <li>Uppercase and lowercase letters</li>
+              <li>At least one number</li>
+              <li>At least one special character</li>
+            </ul>
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Reset Password</button>
+        </form>
+      </div>
     </div>
   </div>
 

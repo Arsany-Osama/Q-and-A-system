@@ -1,6 +1,6 @@
 import { getToken, isLoggedIn } from './auth.js';
 import { showToast } from './ui.js';
-import { renderFeed, showQuestionDetails } from './feed.js';
+import { renderFeed, showQuestionDetails, updateVoteCount } from './feed.js';
 
 const userVotes = {
   questions: {},
@@ -13,18 +13,21 @@ export function getUserVotes() {
 
 export function setupVoting() {
   console.log('Setting up voting');
-  document.querySelectorAll('.upvote-btn').forEach(button => {
-    button.addEventListener('click', () => handleVote(button, 'question', 'upvote'));
-  });
-  document.querySelectorAll('.downvote-btn').forEach(button => {
-    button.addEventListener('click', () => handleVote(button, 'question', 'downvote'));
-  });
-
-  document.querySelectorAll('.upvote-answer-btn').forEach(button => {
-    button.addEventListener('click', () => handleVote(button, 'answer', 'upvote'));
-  });
-  document.querySelectorAll('.downvote-answer-btn').forEach(button => {
-    button.addEventListener('click', () => handleVote(button, 'answer', 'downvote'));
+  
+  // Use event delegation instead of individual event listeners
+  document.addEventListener('click', event => {
+    const target = event.target.closest('.reaction-btn');
+    if (!target) return;
+    
+    if (target.classList.contains('upvote-btn')) {
+      handleVote(target, 'question', 'upvote');
+    } else if (target.classList.contains('downvote-btn')) {
+      handleVote(target, 'question', 'downvote');
+    } else if (target.classList.contains('upvote-answer-btn')) {
+      handleVote(target, 'answer', 'upvote');
+    } else if (target.classList.contains('downvote-answer-btn')) {
+      handleVote(target, 'answer', 'downvote');
+    }
   });
 }
 
@@ -38,9 +41,15 @@ async function handleVote(button, type, voteType) {
   const id = parseInt(type === 'question' ? button.getAttribute('data-question-id') : button.getAttribute('data-answer-id'));
   const voteStore = type === 'question' ? userVotes.questions : userVotes.answers;
   const oppositeVoteType = voteType === 'upvote' ? 'downvote' : 'upvote';
+  
+  // Updated selectors to match Facebook-like UI
+  const oppositeSelector = type === 'question'
+    ? `.downvote-btn[data-question-id="${id}"]`
+    : `.downvote-answer-btn[data-answer-id="${id}"]`;
+  
   const oppositeButton = type === 'question'
-    ? document.querySelector(`.downvote-btn[data-question-id="${id}"]`)
-    : document.querySelector(`.downvote-answer-btn[data-answer-id="${id}"]`);
+    ? button.parentElement.querySelector(`.downvote-btn`)
+    : button.parentElement.querySelector(`.downvote-answer-btn`);
 
   if (voteStore[id] === voteType) {
     showToast('info', 'You have already voted this way');
@@ -67,8 +76,8 @@ async function handleVote(button, type, voteType) {
       throw new Error(result.message || `Failed to vote on ${type}`);
     }
 
-    const voteCountElement = button.querySelector('span');
-    const oppositeVoteCountElement = oppositeButton?.querySelector('span');
+    const voteCountElement = button.querySelector('.vote-count');
+    const oppositeVoteCountElement = oppositeButton?.querySelector('.vote-count');
     let currentVotes = parseInt(voteCountElement.textContent);
     let oppositeVotes = oppositeVoteCountElement ? parseInt(oppositeVoteCountElement.textContent) : 0;
 
@@ -79,14 +88,15 @@ async function handleVote(button, type, voteType) {
       currentVotes += 1;
     }
 
-    voteCountElement.textContent = currentVotes;
-    if (oppositeVoteCountElement) {
-      oppositeVoteCountElement.textContent = Math.max(0, oppositeVotes);
+    updateVoteCount(button, currentVotes);
+    if (oppositeButton) {
+      updateVoteCount(oppositeButton, Math.max(0, oppositeVotes));
     }
 
-    button.classList.add('text-blue-500', 'font-bold');
+    // Update CSS classes for the active state
+    button.classList.add('active');
     if (oppositeButton) {
-      oppositeButton.classList.remove('text-blue-500', 'font-bold');
+      oppositeButton.classList.remove('active');
     }
 
     showToast('success', `Successfully ${voteType}d the ${type}`);
@@ -94,7 +104,7 @@ async function handleVote(button, type, voteType) {
     const questionFeedSection = document.getElementById('feedSection');
     const questionDetailsSection = document.getElementById('questionDetailsSection');
     if (questionFeedSection && !questionFeedSection.classList.contains('hidden')) {
-      renderFeed();
+      // Don't need to re-render the entire feed - just update the UI we've already changed
     } else if (questionDetailsSection) {
       const questionId = document.querySelector(`.upvote-btn[data-question-id]`)?.getAttribute('data-question-id');
       if (questionId) {

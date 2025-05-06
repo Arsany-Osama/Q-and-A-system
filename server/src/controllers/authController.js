@@ -76,4 +76,43 @@ const getUserStats = async (req, res) => {
   }
 };
 
-module.exports = { register, login, logout, getUserStats };
+const getTopContributors = async (req, res) => {
+  try {
+    // Group answers by userId and count them
+    const userAnswerCounts = await prisma.answer.groupBy({
+      by: ['userId'],
+      _count: {
+        id: true
+      },
+      orderBy: {
+        _count: {
+          id: 'desc'
+        }
+      },
+      take: 5 // Limit to top 5 contributors
+    });
+
+    // Fetch user details for these contributors
+    const topContributors = await Promise.all(
+      userAnswerCounts.map(async (item) => {
+        const user = await prisma.user.findUnique({
+          where: { id: item.userId },
+          select: { id: true, username: true }
+        });
+        
+        return {
+          id: user.id,
+          username: user.username,
+          answerCount: item._count.id
+        };
+      })
+    );
+
+    res.json({ success: true, contributors: topContributors });
+  } catch (error) {
+    console.error('Error fetching top contributors:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+module.exports = { register, login, logout, getUserStats, getTopContributors };

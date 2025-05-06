@@ -9,6 +9,23 @@ export function getToken() {
   return localStorage.getItem('token') || '';
 }
 
+export async function fetchTopContributors() {
+  try {
+    const response = await fetch('/auth/top-contributors');
+    const data = await response.json();
+    
+    if (data.success) {
+      return data.contributors;
+    } else {
+      console.error('Error fetching top contributors:', data.message);
+      return [];
+    }
+  } catch (error) {
+    console.error('Network error when fetching top contributors:', error);
+    return [];
+  }
+}
+
 export function logout() {
   console.log('Logging out');
   const token = getToken();

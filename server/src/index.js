@@ -6,7 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const answerRoutes = require('./routes/answerRoutes');
 const voteRoutes = require('./routes/voteRoutes');
-const passport = require('./passport');
+const passport = require('./services/passport');
 
 const app = express();
 

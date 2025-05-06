@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const passport = require('../passport');
-const { register, login, logout, getUserStats, getTopContributors } = require('../controllers/authController');
+const passport = require('../services/passport');
+const { register, login, logout, getUserStats, getTopContributors, verifyOTP, forgotPassword, resetPassword } = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/authMiddleware');
 
 router.post('/register', register);
@@ -9,6 +9,9 @@ router.post('/login', login);
 router.post('/logout', authenticateToken, logout);
 router.get('/stats', authenticateToken, getUserStats);
 router.get('/top-contributors', getTopContributors);
+router.post('/verify-otp', verifyOTP);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // Google OAuth routes
 router.get(
@@ -20,7 +23,6 @@ router.get(
   '/google/callback',
   passport.authenticate('google', { session: false }),
   (req, res) => {
-    // On successful authentication, send token and user info to frontend
     const { token, user } = req.user;
     res.send(`
       <script>

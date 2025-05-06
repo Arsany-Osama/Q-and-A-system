@@ -46,6 +46,21 @@ export function validatePassword(password) {
   return validationResults;
 }
 
+// Update password requirements UI
+export function updatePasswordRequirements(password) {
+  const lengthReq = document.getElementById('lengthReq');
+  const upperReq = document.getElementById('upperReq');
+  const lowerReq = document.getElementById('lowerReq');
+  const numberReq = document.getElementById('numberReq');
+  const specialReq = document.getElementById('specialReq');
+
+  if (lengthReq) lengthReq.className = password.length >= PASSWORD_POLICY.minLength ? 'text-green-500' : 'text-red-500';
+  if (upperReq) upperReq.className = /[A-Z]/.test(password) ? 'text-green-500' : 'text-red-500';
+  if (lowerReq) lowerReq.className = /[a-z]/.test(password) ? 'text-green-500' : 'text-red-500';
+  if (numberReq) numberReq.className = /[0-9]/.test(password) ? 'text-green-500' : 'text-red-500';
+  if (specialReq) specialReq.className = new RegExp(`[${PASSWORD_POLICY.specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`).test(password) ? 'text-green-500' : 'text-red-500';
+}
+
 // Initialize 2FA setup
 export function initTwoFactorAuth() {
   const twoFactorSetupBtn = document.getElementById('twoFactorSetupBtn');
@@ -240,6 +255,7 @@ export function initForgotPassword() {
           document.getElementById('securityQuestionsStep').classList.add('hidden');
           document.getElementById('resetPasswordStep').classList.remove('hidden');
           document.getElementById('resetToken').value = result.token;
+          showResetPasswordForm(result.token); // Pass token to reset form
         } else {
           showToast('error', result.message || 'Failed to verify security questions');
         }
@@ -282,7 +298,7 @@ export function initForgotPassword() {
         const result = await response.json();
         
         if (result.success) {
-          showToast('success', 'Password reset successfully');
+          showToast('success', 'Password reset successful! Please log in with your new password.');
           hidePopup();
           // Redirect to login
           showPopup('login');
@@ -305,7 +321,24 @@ export function initSecurity() {
   // Attach password validation to password fields
   const passwordFields = document.querySelectorAll('input[type="password"]');
   passwordFields.forEach(field => {
-    if (field.id === 'password' || field.id === 'newPassword') {
+    if (field.id === 'password' || field.id === 'newPassword' || field.id === 'confirmNewPassword') {
+      field.addEventListener('input', () => {
+        const password = document.getElementById('newPassword')?.value || '';
+        const confirmPassword = document.getElementById('confirmNewPassword')?.value || '';
+        updatePasswordRequirements(password);
+        if (field.id === 'confirmNewPassword' && password && confirmPassword) {
+          if (password !== confirmPassword) {
+            showToast('error', 'Passwords do not match');
+          } else {
+            const validation = validatePassword(password);
+            if (!validation.valid) {
+              showToast('error', validation.errors[0]);
+            } else {
+              showToast('success', 'Passwords match and meet policy requirements');
+            }
+          }
+        }
+      });
       field.addEventListener('blur', () => {
         if (field.value) {
           const validation = validatePassword(field.value);

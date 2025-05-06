@@ -1,4 +1,4 @@
-import { isLoggedIn, logout } from './auth.js';
+import { isLoggedIn, logout, forgotPassword } from './auth.js';
 import { validatePassword } from './security.js';
 
 export function initUI() {
@@ -196,21 +196,44 @@ export function hideSecurityQuestionsPopup() {
 
 export function showForgotPasswordPopup() {
   const popup = document.getElementById('forgotPasswordPopup');
-  popup.classList.remove('hidden');
-  
-  document.getElementById('forgotPasswordStep').classList.remove('hidden');
-  document.getElementById('securityQuestionsStep').classList.add('hidden');
-  document.getElementById('resetPasswordStep').classList.add('hidden');
-  
-  document.getElementById('forgotStep1Indicator').classList.remove('bg-gray-300', 'dark:bg-gray-600');
-  document.getElementById('forgotStep1Indicator').classList.add('bg-primary');
-  document.getElementById('forgotStep2Indicator').classList.remove('bg-primary');
-  document.getElementById('forgotStep2Indicator').classList.add('bg-gray-300', 'dark:bg-gray-600');
-  document.getElementById('forgotStep3Indicator').classList.remove('bg-primary');
-  document.getElementById('forgotStep3Indicator').classList.add('bg-gray-300', 'dark:bg-gray-600');
-  
-  document.getElementById('forgotPasswordForm').reset();
-  document.getElementById('forgotEmail').focus();
+  const forgotPasswordStep = document.getElementById('forgotPasswordStep');
+  const securityQuestionsStep = document.getElementById('securityQuestionsStep');
+  const resetPasswordStep = document.getElementById('resetPasswordStep');
+  const forgotStep1Indicator = document.getElementById('forgotStep1Indicator');
+  const forgotStep2Indicator = document.getElementById('forgotStep2Indicator');
+  const forgotStep3Indicator = document.getElementById('forgotStep3Indicator');
+  const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+
+  if (popup) popup.classList.remove('hidden');
+
+  // Safely toggle visibility of steps with null checks
+  if (forgotPasswordStep) forgotPasswordStep.classList.remove('hidden');
+  if (securityQuestionsStep) securityQuestionsStep.classList.add('hidden');
+  if (resetPasswordStep) resetPasswordStep.classList.add('hidden');
+
+  // Update wizard indicators with null checks
+  if (forgotStep1Indicator) {
+    forgotStep1Indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600');
+    forgotStep1Indicator.classList.add('bg-primary');
+  }
+  if (forgotStep2Indicator) {
+    forgotStep2Indicator.classList.remove('bg-primary');
+    forgotStep2Indicator.classList.add('bg-gray-300', 'dark:bg-gray-600');
+  }
+  if (forgotStep3Indicator) {
+    forgotStep3Indicator.classList.remove('bg-primary');
+    forgotStep3Indicator.classList.add('bg-gray-300', 'dark:bg-gray-600');
+  }
+
+  if (forgotPasswordForm) {
+    forgotPasswordForm.reset();
+    document.getElementById('forgotEmail')?.focus();
+    forgotPasswordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('forgotEmail').value;
+      await forgotPassword(email);
+    });
+  }
 }
 
 export function hideForgotPasswordPopup() {

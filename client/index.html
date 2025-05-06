@@ -366,31 +366,12 @@
         </form>
       </div>
       
-      <!-- Step 2: Security Questions -->
-      <div id="securityQuestionsStep" class="space-y-4 hidden">
-        <p class="text-gray-600 dark:text-gray-300">Please answer your security questions to verify your identity.</p>
-        <form id="securityQuestionsVerifyForm" class="space-y-4">
-          <div class="form-group">
-            <p class="label security-question-text">Question 1</p>
-            <input type="text" id="securityAnswer1Verify" class="input" placeholder="Your answer" required aria-label="Answer for security question 1">
-          </div>
-          <div class="form-group">
-            <p class="label security-question-text">Question 2</p>
-            <input type="text" id="securityAnswer2Verify" class="input" placeholder="Your answer" required aria-label="Answer for security question 2">
-          </div>
-          <div class="form-group">
-            <p class="label security-question-text">Question 3</p>
-            <input type="text" id="securityAnswer3Verify" class="input" placeholder="Your answer" required aria-label="Answer for security question 3">
-          </div>
-          <button type="submit" class="btn btn-primary w-full">Verify Answers</button>
-        </form>
-      </div>
-      
-      <!-- Step 3: Reset Password -->
+      <!-- Step 2: Reset Password -->
       <div id="resetPasswordStep" class="space-y-4 hidden">
         <p class="text-gray-600 dark:text-gray-300">Create a new password for your account.</p>
         <form id="resetPasswordForm" class="space-y-4">
           <input type="hidden" id="resetToken" value="">
+          <input type="hidden" id="resetEmail" name="resetEmail">
           <div class="form-group">
             <label for="newPassword" class="label">New Password</label>
             <input type="password" id="newPassword" class="input" placeholder="Enter new password" required aria-label="New password">

@@ -1,4 +1,5 @@
 import { showToast, hidePopup, renderUserUI } from './ui.js';
+import { validatePassword } from './security.js';
 
 export function isLoggedIn() {
   return !!localStorage.getItem('token');
@@ -8,12 +9,30 @@ export function getToken() {
   return localStorage.getItem('token') || '';
 }
 
+export async function fetchTopContributors() {
+  try {
+    const response = await fetch('/auth/top-contributors');
+    const data = await response.json();
+    
+    if (data.success) {
+      return data.contributors;
+    } else {
+      console.error('Error fetching top contributors:', data.message);
+      return [];
+    }
+  } catch (error) {
+    console.error('Network error when fetching top contributors:', error);
+    return [];
+  }
+}
+
 export function logout() {
   console.log('Logging out');
   const token = getToken();
   if (!token) {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('has2fa');
     showToast('success', 'Logged out successfully');
     renderUserUI();
     return;
@@ -40,6 +59,7 @@ export function logout() {
     .finally(() => {
       localStorage.removeItem('token');
       localStorage.removeItem('username');
+      localStorage.removeItem('has2fa');
       renderUserUI();
     });
 }
@@ -51,6 +71,14 @@ export function initAuth() {
     return;
   }
 
+  // Real-time password validation for register
+  const passwordInput = document.getElementById('password');
+  passwordInput.addEventListener('input', () => {
+    if (document.getElementById('authTitle').textContent.toLowerCase() === 'register') {
+      updatePasswordRequirements(passwordInput.value);
+    }
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     console.log('Auth form submitted');
@@ -60,6 +88,15 @@ export function initAuth() {
     const password = document.getElementById('password').value;
     const submitBtn = document.getElementById('authSubmitBtn');
     const spinner = document.getElementById('authSpinner');
+    
+    // Validate password for register
+    if (action === 'register') {
+      const validation = validatePassword(password);
+      if (!validation.valid) {
+        showToast('error', validation.errors[0]);
+        return;
+      }
+    }
 
     submitBtn.disabled = true;
     spinner.classList.remove('hidden');
@@ -68,10 +105,17 @@ export function initAuth() {
       const result = await handleAuth(action, username, email, password);
       if (result.success) {
         showToast('success', `${action === 'login' ? 'Logged in' : 'Registered'} successfully`);
-        hidePopup();
-        renderUserUI();
-        if (action === 'login') {
-          window.location.reload(); // Refresh to update UI
+        
+        // Handle 2FA if required
+        if (result.requires2FA) {
+          // Show 2FA verification form
+          handleTwoFactorAuth(result);
+        } else {
+          hidePopup();
+          renderUserUI();
+          if (action === 'login') {
+            window.location.reload(); // Refresh to update UI
+          }
         }
       } else {
         showToast('error', result.message || 'Authentication failed');
@@ -99,6 +143,79 @@ export function initAuth() {
   }
 }
 
+// Update password requirements in real-time
+function updatePasswordRequirements(password) {
+  const requirements = document.getElementById('passwordRequirements');
+  if (!requirements) return;
+  
+  requirements.classList.remove('hidden');
+  
+  // Check each requirement
+  document.getElementById('lengthReq').className = password.length >= 8 ? 'text-green-500' : 'text-red-500';
+  document.getElementById('upperReq').className = /[A-Z]/.test(password) ? 'text-green-500' : 'text-red-500';
+  document.getElementById('lowerReq').className = /[a-z]/.test(password) ? 'text-green-500' : 'text-red-500';
+  document.getElementById('numberReq').className = /[0-9]/.test(password) ? 'text-green-500' : 'text-red-500';
+  document.getElementById('specialReq').className = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? 'text-green-500' : 'text-red-500';
+}
+
+// Handle 2FA verification if required during login
+function handleTwoFactorAuth(result) {
+  // Create a modal for 2FA verification
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+  modal.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
+      <h2 class="text-xl font-bold mb-4">Two-Factor Authentication</h2>
+      <p class="mb-4">Please enter the verification code from your authenticator app.</p>
+      <form id="twoFactorForm" class="space-y-4">
+        <input type="text" id="twoFactorCode" pattern="[0-9]{6}" maxlength="6" class="input w-full" placeholder="000000" required>
+        <button type="submit" class="btn btn-primary w-full">Verify</button>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // Focus on input
+  setTimeout(() => document.getElementById('twoFactorCode').focus(), 100);
+  
+  // Handle 2FA verification
+  document.getElementById('twoFactorForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('twoFactorCode').value;
+    
+    try {
+      const response = await fetch('/auth/2fa/verify-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: result.email,
+          twoFactorToken: result.twoFactorToken,
+          code
+        })
+      });
+      
+      const verifyResult = await response.json();
+      
+      if (verifyResult.success) {
+        localStorage.setItem('token', verifyResult.token);
+        localStorage.setItem('username', verifyResult.username);
+        localStorage.setItem('has2fa', 'true');
+        showToast('success', 'Two-factor authentication successful');
+        modal.remove();
+        hidePopup();
+        renderUserUI();
+        window.location.reload();
+      } else {
+        showToast('error', verifyResult.message || 'Invalid verification code');
+      }
+    } catch (error) {
+      showToast('error', 'Network error occurred');
+    }
+  });
+}
+
 async function handleAuth(action, username, email, password) {
   const url = `/auth/${action}`;
   const body = action === 'login' ? { email, password } : { username, email, password };
@@ -112,9 +229,12 @@ async function handleAuth(action, username, email, password) {
       body: JSON.stringify(body),
     });
     const result = await response.json();
-    if (result.success) {
+    if (result.success && !result.requires2FA) {
       localStorage.setItem('token', result.token);
       localStorage.setItem('username', action === 'register' ? username : result.username);
+      if (result.has2fa) {
+        localStorage.setItem('has2fa', 'true');
+      }
     }
     return result;
   } catch (err) {

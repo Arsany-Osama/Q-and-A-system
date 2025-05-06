@@ -20,6 +20,16 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Slide In Up */
+.animate-slide-in-up {
+  animation: slideInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Bounce */
 @keyframes bounce {
   0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
@@ -58,8 +68,29 @@
   100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
 }
 
-.btn:hover {
+.btn-primary:hover {
   animation: glow 1.5s infinite;
+}
+
+.dark .btn-primary:hover {
+  animation: darkGlow 1.5s infinite;
+}
+
+@keyframes darkGlow {
+  0% { box-shadow: 0 0 8px rgba(99, 179, 237, 0.6); }
+  50% { box-shadow: 0 0 25px rgba(99, 179, 237, 0.9); }
+  100% { box-shadow: 0 0 8px rgba(99, 179, 237, 0.6); }
+}
+
+/* Button Hover Glow */
+.dark .btn-secondary:hover {
+  animation: purpleGlow 1.5s infinite;
+}
+
+@keyframes purpleGlow {
+  0% { box-shadow: 0 0 8px rgba(183, 148, 244, 0.6); }
+  50% { box-shadow: 0 0 25px rgba(183, 148, 244, 0.9); }
+  100% { box-shadow: 0 0 8px rgba(183, 148, 244, 0.6); }
 }
 
 /* Ripple */
@@ -72,4 +103,38 @@
 .toast.show {
   opacity: 1;
   transform: translateX(0);
+}
+
+/* Hero Background Animation */
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.dark .hero {
+  background-size: 200% 200%;
+  animation: gradientMove 10s ease infinite;
+}
+
+/* Tag Hover Animation */
+.dark .tag:hover {
+  animation: tagPulse 1s infinite;
+}
+
+@keyframes tagPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Question Card Animation */
+.dark .question-card:hover .card-title {
+  animation: titleColor 1.5s infinite;
+}
+
+@keyframes titleColor {
+  0% { color: #63b3ed; }
+  50% { color: #4299e1; }
+  100% { color: #63b3ed; }
 }

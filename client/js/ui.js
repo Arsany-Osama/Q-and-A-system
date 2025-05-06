@@ -2,7 +2,6 @@ import { isLoggedIn, logout } from './auth.js';
 import { validatePassword } from './security.js';
 
 export function initUI() {
-  // Theme Toggle
   const themeToggle = document.getElementById('themeToggle');
   const savedTheme = localStorage.getItem('theme') || 'light';
   document.documentElement.classList.toggle('dark', savedTheme === 'dark');
@@ -14,26 +13,21 @@ export function initUI() {
     updateThemeIcon(isDark);
   });
 
-  // Auth Popup Events
   document.getElementById('closePopupBtn')?.addEventListener('click', hidePopup);
   document.getElementById('loginTab')?.addEventListener('click', () => showPopup('login'));
   document.getElementById('registerTab')?.addEventListener('click', () => showPopup('register'));
   
-  // Security popups close buttons
   document.getElementById('closeTwoFactorPopupBtn')?.addEventListener('click', hideTwoFactorPopup);
   document.getElementById('closeSecurityQuestionsPopupBtn')?.addEventListener('click', hideSecurityQuestionsPopup);
   document.getElementById('closeForgotPasswordPopupBtn')?.addEventListener('click', hideForgotPasswordPopup);
   
-  // Forgot password link
   document.getElementById('forgotPasswordBtn')?.addEventListener('click', () => {
     hidePopup();
     showForgotPasswordPopup();
   });
 
-  // Render User Status
   renderUserUI();
 
-  // Setup Focus Trap for popups
   setupFocusTrap('authPopup');
   setupFocusTrap('twoFactorPopup');
   setupFocusTrap('securityQuestionsPopup');
@@ -137,9 +131,6 @@ export function renderUserUI() {
             <button id="twoFactorAuthBtn" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
               Two-Factor Auth
             </button>
-            <button id="securityQuestionsBtn" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-              Security Questions
-            </button>
             <button id="logoutBtn" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
               Logout
             </button>
@@ -147,19 +138,13 @@ export function renderUserUI() {
         </div>
       </div>
     `;
-    // Add event listeners for the user menu
     document.getElementById('logoutBtn').addEventListener('click', logout);
     document.getElementById('userMenuBtn').addEventListener('click', toggleUserMenu);
     document.getElementById('twoFactorAuthBtn').addEventListener('click', () => {
       toggleUserMenu();
       showTwoFactorPopup();
     });
-    document.getElementById('securityQuestionsBtn').addEventListener('click', () => {
-      toggleUserMenu();
-      showSecurityQuestionsPopup();
-    });
-    
-    // Close menu when clicking outside
+
     document.addEventListener('click', (e) => {
       const userMenu = document.getElementById('userMenu');
       const userMenuBtn = document.getElementById('userMenuBtn');
@@ -177,23 +162,19 @@ export function renderUserUI() {
   }
 }
 
-// Toggle user menu
 function toggleUserMenu() {
   const userMenu = document.getElementById('userMenu');
   userMenu.classList.toggle('hidden');
 }
 
-// Show 2FA popup
 export function showTwoFactorPopup(hasTwoFactor = false) {
   const popup = document.getElementById('twoFactorPopup');
   popup.classList.remove('hidden');
   
-  // Reset all steps
   document.getElementById('twoFactorSetupStep').classList.add('hidden');
   document.getElementById('twoFactorQRStep').classList.add('hidden');
   document.getElementById('twoFactorDisableStep').classList.add('hidden');
   
-  // Show appropriate step
   if (hasTwoFactor) {
     document.getElementById('twoFactorDisableStep').classList.remove('hidden');
   } else {
@@ -201,38 +182,26 @@ export function showTwoFactorPopup(hasTwoFactor = false) {
   }
 }
 
-// Hide 2FA popup
 export function hideTwoFactorPopup() {
   const popup = document.getElementById('twoFactorPopup');
   if (popup.classList.contains('hidden')) return;
   popup.classList.add('hidden');
 }
 
-// Show security questions popup
-export function showSecurityQuestionsPopup() {
-  const popup = document.getElementById('securityQuestionsPopup');
-  popup.classList.remove('hidden');
-  document.getElementById('securityQuestionsForm').reset();
-}
-
-// Hide security questions popup
 export function hideSecurityQuestionsPopup() {
   const popup = document.getElementById('securityQuestionsPopup');
   if (popup.classList.contains('hidden')) return;
   popup.classList.add('hidden');
 }
 
-// Show forgot password popup
 export function showForgotPasswordPopup() {
   const popup = document.getElementById('forgotPasswordPopup');
   popup.classList.remove('hidden');
   
-  // Reset and show only the first step
   document.getElementById('forgotPasswordStep').classList.remove('hidden');
   document.getElementById('securityQuestionsStep').classList.add('hidden');
   document.getElementById('resetPasswordStep').classList.add('hidden');
   
-  // Update step indicators
   document.getElementById('forgotStep1Indicator').classList.remove('bg-gray-300', 'dark:bg-gray-600');
   document.getElementById('forgotStep1Indicator').classList.add('bg-primary');
   document.getElementById('forgotStep2Indicator').classList.remove('bg-primary');
@@ -244,7 +213,6 @@ export function showForgotPasswordPopup() {
   document.getElementById('forgotEmail').focus();
 }
 
-// Hide forgot password popup
 export function hideForgotPasswordPopup() {
   const popup = document.getElementById('forgotPasswordPopup');
   if (popup.classList.contains('hidden')) return;

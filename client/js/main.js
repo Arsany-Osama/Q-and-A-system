@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupQuestionForm();
   setupAnswerForm();
   initSearch();
-  setupVoting();
+  setupVoting(); // Call once here
   initAnimations();
   setupFilterButtons();
   renderFeed();
@@ -89,10 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Setup event listeners for dynamically added elements
   function setupDynamicEventListeners() {
-    // We'll use event delegation for dynamically added elements
+    // Use event delegation, excluding .reaction-btn
     document.addEventListener('click', (e) => {
       // Handle share button clicks
-      if (e.target.closest('.share-btn')) {
+      if (e.target.closest('.share-btn') && !e.target.closest('.reaction-btn')) {
         const btn = e.target.closest('.share-btn');
         const card = btn.closest('.question-card');
         if (!card) return;
@@ -100,10 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const questionId = card.getAttribute('data-id');
         const title = card.querySelector('.card-title')?.textContent || 'Question';
         
-        // Create a share URL
         const shareUrl = `${window.location.origin}${window.location.pathname}?q=${questionId}`;
         
-        // If Web Share API is available
         if (navigator.share) {
           navigator.share({
             title: title,
@@ -111,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
             url: shareUrl
           }).catch(console.error);
         } else {
-          // Fallback: copy to clipboard
           navigator.clipboard.writeText(shareUrl).then(() => {
             showToast('success', 'Link copied to clipboard');
           }).catch(() => {
@@ -121,34 +118,32 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       // Handle answer counter button clicks to toggle answers visibility
-      if (e.target.closest('.answers-counter')) {
+      if (e.target.closest('.answers-counter') && !e.target.closest('.reaction-btn')) {
         const btn = e.target.closest('.answers-counter');
         const card = btn.closest('.question-card');
         if (!card) return;
         
         const toggleBtn = card.querySelector('.toggle-answers');
         if (toggleBtn) {
-          toggleBtn.click(); // Trigger the toggle answers button
+          toggleBtn.click();
         }
       }
       
       // Handle dropdown toggles
-      if (e.target.closest('.dropdown-toggle')) {
+      if (e.target.closest('.dropdown-toggle') && !e.target.closest('.reaction-btn')) {
         e.stopPropagation();
         const button = e.target.closest('.dropdown-toggle');
         const menu = button.nextElementSibling;
         
-        // Close all other dropdowns first
         document.querySelectorAll('.dropdown-menu').forEach(m => {
           if (m !== menu) m.classList.add('hidden');
         });
         
-        // Toggle current dropdown
         menu.classList.toggle('hidden');
       }
       
       // Handle reply button clicks
-      if (e.target.closest('.reply-btn')) {
+      if (e.target.closest('.reply-btn') && !e.target.closest('.reaction-btn')) {
         const button = e.target.closest('.reply-btn');
         const questionId = button.closest('.question-card')?.getAttribute('data-id');
         const answerCard = button.closest('.answer-card');
@@ -159,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (questionId && answerCard) {
-          // Focus on the quick reply input for this answer
           const quickInput = answerCard.closest('.answers-section').querySelector('.quick-answer-input');
           if (quickInput) {
             quickInput.focus();
@@ -185,10 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showSection('questionForm');
     });
     
-    // Monitor for new question cards and apply observer
     const questionFeed = document.getElementById('questionFeed');
     if (questionFeed) {
-      // Create a MutationObserver to watch for new cards
       const observer = new MutationObserver((mutations) => {
         mutations.forEach(mutation => {
           if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -201,17 +193,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       });
       
-      // Start observing the feed for new cards
       observer.observe(questionFeed, { childList: true, subtree: false });
       
-      // Also setup lazy loading for existing cards
       questionFeed.querySelectorAll('.question-card').forEach(card => {
         setupLazyLoadingForCard(card);
       });
     }
   }
   
-  // Setup lazy loading effect for a single card
   function setupLazyLoadingForCard(card) {
     const intersectionObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -225,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
     intersectionObserver.observe(card);
   }
 
-  // Navigation Event Listeners
   document.getElementById('postQuestionBtn')?.addEventListener('click', () => {
     console.log('Post Question button clicked');
     if (!isLoggedIn()) {

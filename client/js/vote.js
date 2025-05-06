@@ -14,21 +14,41 @@ export function getUserVotes() {
 export function setupVoting() {
   console.log('Setting up voting');
   
-  // Use event delegation instead of individual event listeners
+  // Use event delegation with a flag to prevent multiple triggers
+  let isHandlingVote = false;
   document.addEventListener('click', event => {
     const target = event.target.closest('.reaction-btn');
     if (!target) return;
-    
-    if (target.classList.contains('upvote-btn')) {
-      handleVote(target, 'question', 'upvote');
-    } else if (target.classList.contains('downvote-btn')) {
-      handleVote(target, 'question', 'downvote');
-    } else if (target.classList.contains('upvote-answer-btn')) {
-      handleVote(target, 'answer', 'upvote');
-    } else if (target.classList.contains('downvote-answer-btn')) {
-      handleVote(target, 'answer', 'downvote');
+
+    // Check if this click has already been processed
+    if (target.dataset.voteProcessed === 'true') {
+      console.log('Vote already processed for this click');
+      return;
     }
-  });
+
+    event.stopPropagation(); // Prevent bubbling to other handlers
+    event.preventDefault(); // Prevent default action (e.g., form submission)
+    isHandlingVote = true;
+    target.dataset.voteProcessed = 'true'; // Mark as processed
+
+    try {
+      if (target.classList.contains('upvote-btn')) {
+        handleVote(target, 'question', 'upvote');
+      } else if (target.classList.contains('downvote-btn')) {
+        handleVote(target, 'question', 'downvote');
+      } else if (target.classList.contains('upvote-answer-btn')) {
+        handleVote(target, 'answer', 'upvote');
+      } else if (target.classList.contains('downvote-answer-btn')) {
+        handleVote(target, 'answer', 'downvote');
+      }
+    } finally {
+      isHandlingVote = false;
+      // Reset the processed flag after a short delay to allow for new clicks
+      setTimeout(() => {
+        target.dataset.voteProcessed = 'false';
+      }, 100);
+    }
+  }, { capture: false }); // Use bubbling phase to ensure proper event delegation
 }
 
 async function handleVote(button, type, voteType) {
@@ -39,17 +59,25 @@ async function handleVote(button, type, voteType) {
   }
 
   const id = parseInt(type === 'question' ? button.getAttribute('data-question-id') : button.getAttribute('data-answer-id'));
+  if (isNaN(id)) {
+    console.error('Invalid ID for vote:', id);
+    showToast('error', 'Invalid vote target');
+    return;
+  }
+
   const voteStore = type === 'question' ? userVotes.questions : userVotes.answers;
   const oppositeVoteType = voteType === 'upvote' ? 'downvote' : 'upvote';
-  
-  // Updated selectors to match Facebook-like UI
-  const oppositeSelector = type === 'question'
-    ? `.downvote-btn[data-question-id="${id}"]`
-    : `.downvote-answer-btn[data-answer-id="${id}"]`;
-  
-  const oppositeButton = type === 'question'
-    ? button.parentElement.querySelector(`.downvote-btn`)
-    : button.parentElement.querySelector(`.downvote-answer-btn`);
+
+  // Find opposite button more robustly
+  let oppositeButton = null;
+  const parentCard = button.closest(type === 'question' ? '.question-card' : '.answer-card');
+  if (parentCard) {
+    oppositeButton = parentCard.querySelector(
+      type === 'question'
+        ? `.${oppositeVoteType === 'upvote' ? 'upvote-btn' : 'downvote-btn'}[data-question-id="${id}"]`
+        : `.${oppositeVoteType === 'upvote' ? 'upvote-answer-btn' : 'downvote-answer-btn'}[data-answer-id="${id}"]`
+    );
+  }
 
   if (voteStore[id] === voteType) {
     showToast('info', 'You have already voted this way');
@@ -78,8 +106,13 @@ async function handleVote(button, type, voteType) {
 
     const voteCountElement = button.querySelector('.vote-count');
     const oppositeVoteCountElement = oppositeButton?.querySelector('.vote-count');
-    let currentVotes = parseInt(voteCountElement.textContent);
-    let oppositeVotes = oppositeVoteCountElement ? parseInt(oppositeVoteCountElement.textContent) : 0;
+    if (!voteCountElement) {
+      console.warn('Vote count element not found');
+      return;
+    }
+
+    let currentVotes = parseInt(voteCountElement.textContent) || 0;
+    let oppositeVotes = oppositeVoteCountElement ? parseInt(oppositeVoteCountElement.textContent) || 0 : 0;
 
     if (previousVote === oppositeVoteType) {
       currentVotes += 1;
@@ -89,7 +122,7 @@ async function handleVote(button, type, voteType) {
     }
 
     updateVoteCount(button, currentVotes);
-    if (oppositeButton) {
+    if (oppositeButton && oppositeVoteCountElement) {
       updateVoteCount(oppositeButton, Math.max(0, oppositeVotes));
     }
 
@@ -101,11 +134,9 @@ async function handleVote(button, type, voteType) {
 
     showToast('success', `Successfully ${voteType}d the ${type}`);
 
-    const questionFeedSection = document.getElementById('feedSection');
+    // Update UI if in details view
     const questionDetailsSection = document.getElementById('questionDetailsSection');
-    if (questionFeedSection && !questionFeedSection.classList.contains('hidden')) {
-      // Don't need to re-render the entire feed - just update the UI we've already changed
-    } else if (questionDetailsSection) {
+    if (questionDetailsSection && !questionDetailsSection.classList.contains('hidden')) {
       const questionId = document.querySelector(`.upvote-btn[data-question-id]`)?.getAttribute('data-question-id');
       if (questionId) {
         showQuestionDetails(questionId);

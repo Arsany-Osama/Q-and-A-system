@@ -1,4 +1,4 @@
-import { showToast, hidePopup, renderUserUI } from './ui.js';
+import { showToast, hidePopup, renderUserUI, showSection } from './ui.js';
 import { validatePassword } from './security.js';
 
 export function isLoggedIn() {
@@ -108,13 +108,16 @@ export function initAuth() {
         
         // Handle 2FA if required
         if (result.requires2FA) {
-          // Show 2FA verification form
           handleTwoFactorAuth(result);
         } else {
           hidePopup();
+          localStorage.setItem('token', result.token);
+          localStorage.setItem('username', action === 'register' ? username : result.username);
+          if (result.has2fa) localStorage.setItem('has2fa', 'true');
           renderUserUI();
+          showSection('profileSection'); // Navigate to profile section
           if (action === 'login') {
-            window.location.reload(); // Refresh to update UI
+            setTimeout(() => window.location.reload(), 100); // Delay reload to ensure UI updates
           }
         }
       } else {
@@ -127,6 +130,52 @@ export function initAuth() {
       spinner.classList.add('hidden');
     }
   });
+
+  // Google Login Button and Callback
+  const googleLoginBtn = document.getElementById('googleLoginBtn');
+  if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', () => {
+      console.log('Google login button clicked');
+      const width = 500;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      window.open('/auth/google', 'Google Login', `width=${width},height=${height},left=${left},top=${top}`);
+    });
+
+    // Listen for Google OAuth callback
+    window.addEventListener('message', (event) => {
+      console.log('Received message event:', event.data);
+      if (event.data.type === 'google-auth') {
+        if (event.data.success) {
+          console.log('Google login successful, setting localStorage:', {
+            token: event.data.token,
+            username: event.data.username,
+          });
+          localStorage.setItem('token', event.data.token);
+          localStorage.setItem('username', event.data.username);
+          console.log('LocalStorage after setting:', {
+            token: localStorage.getItem('token'),
+            username: localStorage.getItem('username'),
+          });
+
+          showToast('success', 'Logged in with Google successfully');
+          hidePopup(); // Ensure the popup is hidden
+          renderUserUI(); // Update the UI to show the username
+          showSection('profileSection'); // Navigate to profile section
+
+          // Delay reload to ensure localStorage and UI updates are applied
+          setTimeout(() => {
+            console.log('Reloading page to ensure UI updates');
+            window.location.reload();
+          }, 100);
+        } else {
+          console.error('Google login failed:', event.data.message);
+          showToast('error', event.data.message || 'Google login failed');
+        }
+      }
+    });
+  }
 
   // Password toggle
   const togglePassword = document.getElementById('togglePassword');
@@ -150,7 +199,6 @@ function updatePasswordRequirements(password) {
   
   requirements.classList.remove('hidden');
   
-  // Check each requirement
   document.getElementById('lengthReq').className = password.length >= 8 ? 'text-green-500' : 'text-red-500';
   document.getElementById('upperReq').className = /[A-Z]/.test(password) ? 'text-green-500' : 'text-red-500';
   document.getElementById('lowerReq').className = /[a-z]/.test(password) ? 'text-green-500' : 'text-red-500';
@@ -160,7 +208,6 @@ function updatePasswordRequirements(password) {
 
 // Handle 2FA verification if required during login
 function handleTwoFactorAuth(result) {
-  // Create a modal for 2FA verification
   const modal = document.createElement('div');
   modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
   modal.innerHTML = `
@@ -174,30 +221,22 @@ function handleTwoFactorAuth(result) {
     </div>
   `;
   document.body.appendChild(modal);
-  
-  // Focus on input
+
   setTimeout(() => document.getElementById('twoFactorCode').focus(), 100);
-  
-  // Handle 2FA verification
+
   document.getElementById('twoFactorForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const code = document.getElementById('twoFactorCode').value;
-    
+
     try {
       const response = await fetch('/auth/2fa/verify-login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: result.email,
-          twoFactorToken: result.twoFactorToken,
-          code
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: result.email, twoFactorToken: result.twoFactorToken, code }),
       });
-      
+
       const verifyResult = await response.json();
-      
+
       if (verifyResult.success) {
         localStorage.setItem('token', verifyResult.token);
         localStorage.setItem('username', verifyResult.username);
@@ -206,7 +245,8 @@ function handleTwoFactorAuth(result) {
         modal.remove();
         hidePopup();
         renderUserUI();
-        window.location.reload();
+        showSection('profileSection');
+        setTimeout(() => window.location.reload(), 100);
       } else {
         showToast('error', verifyResult.message || 'Invalid verification code');
       }
@@ -223,18 +263,14 @@ async function handleAuth(action, username, email, password) {
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     const result = await response.json();
     if (result.success && !result.requires2FA) {
       localStorage.setItem('token', result.token);
       localStorage.setItem('username', action === 'register' ? username : result.username);
-      if (result.has2fa) {
-        localStorage.setItem('has2fa', 'true');
-      }
+      if (result.has2fa) localStorage.setItem('has2fa', 'true');
     }
     return result;
   } catch (err) {

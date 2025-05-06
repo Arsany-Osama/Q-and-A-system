@@ -163,55 +163,6 @@ async function disable2FA() {
   }
 }
 
-// Initialize security questions setup
-export function initSecurityQuestions() {
-  const securityQuestionsForm = document.getElementById('securityQuestionsForm');
-
-  if (securityQuestionsForm) {
-    securityQuestionsForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const questions = [
-        {
-          question: document.getElementById('securityQuestion1').value,
-          answer: document.getElementById('securityAnswer1').value
-        },
-        {
-          question: document.getElementById('securityQuestion2').value,
-          answer: document.getElementById('securityAnswer2').value
-        },
-        {
-          question: document.getElementById('securityQuestion3').value,
-          answer: document.getElementById('securityAnswer3').value
-        }
-      ];
-
-      try {
-        const response = await fetch('/auth/security-questions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${getToken()}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ questions })
-        });
-
-        const result = await response.json();
-        
-        if (result.success) {
-          showToast('success', 'Security questions saved successfully');
-          hidePopup();
-        } else {
-          showToast('error', result.message || 'Failed to save security questions');
-        }
-      } catch (error) {
-        showToast('error', 'Network error occurred');
-        console.error('Error saving security questions:', error);
-      }
-    });
-  }
-}
-
 // Initialize forgot password functionality
 export function initForgotPassword() {
   const forgotPasswordForm = document.getElementById('forgotPasswordForm');
@@ -346,48 +297,10 @@ export function initForgotPassword() {
   }
 }
 
-// Google Login Integration
-export function initGoogleLogin() {
-  const googleLoginBtn = document.getElementById('googleLoginBtn');
-  
-  if (googleLoginBtn) {
-    googleLoginBtn.addEventListener('click', () => {
-      // Open Google OAuth window
-      const width = 500;
-      const height = 600;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      
-      window.open(
-        '/auth/google',
-        'Google Login',
-        `width=${width},height=${height},left=${left},top=${top}`
-      );
-      
-      // Listen for message from popup window
-      window.addEventListener('message', (event) => {
-        if (event.data.type === 'google-auth') {
-          if (event.data.success) {
-            localStorage.setItem('token', event.data.token);
-            localStorage.setItem('username', event.data.username);
-            showToast('success', 'Logged in with Google successfully');
-            hidePopup();
-            window.location.reload();
-          } else {
-            showToast('error', event.data.message || 'Google login failed');
-          }
-        }
-      }, { once: true });
-    });
-  }
-}
-
 // Initialize all security features
 export function initSecurity() {
   initTwoFactorAuth();
-  initSecurityQuestions();
   initForgotPassword();
-  initGoogleLogin();
   
   // Attach password validation to password fields
   const passwordFields = document.querySelectorAll('input[type="password"]');
@@ -407,4 +320,4 @@ export function initSecurity() {
       });
     }
   });
-} 
+}

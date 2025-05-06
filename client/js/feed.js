@@ -1,7 +1,7 @@
 import { fetchQuestions } from './question.js';
 import { showPopup, showToast, showSection } from './ui.js';
 import { getToken, isLoggedIn, fetchTopContributors } from './auth.js';
-import { setupVoting, getUserVotes } from './vote.js';
+import { getUserVotes } from './vote.js';
 
 let currentPage = 1;
 const questionsPerPage = 10;
@@ -15,15 +15,12 @@ function applyFilter(questions, filter) {
   
   switch(filter) {
     case 'trending':
-      // Sort by score (upvotes - downvotes) with most upvoted first
       return filtered.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
     
     case 'newest':
-      // Sort by date with newest first
       return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
     case 'unanswered':
-      // Filter to only show questions with no answers
       return filtered
         .filter(q => !q.answers || q.answers.length === 0)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -37,7 +34,6 @@ function applyFilter(questions, filter) {
 export function setupFilterButtons() {
   console.log('Setting up filter buttons');
   
-  // Set initial active filter based on currentFilter value
   const activeFilterBtn = document.querySelector(`.filter-btn[data-filter="${currentFilter}"]`);
   if (activeFilterBtn) {
     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -49,19 +45,16 @@ export function setupFilterButtons() {
   document.querySelectorAll('.filter-btn').forEach(button => {
     button.addEventListener('click', () => {
       const filter = button.getAttribute('data-filter');
-      if (filter === currentFilter) return; // No change needed
+      if (filter === currentFilter) return;
       
-      // Update active button styling
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
       });
       button.classList.add('active');
       
-      // Apply new filter
       currentFilter = filter;
-      currentPage = 1; // Reset to first page
+      currentPage = 1;
       
-      // Show animation for the filter change
       const feed = document.getElementById('questionFeed');
       if (feed) {
         gsap.to(feed, {
@@ -84,7 +77,6 @@ export function setupFilterButtons() {
     });
   });
   
-  // Setup sidebar ask question button if it exists
   document.getElementById('sidebarAskQuestion')?.addEventListener('click', () => {
     showSection('questionForm');
   });
@@ -106,7 +98,6 @@ export async function renderFeed() {
     </div>
   `;
 
-  // Fetch and render top contributors
   renderTopContributors();
 
   try {
@@ -129,7 +120,6 @@ export async function renderFeed() {
       return;
     }
 
-    // Apply filter
     questions = applyFilter(questions, currentFilter);
     
     const start = (currentPage - 1) * questionsPerPage;
@@ -146,7 +136,6 @@ export async function renderFeed() {
       wrapper.style.animationDelay = `${index * 0.1}s`;
       wrapper.setAttribute('data-id', q.id);
       
-      // Calculate engagement metrics
       const totalVotes = (q.upvotes || 0) + (q.downvotes || 0);
       const voteRatio = totalVotes > 0 ? Math.round((q.upvotes / totalVotes) * 100) : 0;
       const engagementClass = q.answers.length > 2 ? 'high-engagement' : (q.answers.length > 0 ? 'medium-engagement' : '');
@@ -175,7 +164,7 @@ export async function renderFeed() {
                     <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
                     </svg>
-            </button>
+                  </button>
                   <div class="dropdown-menu hidden absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10">
                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Save question</a>
                     <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Report</a>
@@ -188,7 +177,6 @@ export async function renderFeed() {
           
           <div class="card-body">
             <p class="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-2">${q.content}</p>
-            
             ${q.tags && q.tags.length > 1 ? 
               `<div class="tags-container mb-3">
                 <div class="tags flex flex-wrap gap-1">
@@ -237,12 +225,12 @@ export async function renderFeed() {
             
             <div class="answers-section mt-3">
               <div class="toggle-answers-container mb-2">
-            <button class="toggle-answers flex items-center text-primary hover:text-primary-dark text-sm" aria-expanded="false" aria-controls="answers-${q.id}">
+                <button class="toggle-answers flex items-center text-primary hover:text-primary-dark text-sm" aria-expanded="false" aria-controls="answers-${q.id}">
                   <svg class="w-4 h-4 mr-1 toggle-icon transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
                   <span>${q.answers.length > 0 ? `Show ${q.answers.length} answers` : 'No answers yet'}</span>
-            </button>
+                </button>
               </div>
               
               <div id="answers-${q.id}" class="answers hidden space-y-3">
@@ -311,25 +299,23 @@ export async function renderFeed() {
       container.appendChild(wrapper);
     });
 
-    // Setup dropdown toggles
-    document.querySelectorAll('.dropdown-toggle').forEach(button => {
-      button.addEventListener('click', (e) => {
+    document.addEventListener('click', (e) => {
+      // Handle dropdown toggles with delegation
+      if (e.target.closest('.dropdown-toggle')) {
         e.stopPropagation();
+        const button = e.target.closest('.dropdown-toggle');
         const menu = button.nextElementSibling;
+        
+        document.querySelectorAll('.dropdown-menu').forEach(m => {
+          if (m !== menu) m.classList.add('hidden');
+        });
+        
         menu.classList.toggle('hidden');
-      });
-    });
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.dropdown-menu').forEach(menu => {
-        menu.classList.add('hidden');
-      });
-    });
+      }
 
-    // Setup answers toggle
-    document.querySelectorAll('.toggle-answers').forEach(button => {
-      button.addEventListener('click', () => {
+      // Handle answers toggle with delegation
+      if (e.target.closest('.toggle-answers')) {
+        const button = e.target.closest('.toggle-answers');
         const answersDiv = button.closest('.toggle-answers-container').nextElementSibling;
         const isExpanded = button.getAttribute('aria-expanded') === 'true';
         button.setAttribute('aria-expanded', !isExpanded);
@@ -361,10 +347,9 @@ export async function renderFeed() {
         button.querySelector('span').textContent = isExpanded ? 
           `Show ${button.closest('.answers-section').querySelector('.answers').children.length - 1} answers` : 
           `Hide answers`;
-      });
+      }
     });
 
-    // Quick answer functionality
     document.querySelectorAll('.quick-answer-input').forEach(input => {
       input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
@@ -387,7 +372,6 @@ export async function renderFeed() {
       });
     });
 
-    // Setup answer button
     document.querySelectorAll('.answer-btn').forEach(button => {
       button.addEventListener('click', () => {
         if (!isLoggedIn()) {
@@ -407,7 +391,6 @@ export async function renderFeed() {
       });
     });
 
-    // Setup card title click for question details
     document.querySelectorAll('.card-title').forEach(title => {
       title.addEventListener('click', () => {
         const questionId = parseInt(title.closest('.question-card').getAttribute('data-id'));
@@ -415,7 +398,6 @@ export async function renderFeed() {
       });
     });
 
-    setupVoting();
     renderPagination(questions.length, pagination);
 
   } catch (err) {
@@ -437,7 +419,6 @@ export async function renderFeed() {
   }
 }
 
-// Function to render top contributors from real data
 async function renderTopContributors() {
   const contributorsContainer = document.querySelector('.contributors');
   if (!contributorsContainer) return;
@@ -463,7 +444,6 @@ async function renderTopContributors() {
 
     contributorsContainer.innerHTML = '';
     
-    // Generate random gradient colors for avatars
     const gradients = [
       'from-blue-400 to-blue-600',
       'from-purple-400 to-purple-600',
@@ -505,7 +485,6 @@ async function renderTopContributors() {
   }
 }
 
-// Helper function to handle quick answers submission
 function handleQuickAnswer(input) {
   if (!isLoggedIn()) {
     showPopup('login');
@@ -517,7 +496,6 @@ function handleQuickAnswer(input) {
   
   if (!answer) return;
   
-  // Here you would normally submit the answer to your API
   fetch('/answers', {
     method: 'POST',
     headers: {
@@ -532,13 +510,8 @@ function handleQuickAnswer(input) {
   .then(response => response.json())
   .then(data => {
     if (data.success) {
-      // Clear the input
       input.value = '';
-      
-      // Show success message
       showToast('success', 'Your answer has been posted!');
-      
-      // Optionally refresh the answers section
       setTimeout(() => renderFeed(), 1000);
     } else {
       throw new Error(data.message || 'Failed to post answer');
@@ -565,8 +538,8 @@ export async function showQuestionDetails(questionId) {
   const questionDetailsSection = document.createElement('section');
   questionDetailsSection.id = 'questionDetailsSection';
   questionDetailsSection.className = 'mt-8';
-  const upvoteClass = userVotes.questions[question.id] === 'upvote' ? 'text-blue-500 font-bold' : '';
-  const downvoteClass = userVotes.questions[question.id] === 'downvote' ? 'text-blue-500 font-bold' : '';
+  const upvoteClass = userVotes.questions[question.id] === 'upvote' ? 'active' : '';
+  const downvoteClass = userVotes.questions[question.id] === 'downvote' ? 'active' : '';
   questionDetailsSection.innerHTML = `
     <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-lg flex flex-col space-y-4">
       <button id="backToFeedBtn" class="btn btn-secondary text-xs sm:text-sm px-3 py-1 w-fit">Back to Feed</button>
@@ -578,11 +551,11 @@ export async function showQuestionDetails(questionId) {
           ${question.tags ? question.tags.map(tag => `<span class="tag">${tag}</span>`).join('') : ''}
         </div>
         <div class="flex items-center gap-3">
-          <button class="btn-vote upvote-btn ${upvoteClass} flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" data-question-id="${question.id}" aria-label="Like question">
+          <button class="reaction-btn btn-vote upvote-btn ${upvoteClass}" data-question-id="${question.id}" aria-label="Like question">
             <span class="text-xl">👍</span>
             <span class="vote-count transition-all duration-300 font-medium">${question.upvotes || 0}</span>
           </button>
-          <button class="btn-vote downvote-btn ${downvoteClass} flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" data-question-id="${question.id}" aria-label="Dislike question">
+          <button class="reaction-btn btn-vote downvote-btn ${downvoteClass}" data-question-id="${question.id}" aria-label="Dislike question">
             <span class="text-xl">👎</span>
             <span class="vote-count transition-all duration-300 font-medium">${question.downvotes || 0}</span>
           </button>
@@ -593,18 +566,18 @@ export async function showQuestionDetails(questionId) {
         <h3 class="text-base font-semibold">Answers (${question.answers.length})</h3>
         <div id="answersList" class="space-y-4">
           ${question.answers.length > 0 ? question.answers.map(a => {
-            const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'text-blue-500 font-bold' : '';
-            const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'text-blue-500 font-bold' : '';
+            const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
+            const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
             return `
               <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex flex-col space-y-2">
                 <p class="text-sm">${a.content}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-500">Answered by ${a.username || 'Anonymous'} on ${new Date(a.createdAt).toLocaleDateString()}</p>
                 <div class="flex items-center gap-2">
-                  <button class="btn-vote upvote-answer-btn ${answerUpvoteClass} flex items-center gap-1 px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" data-answer-id="${a.id}" aria-label="Like answer">
+                  <button class="reaction-btn btn-vote upvote-answer-btn ${answerUpvoteClass}" data-answer-id="${a.id}" aria-label="Like answer">
                     <span class="text-base">👍</span>
                     <span class="vote-count transition-all duration-300">${a.upvotes || 0}</span>
                   </button>
-                  <button class="btn-vote downvote-answer-btn ${answerDownvoteClass} flex items-center gap-1 px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" data-answer-id="${a.id}" aria-label="Dislike answer">
+                  <button class="reaction-btn btn-vote downvote-answer-btn ${answerDownvoteClass}" data-answer-id="${a.id}" aria-label="Dislike answer">
                     <span class="text-base">👎</span>
                     <span class="vote-count transition-all duration-300">${a.downvotes || 0}</span>
                   </button>
@@ -650,8 +623,6 @@ export async function showQuestionDetails(questionId) {
       });
     });
   });
-
-  setupVoting();
 }
 
 function renderPagination(totalQuestions, pagination) {
@@ -675,14 +646,11 @@ function renderPagination(totalQuestions, pagination) {
 export function updateVoteCount(button, newCount) {
   const countElement = button.querySelector('.vote-count');
   if (countElement) {
-    // Store the old value
     const oldValue = parseInt(countElement.textContent);
     const newValue = newCount || 0;
     
-    // Update the text
     countElement.textContent = newValue;
     
-    // Add animation
     if (newValue > oldValue) {
       countElement.animate([
         { transform: 'scale(1)', opacity: 0.5 },
@@ -705,7 +673,6 @@ export function updateVoteCount(button, newCount) {
   }
 }
 
-// Initialize filters when document is ready
 document.addEventListener('DOMContentLoaded', () => {
   setupFilterButtons();
 });

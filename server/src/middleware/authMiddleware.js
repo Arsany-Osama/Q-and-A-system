@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const { Router } = require('express');
+const router = Router();
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -20,4 +22,9 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-module.exports = { authenticateToken };
+router.post('/something', authenticateToken, (req, res) => {
+  // Your controller logic here
+  res.json({ success: true, message: 'Access granted to protected route' });
+});
+
+module.exports = { authenticateToken, router };

@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Handle reply button clicks
       if (e.target.closest('.reply-btn') && !e.target.closest('.reaction-btn')) {
         const button = e.target.closest('.reply-btn');
-        const questionId = button.closest('.question-card')?.getAttribute('data-id');
+        const answerId = button.getAttribute('data-answer-id');
         const answerCard = button.closest('.answer-card');
         
         if (!isLoggedIn()) {
@@ -153,12 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         
-        if (questionId && answerCard) {
-          const quickInput = answerCard.closest('.answers-section').querySelector('.quick-answer-input');
-          if (quickInput) {
-            quickInput.focus();
-            quickInput.setAttribute('placeholder', 'Write a reply...');
-          }
+        if (answerCard) {
+          const answerUsername = answerCard.getAttribute('data-username');
+          const answerUserId = answerCard.getAttribute('data-user-id');
+          showReplyForm(button, answerId, answerUsername, answerUserId);
         }
       }
     });

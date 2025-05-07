@@ -8,14 +8,17 @@ datasource db {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  username  String     @unique
-  email     String     @unique
-  password  String?
-  googleId  String?    @unique
-  questions Question[]
-  answers   Answer[]
-  votes     Vote[]
+  id          Int        @id @default(autoincrement())
+  username    String     @unique
+  email       String     @unique
+  password    String?
+  googleId    String?    @unique
+  questions   Question[]
+  answers     Answer[]
+  votes       Vote[]
+  replies     Reply[]
+  mentionedIn Reply[]    @relation("MentionedUser")
+
   @@index([email])
   @@index([googleId])
 }
@@ -44,6 +47,7 @@ model Answer {
   user       User     @relation(fields: [userId], references: [id])
   question   Question @relation(fields: [questionId], references: [id])
   votes      Vote[]
+  replies    Reply[]
   createdAt  DateTime @default(now())
 }
 
@@ -56,4 +60,18 @@ model Vote {
   user       User      @relation(fields: [userId], references: [id])
   question   Question? @relation(fields: [questionId], references: [id])
   answer     Answer?   @relation(fields: [answerId], references: [id])
+}
+
+model Reply {
+  id              Int      @id @default(autoincrement())
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  userId          Int
+  answerId        Int
+  mentionedUserId Int?
+
+  user          User   @relation(fields: [userId], references: [id])
+  answer        Answer @relation(fields: [answerId], references: [id])
+  mentionedUser User?  @relation("MentionedUser", fields: [mentionedUserId], references: [id])
 }

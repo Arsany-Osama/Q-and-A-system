@@ -2,6 +2,7 @@ import { fetchQuestions } from './question.js';
 import { showPopup, showToast, showSection } from './ui.js';
 import { getToken, isLoggedIn, fetchTopContributors } from './auth.js';
 import { getUserVotes } from './vote.js';
+import { setupReplyUI } from './reply.js';  // Add this import
 
 let currentPage = 1;
 const questionsPerPage = 10;
@@ -245,7 +246,7 @@ export async function renderFeed() {
                     const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
                     const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
                 return `
-                      <div class="answer-card">
+                      <div class="answer-card" data-username="${a.username}" data-user-id="${a.userId}">
                         <div class="answer-header flex items-start mb-1">
                           <div class="avatar-container mr-2">
                             <div class="avatar bg-gradient-to-r from-gray-400 to-gray-500 text-white flex items-center justify-center rounded-full h-7 w-7 text-xs font-medium">
@@ -297,6 +298,16 @@ export async function renderFeed() {
         </div>
       `;
       container.appendChild(wrapper);
+    });
+
+    document.querySelectorAll('.answer-card').forEach(answerCard => {
+      const answerId = answerCard.querySelector('.reaction-btn-sm')?.dataset.answerId;
+      const username = answerCard.getAttribute('data-username');
+      const userId = answerCard.getAttribute('data-user-id');
+      
+      if (answerId) {
+        setupReplyUI(answerCard, parseInt(answerId), username, userId);
+      }
     });
 
     document.addEventListener('click', (e) => {

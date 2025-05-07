@@ -1,11 +1,38 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const JwtStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 
 const prisma = new PrismaClient();
 const secretKey = process.env.JWT_SECRET;
 
+// Configure JWT strategy
+const jwtOptions = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: secretKey
+};
+
+// Add JWT Strategy
+passport.use('jwt', new JwtStrategy(jwtOptions, async (payload, done) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id }
+    });
+    
+    if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
+    }
+  } catch (error) {
+    console.error('Error in JWT strategy:', error);
+    return done(error, false);
+  }
+}));
+
+// Google OAuth Strategy
 passport.use(
   new GoogleStrategy(
     {
@@ -70,5 +97,22 @@ passport.use(
     }
   )
 );
+
+// Serialize user for session (if using sessions)
+passport.serializeUser((data, done) => {
+  done(null, data.user.id);
+});
+
+// Deserialize user from session (if using sessions)
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: Number(id) }
+    });
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
 
 module.exports = passport;

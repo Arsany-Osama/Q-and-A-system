@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const answerRoutes = require('./routes/answerRoutes');
 const voteRoutes = require('./routes/voteRoutes');
+const replyRoutes = require('./routes/replyRoutes');
 const passport = require('./services/passport');
 
 const app = express();
@@ -23,6 +24,7 @@ app.use('/auth', authRoutes);
 app.use('/questions', questionRoutes);
 app.use('/answers', answerRoutes);
 app.use('/vote', voteRoutes);
+app.use('/replies', replyRoutes);
 
 // Fallback route for client-side routing (must be last)
 app.get('*', (req, res) => {

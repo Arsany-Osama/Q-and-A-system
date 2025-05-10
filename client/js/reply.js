@@ -1,5 +1,6 @@
 import { getToken, isLoggedIn } from './auth.js';
 import { showPopup, showToast } from './ui.js';
+import { replies as repliesApi } from './utils/api.js';
 
 // Post a reply to an answer
 export async function postReply(answerId, content, mentionedUserId, mentionedUsername) {
@@ -14,21 +15,7 @@ export async function postReply(answerId, content, mentionedUserId, mentionedUse
       content = `@${mentionedUsername} ${content}`;
     }
     
-    const response = await fetch('/replies', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getToken()}`
-      },
-      body: JSON.stringify({
-        answerId,
-        content,
-        mentionedUserId,
-        mentionedUsername
-      })
-    });
-    
-    const data = await response.json();
+    const data = await repliesApi.create(answerId, content);
     
     if (data.success) {
       return {

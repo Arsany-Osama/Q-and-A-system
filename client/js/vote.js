@@ -1,6 +1,7 @@
-import { getToken, isLoggedIn } from './auth.js';
+import { isLoggedIn } from './auth.js';
 import { showToast } from './ui.js';
 import { renderFeed, showQuestionDetails, updateVoteCount } from './feed.js';
+import { votes as votesApi } from './utils/api.js';
 
 const userVotes = {
   questions: {},
@@ -88,19 +89,18 @@ async function handleVote(button, type, voteType) {
   voteStore[id] = voteType;
 
   try {
-    const endpoint = `/vote/${type}`;
-    const body = type === 'question' ? { questionId: id, voteType } : { answerId: id, voteType };
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify(body),
-    });
+    let result;
+    if (type === 'question') {
+      result = voteType === 'upvote' 
+        ? await votesApi.upvoteQuestion(id) 
+        : await votesApi.downvoteQuestion(id);
+    } else { // answer
+      result = voteType === 'upvote' 
+        ? await votesApi.upvoteAnswer(id) 
+        : await votesApi.downvoteAnswer(id);
+    }
 
-    const result = await response.json();
-    if (!response.ok || !result.success) {
+    if (!result.success) {
       throw new Error(result.message || `Failed to vote on ${type}`);
     }
 

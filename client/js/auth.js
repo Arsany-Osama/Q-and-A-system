@@ -1,5 +1,6 @@
 import { showToast, hidePopup, renderUserUI, showSection } from './ui.js';
 import { validatePassword } from './security.js';
+import { auth as authApi } from './utils/api.js';
 
 const pendingUsers = new Map();
 
@@ -33,15 +34,8 @@ export function isApproved() {
 
 export async function fetchTopContributors() {
   try {
-    const response = await fetch('/auth/top-contributors');
-    const data = await response.json();
-
-    if (data.success) {
-      return data.contributors;
-    } else {
-      console.error('Error fetching top contributors:', data.message);
-      return [];
-    }
+    const data = await authApi.getTopContributors();
+    return data.contributors;
   } catch (error) {
     console.error('Network error when fetching top contributors:', error);
     return [];
@@ -60,14 +54,7 @@ export function logout() {
     return;
   }
 
-  fetch('/auth/logout', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  })
-    .then(response => response.json())
+  authApi.logout()
     .then(result => {
       if (result.success) {
         showToast('success', 'Logged out successfully');
@@ -274,17 +261,11 @@ function handleTwoFactorAuth(result) {
     const code = document.getElementById('twoFactorCode').value;
 
     try {
-      const response = await fetch('/auth/2fa/verify-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: result.email, twoFactorToken: result.twoFactorToken, code }),
-      });
+      const response = await authApi.verifyTwoFactor(code);
 
-      const verifyResult = await response.json();
-
-      if (verifyResult.success) {
-        localStorage.setItem('token', verifyResult.token);
-        localStorage.setItem('username', verifyResult.username);
+      if (response.success) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('username', response.username);
         localStorage.setItem('has2fa', 'true');
         showToast('success', 'Two-factor authentication successful');
         modal.remove();
@@ -293,7 +274,7 @@ function handleTwoFactorAuth(result) {
         showSection('profileSection');
         setTimeout(() => window.location.reload(), 100);
       } else {
-        showToast('error', verifyResult.message || 'Invalid verification code');
+        showToast('error', response.message || 'Invalid verification code');
       }
     } catch (error) {
       showToast('error', 'Network error occurred');
@@ -302,39 +283,23 @@ function handleTwoFactorAuth(result) {
 }
 
 async function handleAuth(action, username, email, password) {
-  const url = `/auth/${action}`;
-  const body = action === 'login' ? { email, password } : { username, email, password };
-
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const result = await response.json();
-    if (result.success && !result.requires2FA) {
-      localStorage.setItem('token', result.token);
-      localStorage.setItem('username', result.username);
-      localStorage.setItem('role', result.role);
-      localStorage.setItem('state', result.state);
-      if (result.has2fa) localStorage.setItem('has2fa', 'true');
+    if (action === 'login') {
+      return await authApi.login(username, password);
     }
-    return result;
-  } catch (err) {
-    throw new Error('Network error');
+    return { success: false, message: 'Invalid action' };
+  } catch (error) {
+    console.error('Auth error:', error);
+    return { success: false, message: error.message || 'Authentication failed' };
   }
 }
 
 async function handleRegister(username, email, password) {
   try {
-    const response = await fetch('/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password }),
-    });
-    return await response.json();
-  } catch (err) {
-    throw new Error('Network error');
+    return await authApi.register(username, email, password);
+  } catch (error) {
+    console.error('Registration error:', error);
+    return { success: false, message: error.message || 'Registration failed' };
   }
 }
 
@@ -372,96 +337,48 @@ function showOTPForm(email, type) {
 
 export async function verifyOTP(email, otp, type) {
   try {
-    const response = await fetch('/auth/verify-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp, type }),
-    });
-    const result = await response.json();
-    if (result.success) {
+    const response = await authApi.verifyOTP(email, otp, type);
+    
+    if (response.success) {
       if (type === 'registration') {
-        const userData = pendingUsers.get(email);
-        if (!userData) throw new Error('User data not found');
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('username', userData.username);
-        localStorage.setItem('role', result.role);
-        localStorage.setItem('state', result.state);
-        pendingUsers.delete(email);
-        showToast('success', 'Registration successful');
+        showToast('success', 'Registration completed successfully! You can now log in.');
+        hidePopup();
+      } else if (type === '2fa') {
+        showToast('success', '2FA verification successful');
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('username', response.username);
+        localStorage.setItem('role', response.role);
+        localStorage.setItem('state', response.state);
+        if (response.has2fa) localStorage.setItem('has2fa', 'true');
         hidePopup();
         renderUserUI();
         showSection('profileSection');
-        setTimeout(() => window.location.reload(), 100);
-      } else if (type === 'forgot-password') {
-        // Hide the OTP popup
-        const otpPopup = document.getElementById(`${type}-otp-popup`);
-        if (otpPopup) otpPopup.remove();
-
-        // Show the reset password step in the existing forgotPasswordPopup
-        const forgotPasswordPopup = document.getElementById('forgotPasswordPopup');
-        const forgotPasswordStep = document.getElementById('forgotPasswordStep');
-        const securityQuestionsStep = document.getElementById('securityQuestionsStep');
-        const resetPasswordStep = document.getElementById('resetPasswordStep');
-        const forgotStep1Indicator = document.getElementById('forgotStep1Indicator');
-        const forgotStep2Indicator = document.getElementById('forgotStep2Indicator');
-        const forgotStep3Indicator = document.getElementById('forgotStep3Indicator');
-        const resetTokenField = document.getElementById('resetToken');
-        const resetEmailField = document.getElementById('resetEmail'); // Add this field in the form
-
-        if (forgotPasswordPopup && resetPasswordStep) {
-          // Hide other steps
-          if (forgotPasswordStep) forgotPasswordStep.classList.add('hidden');
-          if (securityQuestionsStep) securityQuestionsStep.classList.add('hidden');
-          resetPasswordStep.classList.remove('hidden');
-
-          // Update wizard indicators
-          if (forgotStep1Indicator) {
-            forgotStep1Indicator.classList.remove('bg-primary');
-            forgotStep1Indicator.classList.add('bg-gray-300', 'dark:bg-gray-600');
-          }
-          if (forgotStep2Indicator) {
-            forgotStep2Indicator.classList.remove('bg-primary');
-            forgotStep2Indicator.classList.add('bg-gray-300', 'dark:bg-gray-600');
-          }
-          if (forgotStep3Indicator) {
-            forgotStep3Indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600');
-            forgotStep3Indicator.classList.add('bg-primary');
-          }
-
-          // Set the reset token and email
-          if (resetTokenField) resetTokenField.value = result.token || '';
-          if (resetEmailField) resetEmailField.value = email; // Store the email
-
-          // Focus on the new password field
-          document.getElementById('newPassword')?.focus();
-        } else {
-          showToast('error', 'Failed to load reset password form');
-        }
       }
     } else {
-      showToast('error', result.message || 'Invalid OTP');
+      showToast('error', response.message || 'OTP verification failed');
     }
+    return response;
   } catch (error) {
-    showToast('error', 'Network error');
+    console.error('OTP verification error:', error);
+    showToast('error', 'Network error during OTP verification');
+    return { success: false, message: 'Network error' };
   }
 }
 
 export async function forgotPassword(email) {
   try {
-    const response = await fetch('/auth/forgot-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    const result = await response.json();
-    if (result.success) {
-      showOTPForm(email, 'forgot-password');
-      showToast('success', 'Please check your email (including spam/junk folder) for the OTP to reset your password.');
+    const response = await authApi.forgotPassword(email);
+    
+    if (response.success) {
+      showToast('success', 'Password reset email sent. Please check your inbox.');
     } else {
-      showToast('error', result.message || 'Failed to initiate password reset');
+      showToast('error', response.message || 'Failed to process password reset');
     }
+    return response;
   } catch (error) {
-    showToast('error', 'Network error');
+    console.error('Forgot password error:', error);
+    showToast('error', 'Network error during password reset request');
+    return { success: false, message: 'Network error' };
   }
 }
 

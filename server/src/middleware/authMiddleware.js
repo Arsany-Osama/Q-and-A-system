@@ -13,7 +13,10 @@ const authenticateToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Verified user:', decoded);
+    console.log('Verified user:', { id: decoded.id, role: decoded.role, state: decoded.state });
+    if (!decoded.role || !decoded.state) {
+      return res.status(403).json({ success: false, message: 'Invalid token: Missing role or state' });
+    }
     req.user = decoded;
     next();
   } catch (err) {
@@ -22,9 +25,35 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-router.post('/something', authenticateToken, (req, res) => {
-  // Your controller logic here
-  res.json({ success: true, message: 'Access granted to protected route' });
-});
+const checkRole = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user || !req.user.role) {
+      return res.status(403).json({ success: false, message: 'Access denied: No role found' });
+    }
 
-module.exports = { authenticateToken, router };
+    if (Array.isArray(allowedRoles) && !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: `Access denied: Required role is one of [${allowedRoles.join(', ')}]`
+      });
+    }
+
+    if (!Array.isArray(allowedRoles) && req.user.role !== allowedRoles) {
+      return res.status(403).json({ 
+        success: false, 
+        message: `Access denied: Required role is ${allowedRoles}`
+      });
+    }
+
+    if (req.user.state !== 'APPROVED') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: Account is not approved'
+      });
+    }
+
+    next();
+  };
+};
+
+module.exports = { authenticateToken, checkRole };

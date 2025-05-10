@@ -1,17 +1,18 @@
-import { isLoggedIn, logout, forgotPassword } from './auth.js';
+import { isLoggedIn, logout, forgotPassword, getUserRole, getUserState, isAdmin, isModerator, isApproved } from './auth.js';
 import { validatePassword } from './security.js';
 
 export function initUI() {
   const themeToggle = document.getElementById('themeToggle');
   const savedTheme = localStorage.getItem('theme') || 'light';
   document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-  updateThemeIcon(savedTheme === 'dark');
-
-  themeToggle.addEventListener('click', () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    updateThemeIcon(isDark);
-  });
+  if (themeToggle) {
+    updateThemeIcon(savedTheme === 'dark');
+    themeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    });
+  }
 
   document.getElementById('closePopupBtn')?.addEventListener('click', hidePopup);
   document.getElementById('loginTab')?.addEventListener('click', () => showPopup('login'));
@@ -36,6 +37,7 @@ export function initUI() {
 
 function updateThemeIcon(isDark) {
   const themeToggle = document.getElementById('themeToggle');
+  if (!themeToggle) return;
   themeToggle.innerHTML = isDark
     ? `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>`
     : `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>`;
@@ -94,8 +96,10 @@ export function showSection(sectionId) {
 
 export function showToast(type, message) {
   const toastContainer = document.getElementById('toastContainer');
+  if (!toastContainer) return;
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
+  toast.setAttribute('role', 'alert');
   toast.innerHTML = `
     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       ${type === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />'}
@@ -115,9 +119,16 @@ export function renderUserUI() {
   const userStatus = document.getElementById('userStatus');
   if (isLoggedIn()) {
     const username = localStorage.getItem('username') || 'User';
+    const role = getUserRole();
+    const state = getUserState();
+
     userStatus.innerHTML = `
       <div class="flex items-center">
         <span class="text-gray-700 dark:text-gray-300 truncate max-w-[150px] sm:max-w-[200px]">${username}</span>
+        <span class="ml-2 px-2 py-1 text-xs rounded ${role === 'ADMIN' ? 'bg-red-100 text-red-800' : role === 'MODERATOR' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'} dark:bg-opacity-20">
+          ${role}
+        </span>
+        ${state !== 'APPROVED' ? `<span class="ml-2 px-2 py-1 text-xs rounded bg-gray-100 text-gray-800 dark:bg-opacity-20">${state}</span>` : ''}
         <div class="relative ml-2">
           <button id="userMenuBtn" class="rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 p-1">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -125,6 +136,11 @@ export function renderUserUI() {
             </svg>
           </button>
           <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 hidden">
+            ${isAdmin() ? `
+              <a href="/admin.html" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                Admin Dashboard
+              </a>
+            ` : ''}
             <button id="securitySettingsBtn" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
               Security Settings
             </button>

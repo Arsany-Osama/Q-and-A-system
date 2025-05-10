@@ -11,6 +11,26 @@ export function getToken() {
   return localStorage.getItem('token') || '';
 }
 
+export function getUserRole() {
+  return localStorage.getItem('role') || 'USER';
+}
+
+export function getUserState() {
+  return localStorage.getItem('state') || 'APPROVED';
+}
+
+export function isAdmin() {
+  return getUserRole() === 'ADMIN';
+}
+
+export function isModerator() {
+  return getUserRole() === 'MODERATOR';
+}
+
+export function isApproved() {
+  return getUserState() === 'APPROVED';
+}
+
 export async function fetchTopContributors() {
   try {
     const response = await fetch('/auth/top-contributors');
@@ -124,6 +144,8 @@ export function initAuth() {
             hidePopup();
             localStorage.setItem('token', result.token);
             localStorage.setItem('username', result.username);
+            localStorage.setItem('role', result.role);
+            localStorage.setItem('state', result.state);
             if (result.has2fa) localStorage.setItem('has2fa', 'true');
             renderUserUI();
             showSection('profileSection');
@@ -154,15 +176,18 @@ export function initAuth() {
     });
 
     window.addEventListener('message', (event) => {
-      console.log('Received message event:', event.data);
-      if (event.data.type === 'google-auth') {
+      console.log('Received message event:', event.data);      if (event.data.type === 'google-auth') {
         if (event.data.success) {
           console.log('Google login successful, setting localStorage:', {
             token: event.data.token,
             username: event.data.username,
+            role: event.data.role,
+            state: event.data.state
           });
           localStorage.setItem('token', event.data.token);
           localStorage.setItem('username', event.data.username);
+          localStorage.setItem('role', event.data.role);
+          localStorage.setItem('state', event.data.state);
           console.log('LocalStorage after setting:', {
             token: localStorage.getItem('token'),
             username: localStorage.getItem('username'),
@@ -180,6 +205,37 @@ export function initAuth() {
       }
     });
   }
+
+  // Handle Auth0 login
+  document.getElementById('auth0LoginBtn')?.addEventListener('click', () => {
+    const width = 600;
+    const height = 600;
+    const left = window.innerWidth / 2 - width / 2;
+    const top = window.innerHeight / 2 - height / 2;
+
+    const authWindow = window.open(
+      '/auth/auth0',
+      'Auth0',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+
+    window.addEventListener('message', (event) => {      if (event.data.type === 'auth0-auth') {
+        authWindow.close();
+        if (event.data.success) {
+          localStorage.setItem('token', event.data.token);
+          localStorage.setItem('username', event.data.username);
+          localStorage.setItem('role', event.data.role);
+          localStorage.setItem('state', event.data.state);
+          localStorage.setItem('state', event.data.state);
+          hidePopup();
+          renderUserUI();
+          showToast('success', 'Logged in successfully with Auth0');
+        } else {
+          showToast('error', 'Auth0 login failed');
+        }
+      }
+    });
+  });
 
   // Password toggle
   const togglePassword = document.getElementById('togglePassword');
@@ -259,6 +315,8 @@ async function handleAuth(action, username, email, password) {
     if (result.success && !result.requires2FA) {
       localStorage.setItem('token', result.token);
       localStorage.setItem('username', result.username);
+      localStorage.setItem('role', result.role);
+      localStorage.setItem('state', result.state);
       if (result.has2fa) localStorage.setItem('has2fa', 'true');
     }
     return result;
@@ -326,6 +384,8 @@ export async function verifyOTP(email, otp, type) {
         if (!userData) throw new Error('User data not found');
         localStorage.setItem('token', result.token);
         localStorage.setItem('username', userData.username);
+        localStorage.setItem('role', result.role);
+        localStorage.setItem('state', result.state);
         pendingUsers.delete(email);
         showToast('success', 'Registration successful');
         hidePopup();

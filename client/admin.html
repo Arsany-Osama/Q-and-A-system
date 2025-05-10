@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Q&A System</title>
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/pages.css">
+</head>
+<body>
+  <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <!-- Header -->
+    <header id="mainHeader" class="bg-white dark:bg-gray-800 shadow-sm">
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex justify-between items-center">
+          <a href="/" class="flex items-center space-x-2">
+            <img src="/assets/logo.svg" alt="Logo" class="h-8 w-8">
+            <span class="text-xl font-bold text-gray-900 dark:text-white">Q&A System</span>
+          </a>
+          <div id="userStatus"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
+
+        <!-- Filter Controls -->
+        <div class="mb-6 flex space-x-4">
+          <select id="roleFilter" class="select">
+            <option value="ALL">All Roles</option>
+            <option value="ADMIN">Admins</option>
+            <option value="MODERATOR">Moderators</option>
+            <option value="USER">Regular Users</option>
+          </select>
+          <select id="stateFilter" class="select">
+            <option value="ALL">All States</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>          <!-- Users List -->
+        <section class="mb-8">
+          <h2 class="text-xl font-semibold mb-4">User Management</h2>
+          <div class="overflow-x-auto">
+            <table class="min-w-full table-auto">
+              <thead>
+                <tr class="bg-gray-100 dark:bg-gray-700">
+                  <th class="px-6 py-4 text-left">Username</th>
+                  <th class="px-6 py-4 text-left">Email</th>
+                  <th class="px-6 py-4 text-left">Role</th>
+                  <th class="px-6 py-4 text-left">State</th>
+                  <th class="px-6 py-4 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <!-- Users will be rendered here -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden">
+          <div class="flex justify-center items-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initUI } from '/js/ui.js';
+    import { initAdminDashboard } from '/js/admin.js';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initUI();
+      initAdminDashboard();
+    });
+  </script>
+</body>
+</html>

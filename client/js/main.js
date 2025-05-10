@@ -1,4 +1,4 @@
-import { initAuth, isLoggedIn } from './auth.js';
+import { initAuth, isLoggedIn, isAdmin } from './auth.js';
 import { initUI, showSection, showPopup, showToast } from './ui.js';
 import { setupQuestionForm } from './question.js';
 import { setupAnswerForm } from './answer.js';
@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFeed();
   initSecurity();
   initFacebookLikeFeedUI();
+  setupAdminNav();
 
   // Function to close the sidebar
   const sidebar = document.getElementById('sidebar');
@@ -210,6 +211,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { threshold: 0.1 });
     
     intersectionObserver.observe(card);
+  }
+
+  // Function to setup admin navigation
+  function setupAdminNav() {
+    const adminDashboardNav = document.getElementById('adminDashboardNav');
+    if (adminDashboardNav) {
+      // Show admin nav only for admin users
+      if (isAdmin()) {
+        adminDashboardNav.classList.remove('hidden');
+      } else {
+        adminDashboardNav.classList.add('hidden');
+      }
+
+      // Add click handler for admin dashboard
+      adminDashboardNav.addEventListener('click', () => {
+        if (!isAdmin()) {
+          showToast('error', 'Access denied: Admin privileges required');
+          return;
+        }
+        window.location.href = '/admin.html';
+        closeSidebar();
+      });
+    }
   }
 
   document.getElementById('postQuestionBtn')?.addEventListener('click', () => {

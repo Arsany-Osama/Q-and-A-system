@@ -7,12 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum State {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id          Int        @id @default(autoincrement())
   username    String     @unique
   email       String     @unique
   password    String?
   googleId    String?    @unique
+  auth0Id     String?    @unique // Added for Auth0 integration
+  role        Role       @default(USER)
+  state       State      @default(APPROVED)
   questions   Question[]
   answers     Answer[]
   votes       Vote[]
@@ -21,6 +36,7 @@ model User {
 
   @@index([email])
   @@index([googleId])
+  @@index([auth0Id])
 }
 
 model Question {

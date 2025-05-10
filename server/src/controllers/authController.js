@@ -17,7 +17,16 @@ const register = async (req, res) => {
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-    otpStore.set(email, { username, email, password: hashedPassword, otp, type: 'registration', expires: Date.now() + 10 * 60 * 1000 });
+    otpStore.set(email, { 
+      username, 
+      email, 
+      password: hashedPassword, 
+      otp, 
+      type: 'registration',
+      role: 'USER',
+      state: 'APPROVED',
+      expires: Date.now() + 10 * 60 * 1000 
+    });
     await sendEmail(email, 'Verify Your Email', `Your OTP is ${otp}. It expires in 10 minutes.`);
     res.json({ success: true });
   } catch (error) {
@@ -37,8 +46,20 @@ const login = async (req, res) => {
     if (!match) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
-    const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: '1h' });
-    res.json({ success: true, token, username: user.username });
+    
+    if (user.state === 'PENDING') {
+      return res.status(403).json({ success: false, message: 'Your account is pending approval' });
+    }
+    if (user.state === 'REJECTED') {
+      return res.status(403).json({ success: false, message: 'Your account has been rejected' });
+    }
+    
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role, state: user.state },
+      secretKey, 
+      { expiresIn: '1h' }
+    );
+    res.json({ success: true, token, username: user.username, role: user.role, state: user.state });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -120,11 +141,16 @@ const verifyOTP = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
   }
   if (type === 'registration') {
-    const { username, email, password } = storedData;
+    const { username, email, password, role, state } = storedData;
     const user = await prisma.user.create({
-      data: { username, email, password },
+      data: { username, email, password, role, state },
     });
-    const token = jwt.sign({ id: user.id, username: user.username }, secretKey, { expiresIn: '1h' });
+    const token = jwt.sign({ 
+      id: user.id, 
+      username: user.username,
+      role: user.role,
+      state: user.state 
+    }, secretKey, { expiresIn: '1h' });
     otpStore.delete(email);
     res.json({ success: true, token });
   } else if (type === 'forgot-password') {

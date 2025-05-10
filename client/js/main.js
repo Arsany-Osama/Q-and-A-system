@@ -1,5 +1,5 @@
 import { initAuth, isLoggedIn, isAdmin } from './auth.js';
-import { initUI, showSection, showPopup, showToast } from './ui.js';
+import { initUI, showSection, showPopup, showToast, hidePopup, showQuestionFormPopup, showAnswerFormPopup, hideQuestionFormPopup, hideAnswerFormPopup } from './ui.js';
 import { setupQuestionForm } from './question.js';
 import { setupAnswerForm } from './answer.js';
 import { renderProfile } from './profile.js';
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
-      showSection('questionForm');
+      showQuestionFormPopup();
       closeSidebar();
     }
   });
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
-      showSection('answerForm');
+      showAnswerFormPopup();
       closeSidebar();
     }
   });
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
-      showSection('questionForm');
+      showQuestionFormPopup();
       closeSidebar();
     }
   });
@@ -285,8 +285,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
-      showSection('answerForm');
+      showAnswerFormPopup();
       closeSidebar();
     }
   });
+
+  // Setup popup close buttons
+  document.getElementById('closeQuestionFormBtn')?.addEventListener('click', hideQuestionFormPopup);
+  document.getElementById('closeAnswerFormBtn')?.addEventListener('click', hideAnswerFormPopup);
 });

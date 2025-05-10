@@ -1,5 +1,6 @@
 import { isLoggedIn, logout, forgotPassword, getUserRole, getUserState, isAdmin, isModerator, isApproved } from './auth.js';
 import { validatePassword } from './security.js';
+import { fetchQuestions } from './question.js';
 
 export function initUI() {
   const themeToggle = document.getElementById('themeToggle');
@@ -33,6 +34,8 @@ export function initUI() {
   setupFocusTrap('twoFactorPopup');
   setupFocusTrap('securityQuestionsPopup');
   setupFocusTrap('forgotPasswordPopup');
+  setupFocusTrap('questionFormPopup');
+  setupFocusTrap('answerFormPopup');
 }
 
 function updateThemeIcon(isDark) {
@@ -277,4 +280,44 @@ function setupFocusTrap(popupId) {
       }
     }
   });
+}
+
+export function showQuestionFormPopup() {
+  const popup = document.getElementById('questionFormPopup');
+  popup.classList.remove('hidden');
+  document.getElementById('questionTitle').focus();
+  document.getElementById('postQuestionForm').reset();
+}
+
+export function hideQuestionFormPopup() {
+  const popup = document.getElementById('questionFormPopup');
+  if (popup.classList.contains('hidden')) return;
+  popup.classList.add('hidden');
+  document.getElementById('postQuestionForm').reset();
+}
+
+export function showAnswerFormPopup(questionId = null) {
+  const popup = document.getElementById('answerFormPopup');
+  popup.classList.remove('hidden');
+  
+  if (questionId) {
+    fetchQuestions().then(questions => {
+      const question = questions.find(q => q.id == questionId);
+      if (question) {
+        document.getElementById('questionSearch').value = question.title;
+        document.getElementById('questionSelect').value = questionId;
+        document.getElementById('questionSelect').setAttribute('required', 'true');
+      }
+    });
+  }
+  
+  document.getElementById('questionSearch').focus();
+  document.getElementById('postAnswerForm').reset();
+}
+
+export function hideAnswerFormPopup() {
+  const popup = document.getElementById('answerFormPopup');
+  if (popup.classList.contains('hidden')) return;
+  popup.classList.add('hidden');
+  document.getElementById('postAnswerForm').reset();
 }

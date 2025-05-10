@@ -1,5 +1,5 @@
 import { fetchQuestions } from './question.js';
-import { showPopup, showToast, showSection } from './ui.js';
+import { showPopup, showToast, showSection, showAnswerFormPopup } from './ui.js';
 import { getToken, isLoggedIn, fetchTopContributors } from './auth.js';
 import { getUserVotes } from './vote.js';
 import { setupReplyUI } from './reply.js';  // Add this import
@@ -332,31 +332,74 @@ export async function renderFeed() {
         button.setAttribute('aria-expanded', !isExpanded);
         const icon = button.querySelector('.toggle-icon');
         
+        // Ensure answersDiv exists before proceeding
+        if (!answersDiv) {
+          console.error('Could not find answers div element');
+          return;
+        }
+
+        // First make sure the element is visible before animating
+        if (!isExpanded) {
+          answersDiv.classList.remove('hidden');
+          // Set initial height to 0 for proper animation
+          answersDiv.style.height = '0px';
+          answersDiv.style.overflow = 'hidden';
+          answersDiv.style.display = 'block';
+        }
+        
+        // Animate the icon rotation
         gsap.to(icon, {
           rotation: isExpanded ? 0 : 180,
           duration: 0.3,
           ease: 'power2.out'
         });
 
-        gsap.to(answersDiv, {
-          height: isExpanded ? 0 : 'auto',
-          opacity: isExpanded ? 0 : 1,
-          duration: 0.3,
-          ease: 'power2.out',
-          onStart: () => {
-            if (!isExpanded) {
-              answersDiv.classList.remove('hidden');
+        // Use a more reliable animation approach
+        if (!isExpanded) {
+          // Get the natural height of the element to animate to
+          const height = answersDiv.scrollHeight;
+          
+          gsap.fromTo(answersDiv, 
+            { height: 0, opacity: 0 },
+            { 
+              height: height, 
+              opacity: 1, 
+              duration: 0.3, 
+              ease: 'power2.out',
+              onComplete: () => {
+                // Remove inline styles to allow natural resizing
+                answersDiv.style.height = 'auto';
+                answersDiv.style.overflow = 'visible';
+              }
             }
-          },
-          onComplete: () => {
-            if (isExpanded) {
+          );
+        } else {
+          // Closing animation
+          const height = answersDiv.offsetHeight;
+          
+          // First set fixed height for smooth animation
+          answersDiv.style.height = `${height}px`;
+          answersDiv.style.overflow = 'hidden';
+          
+          gsap.to(answersDiv, {
+            height: 0,
+            opacity: 0,
+            duration: 0.3,
+            ease: 'power2.out',
+            onComplete: () => {
               answersDiv.classList.add('hidden');
+              // Reset styles
+              answersDiv.style.height = '';
+              answersDiv.style.overflow = '';
+              answersDiv.style.display = '';
             }
-          },
-        });
+          });
+        }
 
+        // Update the button text
+        const answerCount = button.closest('.answers-section').querySelector('.answers').children.length - 1;
         button.querySelector('span').textContent = isExpanded ? 
-          `Show ${button.closest('.answers-section').querySelector('.answers').children.length - 1} answers` : 
+          `Show ${answerCount > 0 ? answerCount : 0} answers` : 
           `Hide answers`;
       }
     });
@@ -390,15 +433,7 @@ export async function renderFeed() {
           return;
         }
         const questionId = button.getAttribute('data-question-id');
-        showSection('answerForm');
-        fetchQuestions().then(questions => {
-          const question = questions.find(q => q.id == questionId);
-          if (question) {
-            document.getElementById('questionSearch').value = question.title;
-            document.getElementById('questionSelect').value = questionId;
-            document.getElementById('questionSelect').setAttribute('required', 'true');
-          }
-        });
+        showAnswerFormPopup(questionId);
       });
     });
 
@@ -623,15 +658,7 @@ export async function showQuestionDetails(questionId) {
         return;
       }
       const questionId = button.getAttribute('data-question-id');
-      showSection('answerForm');
-      fetchQuestions().then(questions => {
-        const question = questions.find(q => q.id == questionId);
-        if (question) {
-          document.getElementById('questionSearch').value = question.title;
-          document.getElementById('questionSelect').value = questionId;
-          document.getElementById('questionSelect').setAttribute('required', 'true');
-        }
-      });
+      showAnswerFormPopup(questionId);
     });
   });
 }

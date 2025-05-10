@@ -160,49 +160,6 @@
         <p class="text-gray-600 dark:text-gray-400">Answers Given: <span id="answersGiven">0</span></p>
       </div>
     </section>
-
-    <!-- Question Form -->
-    <section id="questionForm" class="mt-12 hidden bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg form-container">
-      <h2 class="text-2xl font-bold mb-4">Post a Question</h2>
-      <form id="postQuestionForm" class="space-y-4">
-        <div>
-          <label for="questionTitle" class="label">Question Title</label>
-          <input type="text" id="questionTitle" name="questionTitle" placeholder="Enter your question" class="input" required aria-label="Question title">
-        </div>
-        <div>
-          <label for="questionContent" class="label">Question Details</label>
-          <textarea id="questionContent" name="questionContent" placeholder="Provide details" class="input" rows="5" required aria-label="Question details"></textarea>
-        </div>
-        <div>
-          <label for="questionTags" class="label">Tags (comma-separated, e.g., javascript, python)</label>
-          <input type="text" id="questionTags" name="questionTags" placeholder="Add tags" class="input" aria-label="Question tags">
-        </div>
-        <button type="submit" class="btn btn-primary w-full" aria-label="Submit question">Submit Question</button>
-      </form>
-    </section>
-
-    <!-- Answer Form -->
-    <section id="answerForm" class="mt-12 hidden bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg form-container">
-      <h2 class="text-2xl font-bold mb-4">Answer a Question</h2>
-      <form id="postAnswerForm" class="space-y-4">
-        <div>
-          <label for="questionSearch" class="label">Search a Question</label>
-          <input type="text" id="questionSearch" name="questionSearch" placeholder="Find a question" class="input" aria-label="Search questions to answer" />
-        </div>
-        <ul id="questionListToAnswer" class="question-list max-h-60 overflow-y-auto"></ul>
-        <input type="hidden" id="questionSelect" name="questionSelect" required />
-        <div>
-          <label for="answerContent" class="label">Your Answer</label>
-          <textarea id="answerContent" name="answerContent" placeholder="Write your answer" class="input" rows="5" required aria-label="Your answer"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary w-full" aria-label="Submit answer">
-          <span>Submit Answer</span>
-          <svg id="answerSpinner" class="w-5 h-5 ml-2 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-      </form>
-    </section>
   </main>
 
   <!-- Auth Popup -->
@@ -290,6 +247,97 @@
         </div>
       </div>
       <p id="authMessage" class="text-red-500 mt-4 flex items-center"></p>
+    </div>
+  </div>
+
+  <!-- Question Form Popup -->
+  <div id="questionFormPopup" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="questionFormTitle">
+    <div class="popup-content bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-2xl animate-scale-in relative">
+      <button id="closeQuestionFormBtn" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 transition-colors duration-200" aria-label="Close question form">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      <div class="text-center mb-6">
+        <div class="inline-block p-3 rounded-full bg-primary bg-opacity-10 mb-4">
+          <svg class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 id="questionFormTitle" class="text-2xl font-bold">Share Your Question</h2>
+        <p class="text-gray-600 dark:text-gray-400 mt-2">Provide details to get the best answers from the community</p>
+      </div>
+      
+      <form id="postQuestionForm" class="space-y-5">
+        <div>
+          <label for="questionTitle" class="label">Question Title</label>
+          <input type="text" id="questionTitle" name="questionTitle" placeholder="What do you want to know?" class="input focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all" required aria-label="Question title">
+        </div>
+        <div>
+          <label for="questionContent" class="label">Question Details</label>
+          <textarea id="questionContent" name="questionContent" placeholder="Describe your question in detail..." class="input focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all" rows="5" required aria-label="Question details"></textarea>
+        </div>
+        <div>
+          <label for="questionTags" class="label">Tags</label>
+          <input type="text" id="questionTags" name="questionTags" placeholder="e.g., javascript, python, react" class="input focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all" aria-label="Question tags">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Separate tags with commas</p>
+        </div>
+        <button type="submit" class="btn btn-primary w-full mt-6 group relative overflow-hidden" aria-label="Submit question">
+          <span class="relative z-10">Submit Question</span>
+          <span class="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Answer Form Popup -->
+  <div id="answerFormPopup" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="answerFormTitle">
+    <div class="popup-content bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-2xl animate-scale-in relative">
+      <button id="closeAnswerFormBtn" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 transition-colors duration-200" aria-label="Close answer form">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
+      <div class="text-center mb-6">
+        <div class="inline-block p-3 rounded-full bg-secondary bg-opacity-10 mb-4">
+          <svg class="w-8 h-8 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+          </svg>
+        </div>
+        <h2 id="answerFormTitle" class="text-2xl font-bold">Share Your Knowledge</h2>
+        <p class="text-gray-600 dark:text-gray-400 mt-2">Help others by answering their questions</p>
+      </div>
+      
+      <form id="postAnswerForm" class="space-y-5">
+        <div>
+          <label for="questionSearch" class="label">Find a Question</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input type="text" id="questionSearch" name="questionSearch" placeholder="Search for questions..." class="input pl-10 focus:ring-2 focus:ring-secondary focus:ring-opacity-50 transition-all" aria-label="Search questions to answer" />
+          </div>
+        </div>
+        <div class="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+          <ul id="questionListToAnswer" class="question-list max-h-60 overflow-y-auto rounded-xl divide-y divide-gray-200 dark:divide-gray-700"></ul>
+        </div>
+        <input type="hidden" id="questionSelect" name="questionSelect" required />
+        <div>
+          <label for="answerContent" class="label">Your Answer</label>
+          <textarea id="answerContent" name="answerContent" placeholder="Write a detailed answer..." class="input focus:ring-2 focus:ring-secondary focus:ring-opacity-50 transition-all" rows="5" required aria-label="Your answer"></textarea>
+        </div>
+        <button type="submit" class="btn btn-secondary w-full mt-6 group relative overflow-hidden" aria-label="Submit answer">
+          <span class="relative z-10">Submit Answer</span>
+          <span id="answerSpinner" class="w-5 h-5 ml-2 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </span>
+          <span class="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
+        </button>
+      </form>
     </div>
   </div>
 

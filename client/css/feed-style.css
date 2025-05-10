@@ -669,3 +669,26 @@
   width: 15px;
   height: 15px;
 }
+
+/* Answers section animation styles */
+.answers-section .answers {
+  will-change: height, opacity;
+  transition: height 0.3s ease, opacity 0.3s ease;
+}
+
+.answers-section .answers.hidden {
+  display: none;
+}
+
+.toggle-answers-container {
+  margin-bottom: 0.5rem;
+}
+
+.toggle-answers {
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-icon {
+  transform-origin: center;
+}

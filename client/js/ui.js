@@ -123,12 +123,17 @@ export function showToast(type, message) {
   }, 3000);
 }
 
-export function renderUserUI() {
-  const userStatus = document.getElementById('userStatus');
+export function renderUserUI() {  const userStatus = document.getElementById('userStatus');
   if (isLoggedIn()) {
+    console.log('Rendering user UI - localStorage state:', {
+      username: localStorage.getItem('username'),
+      role: localStorage.getItem('role'),
+      state: localStorage.getItem('state')
+    });
     const username = localStorage.getItem('username') || 'User';
     const role = getUserRole();
     const state = getUserState();
+    console.log('Final values:', { username, role, state });
 
     userStatus.innerHTML = `
       <div class="flex items-center">

@@ -143,8 +143,7 @@ const verifyOTP = async (req, res) => {
   const storedData = otpStore.get(email);
   if (!storedData || storedData.otp !== otp || storedData.type !== type || Date.now() > storedData.expires) {
     return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
-  }
-  if (type === 'registration') {
+  }  if (type === 'registration') {
     const { username, email, password, role, state } = storedData;
     const user = await prisma.user.create({
       data: { username, email, password, role, state },
@@ -156,7 +155,13 @@ const verifyOTP = async (req, res) => {
       state: user.state 
     }, secretKey, { expiresIn: '1h' });
     otpStore.delete(email);
-    res.json({ success: true, token });
+    res.json({ 
+      success: true, 
+      token,
+      username: user.username,
+      role: user.role,
+      state: user.state
+    });
   } else if (type === 'forgot-password') {
     const token = jwt.sign({ email }, secretKey, { expiresIn: '10m' }); // Generate a short-lived token
     otpStore.set(email, { ...storedData, verified: true });

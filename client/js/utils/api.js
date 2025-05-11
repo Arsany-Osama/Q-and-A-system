@@ -2,6 +2,9 @@
  * API Gateway - A central place to handle all API calls to the backend
  */
 
+// Base API URL configuration
+const API_BASE_URL = 'http://localhost:3000';
+
 // Helper function to get auth token
 function getToken() {
   return localStorage.getItem('token') || '';
@@ -30,8 +33,13 @@ async function fetchWithAuth(endpoint, options = {}) {
     }
   };
 
+  // Ensure endpoint starts with forward slash
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_BASE_URL}${normalizedEndpoint}`;
+
   try {
-    const response = await fetch(endpoint, mergedOptions);
+    console.log(`Making request to: ${url}`, { method: mergedOptions.method, body: mergedOptions.body });
+    const response = await fetch(url, mergedOptions);
     
     // Check if the response is JSON
     const contentType = response.headers.get('content-type');
@@ -44,12 +52,13 @@ async function fetchWithAuth(endpoint, options = {}) {
     const data = await response.json();
     
     if (!response.ok) {
+      console.error(`API request failed:`, { status: response.status, data });
       throw { status: response.status, message: data.message || 'API request failed' };
     }
     
     return data;
   } catch (error) {
-    console.error(`API Error (${endpoint}):`, error);
+    console.error(`API Error (${url}):`, error);
     // Return a standardized error object
     return { 
       success: false, 
@@ -77,11 +86,30 @@ export const auth = {
   logout: async () => {
     return fetchWithAuth('/auth/logout', { method: 'POST' });
   },
-  
-  verifyOTP: async (email, otp, type) => {
+    verifyOTP: async (email, otp, type) => {
+    // Validate inputs
+    if (!email || !otp || !type) {
+      return {
+        success: false,
+        message: 'Email, OTP, and type are required'
+      };
+    }
+
+    // Ensure OTP is exactly 6 digits
+    if (!/^\d{6}$/.test(otp)) {
+      return {
+        success: false,
+        message: 'OTP must be exactly 6 digits'
+      };
+    }
+
     return fetchWithAuth('/auth/verify-otp', {
       method: 'POST',
-      body: JSON.stringify({ email, otp, type })
+      body: JSON.stringify({ 
+        email: email.trim(),
+        otp: otp.trim(),
+        type: type.trim()
+      })
     });
   },
   
@@ -237,4 +265,4 @@ export default {
   votes,
   replies,
   admin
-}; 
+};

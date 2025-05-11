@@ -40,17 +40,19 @@ model User {
 }
 
 model Question {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  upvotes   Int      @default(0)
-  downvotes Int      @default(0)
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  answers   Answer[]
-  votes     Vote[]
-  createdAt DateTime @default(now())
-  tags      String // Store tags as a JSON string, e.g., '["tag1", "tag2"]'
+  id               Int      @id @default(autoincrement())
+  title            String
+  content          String
+  upvotes          Int      @default(0)
+  downvotes        Int      @default(0)
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id])
+  answers          Answer[]
+  votes            Vote[]
+  createdAt        DateTime @default(now())
+  tags             String   // Store tags as a JSON string, e.g., '["tag1", "tag2"]'
+  documentPath     String?  // Path to uploaded document (optional)
+  originalFilename String?  // Original filename of the uploaded document (optional)
 }
 
 model Answer {

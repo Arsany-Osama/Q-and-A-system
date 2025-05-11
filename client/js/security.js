@@ -351,45 +351,52 @@ export function initSecurity() {
       field.addEventListener('input', () => {
         // Get the current password value from the field being typed in
         const currentPassword = field.value;
+        const action = document.getElementById('authTitle')?.textContent.toLowerCase();
         
-        // Show the appropriate password requirements div based on field id
-        if (field.id === 'password') {
+        // Show the appropriate password requirements div based on field id and action
+        if (field.id === 'password' && action === 'register') {
           const requirementsDiv = document.getElementById('passwordRequirements');
           if (requirementsDiv) {
             requirementsDiv.classList.remove('hidden');
+            updatePasswordRequirements(currentPassword);
           }
         } else if (field.id === 'newPassword' || field.id === 'confirmNewPassword') {
           const resetRequirementsDiv = document.getElementById('resetPasswordRequirements');
           if (resetRequirementsDiv) {
             resetRequirementsDiv.classList.remove('hidden');
+            updatePasswordRequirements(currentPassword);
           }
         }
-        
-        // Update the requirements UI with the current password
-        updatePasswordRequirements(currentPassword);
-        
-        // No toast messages during typing - just visual indicators
       });
       
       field.addEventListener('blur', () => {
         if (field.value) {
-          const validation = validatePassword(field.value);
-          if (!validation.valid) {
-            const firstError = validation.errors[0];
-            field.setCustomValidity(firstError);
-            // Remove toast message on blur - just set the field validity
-          } else {
-            field.setCustomValidity('');
-            
-            // Only check for password match without showing toast
-            if (field.id === 'confirmNewPassword') {
-              const password = document.getElementById('newPassword')?.value || '';
-              const confirmPassword = field.value;
+          // Only validate complexity for registration or password reset, not login
+          const action = document.getElementById('authTitle')?.textContent.toLowerCase();
+          const isPasswordReset = field.id === 'newPassword' || field.id === 'confirmNewPassword';
+          
+          if (action === 'register' || isPasswordReset) {
+            const validation = validatePassword(field.value);
+            if (!validation.valid) {
+              const firstError = validation.errors[0];
+              field.setCustomValidity(firstError);
+              // Remove toast message on blur - just set the field validity
+            } else {
+              field.setCustomValidity('');
               
-              if (password && confirmPassword && password !== confirmPassword) {
-                field.setCustomValidity('Passwords do not match');
+              // Only check for password match without showing toast
+              if (field.id === 'confirmNewPassword') {
+                const password = document.getElementById('newPassword')?.value || '';
+                const confirmPassword = field.value;
+                
+                if (password && confirmPassword && password !== confirmPassword) {
+                  field.setCustomValidity('Passwords do not match');
+                }
               }
             }
+          } else {
+            // For login, don't validate password complexity
+            field.setCustomValidity('');
           }
         }
       });
@@ -400,12 +407,16 @@ export function initSecurity() {
   const authForm = document.getElementById('authForm');
   if (authForm) {
     authForm.addEventListener('submit', (e) => {
-      const passwordField = document.getElementById('password');
-      if (passwordField && passwordField.value) {
-        const validation = validatePassword(passwordField.value);
-        if (!validation.valid) {
-          e.preventDefault();
-          showToast('error', validation.errors[0]);
+      // Only validate password complexity on registration
+      const action = document.getElementById('authTitle')?.textContent.toLowerCase();
+      if (action === 'register') {
+        const passwordField = document.getElementById('password');
+        if (passwordField && passwordField.value) {
+          const validation = validatePassword(passwordField.value);
+          if (!validation.valid) {
+            e.preventDefault();
+            showToast('error', validation.errors[0]);
+          }
         }
       }
     });

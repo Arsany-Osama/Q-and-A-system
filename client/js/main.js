@@ -10,6 +10,7 @@ import { initSidebar } from './sidebar.js';
 import { renderFeed, setupFilterButtons } from './feed.js';
 import { initSecurity } from './security.js';
 import { fetchAndRenderPopularTags } from './tags.js';
+import './fileUpload.js'; // Import file upload module
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing main.js');

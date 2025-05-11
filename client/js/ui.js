@@ -64,9 +64,9 @@ export function showPopup(action) {
   registerTab.classList.toggle('bg-primary', action === 'register');
   registerTab.classList.toggle('text-white', action === 'register');
   
-  // Always hide password requirements by default, we'll control this from auth.js
+  // Show password requirements only for registration
   if (passwordRequirements) {
-    passwordRequirements.classList.add('hidden');
+    passwordRequirements.classList.toggle('hidden', action !== 'register');
   }
   
   forgotPasswordLink.classList.toggle('hidden', action !== 'login');

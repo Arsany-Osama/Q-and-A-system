@@ -118,11 +118,13 @@ export function initAuth() {
   }
 
   passwordInput.addEventListener('input', () => {
-    if (document.getElementById('authTitle').textContent.toLowerCase() === 'register') {
+    const action = document.getElementById('authTitle').textContent.toLowerCase();
+    // Only show password requirements during registration
+    if (action === 'register') {
       if (passwordRequirements) {
         passwordRequirements.classList.remove('hidden');
+        updatePasswordRequirements(passwordInput.value);
       }
-      updatePasswordRequirements(passwordInput.value);
     }
   });
 
@@ -136,6 +138,7 @@ export function initAuth() {
     const submitBtn = document.getElementById('authSubmitBtn');
     const spinner = document.getElementById('authSpinner');
 
+    // Only validate password complexity for registration, not login
     if (action === 'register') {
       const validation = validatePassword(password);
       if (!validation.valid) {

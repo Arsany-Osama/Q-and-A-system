@@ -789,3 +789,100 @@ form {
   display: flex;
   justify-content: center;
 }
+
+/* File Upload Component */
+#fileUploadContainer {
+  transition: all 0.3s ease;
+  min-height: 150px;
+}
+
+#fileUploadContainer:hover {
+  border-color: var(--color-primary);
+}
+
+#fileUploadContainer.drag-over {
+  background-color: rgba(var(--color-primary-rgb), 0.05);
+  border-color: var(--color-primary);
+  transform: scale(1.01);
+}
+
+#selectedFileName {
+  max-width: calc(100% - 40px);
+}
+
+/* Animation for the file upload container */
+@keyframes pulse-border {
+  0% {
+    border-color: rgba(var(--color-primary-rgb), 0.5);
+  }
+  50% {
+    border-color: rgba(var(--color-primary-rgb), 1);
+  }
+  100% {
+    border-color: rgba(var(--color-primary-rgb), 0.5);
+  }
+}
+
+#fileUploadContainer.uploading {
+  animation: pulse-border 2s infinite;
+}
+
+/* Add style for file type icons */
+.file-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.file-icon.docx {
+  background-color: #2b579a;
+}
+
+.file-icon.pdf {
+  background-color: #f40f02;
+}
+
+.file-icon.txt {
+  background-color: #4d4d4d;
+}
+
+/* Document Attachment Styles */
+.document-attachment {
+  transition: all 0.2s ease;
+}
+
+.document-attachment:hover {
+  background-color: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.document-attachment .document-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.document-attachment-indicator {
+  transition: all 0.2s ease;
+}
+
+.document-attachment-indicator:hover {
+  color: var(--color-primary);
+}
+
+/* Document type color indicators */
+.document-icon svg.pdf-icon {
+  color: #f40f02;
+}
+
+.document-icon svg.docx-icon {
+  color: #2b579a;
+}
+
+.document-icon svg.txt-icon {
+  color: #4d4d4d;
+}

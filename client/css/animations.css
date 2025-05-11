@@ -138,3 +138,38 @@
   50% { color: #4299e1; }
   100% { color: #63b3ed; }
 }
+
+/* Question Form Step Transitions */
+.question-step {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.question-step.hidden {
+  opacity: 0;
+  transform: translateX(-20px);
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
+}
+
+.question-step:not(.hidden) {
+  animation: slideIn 0.4s ease forwards;
+}
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Progress indicators animation */
+#questionStep1Indicator, #questionStep2Indicator {
+  transition: background-color 0.3s ease;
+}

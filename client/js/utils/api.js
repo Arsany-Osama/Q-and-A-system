@@ -17,9 +17,12 @@ function getToken() {
  * @returns {Promise<object>} - The response data or error
  */
 async function fetchWithAuth(endpoint, options = {}) {
+  // Check if body is FormData - if so, don't set Content-Type header (browser will set it with boundary)
+  const isFormData = options.body instanceof FormData;
+  
   const defaultOptions = {
     headers: {
-      'Content-Type': 'application/json',
+      ...(!isFormData && { 'Content-Type': 'application/json' }),
       'Authorization': `Bearer ${getToken()}`
     }
   };
@@ -29,7 +32,7 @@ async function fetchWithAuth(endpoint, options = {}) {
     ...options,
     headers: {
       ...defaultOptions.headers,
-      ...options.headers
+      ...(options.headers || {})
     }
   };
 
@@ -38,21 +41,43 @@ async function fetchWithAuth(endpoint, options = {}) {
   const url = `${API_BASE_URL}${normalizedEndpoint}`;
 
   try {
-    console.log(`Making request to: ${url}`, { method: mergedOptions.method, body: mergedOptions.body });
+    // Log the request details for debugging
+    if (isFormData) {
+      console.log(`Making request to: ${url}`, { 
+        method: mergedOptions.method, 
+        isFormData: 'Yes (FormData)',
+        formDataContents: Array.from(options.body.entries()).reduce((acc, [key, val]) => {
+          acc[key] = key === 'document' ? '[FILE]' : val;
+          return acc;
+        }, {})
+      });
+    } else {
+      console.log(`Making request to: ${url}`, { 
+        method: mergedOptions.method, 
+        isFormData: 'No',
+        body: options.body
+      });
+    }
+    
     const response = await fetch(url, mergedOptions);
     
     // Check if the response is JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       const errorText = await response.text();
-      console.error(`Non-JSON response from server: ${errorText.substring(0, 100)}...`);
+      console.error(`Non-JSON response from server (${response.status}): ${errorText.substring(0, 200)}...`);
       throw new Error(`Server returned non-JSON response with status ${response.status}`);
     }
     
     const data = await response.json();
     
     if (!response.ok) {
-      console.error(`API request failed:`, { status: response.status, data });
+      console.error(`API request failed:`, { 
+        status: response.status, 
+        data,
+        url,
+        method: mergedOptions.method
+      });
       throw { status: response.status, message: data.message || 'API request failed' };
     }
     
@@ -62,7 +87,8 @@ async function fetchWithAuth(endpoint, options = {}) {
     // Return a standardized error object
     return { 
       success: false, 
-      message: error.message || 'Failed to communicate with server' 
+      message: error.message || 'Failed to communicate with server',
+      error: error
     };
   }
 }
@@ -169,10 +195,10 @@ export const questions = {
     return fetchWithAuth('/questions');
   },
   
-  create: async (questionData) => {
+  create: async (questionData, isFormData = false) => {
     return fetchWithAuth('/questions', {
       method: 'POST',
-      body: JSON.stringify(questionData)
+      body: isFormData ? questionData : JSON.stringify(questionData)
     });
   },
   

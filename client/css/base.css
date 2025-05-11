@@ -247,7 +247,9 @@ body {
 .dark .answer-input-container button:hover {
   background: #4299e1;
 }
-
+.h-full-screen{
+  height: 1000px;
+}
 /* Animation Keyframes */
 @keyframes scale-in {
   0% {

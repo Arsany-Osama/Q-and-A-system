@@ -70,7 +70,8 @@ passport.use(
                 email: profile.emails[0].value,
                 username: profile.displayName || `user_${profile.id}`,
                 role: 'USER',
-                state: 'APPROVED'
+                state: 'APPROVED',
+                twoFAEnabled: false
               },
             });
           } else {
@@ -175,7 +176,8 @@ passport.use(
                 email: email,
                 username: username,
                 role: isAdmin ? 'ADMIN' : 'MODERATOR',
-                state: isAdmin ? 'APPROVED' : 'PENDING'
+                state: isAdmin ? 'APPROVED' : 'PENDING',
+                twoFAEnabled: false
               }
             });
           } else {

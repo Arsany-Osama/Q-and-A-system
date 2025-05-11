@@ -7,32 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  MODERATOR
-  ADMIN
-}
-
-enum State {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 model User {
   id          Int        @id @default(autoincrement())
   username    String     @unique
-  email       String     @unique
   password    String?
+  email       String     @unique
   googleId    String?    @unique
-  auth0Id     String?    @unique // Added for Auth0 integration
+  auth0Id     String?    @unique
   role        Role       @default(USER)
   state       State      @default(APPROVED)
-  questions   Question[]
   answers     Answer[]
-  votes       Vote[]
-  replies     Reply[]
+  questions   Question[]
   mentionedIn Reply[]    @relation("MentionedUser")
+  replies     Reply[]
+  votes       Vote[]
+  twoFASecret String?
+  twoFAEnabled Boolean
 
   @@index([email])
   @@index([googleId])
@@ -43,41 +33,42 @@ model Question {
   id               Int      @id @default(autoincrement())
   title            String
   content          String
-  upvotes          Int      @default(0)
-  downvotes        Int      @default(0)
   userId           Int
-  user             User     @relation(fields: [userId], references: [id])
-  answers          Answer[]
-  votes            Vote[]
   createdAt        DateTime @default(now())
-  tags             String   // Store tags as a JSON string, e.g., '["tag1", "tag2"]'
-  documentPath     String?  // Path to uploaded document (optional)
-  originalFilename String?  // Original filename of the uploaded document (optional)
+  downvotes        Int      @default(0)
+  tags             String
+  upvotes          Int      @default(0)
+  documentPath     String?
+  originalFilename String?
+  filePublicId     String?
+  answers          Answer[]
+  user             User     @relation(fields: [userId], references: [id])
+  votes            Vote[]
 }
 
 model Answer {
   id         Int      @id @default(autoincrement())
   content    String
-  upvotes    Int      @default(0)
-  downvotes  Int      @default(0)
-  userId     Int
   questionId Int
-  user       User     @relation(fields: [userId], references: [id])
-  question   Question @relation(fields: [questionId], references: [id])
-  votes      Vote[]
-  replies    Reply[]
+  userId     Int
   createdAt  DateTime @default(now())
+  downvotes  Int      @default(0)
+  upvotes    Int      @default(0)
+  question   Question @relation(fields: [questionId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+  replies    Reply[]
+  votes      Vote[]
 }
 
 model Vote {
   id         Int       @id @default(autoincrement())
   userId     Int
-  questionId Int? // Nullable, used for question votes
-  answerId   Int? // Nullable, used for answer votes
-  voteType   String // "upvote" or "downvote"
-  user       User      @relation(fields: [userId], references: [id])
-  question   Question? @relation(fields: [questionId], references: [id])
+  questionId Int?
+  voteType   String
+  answerId   Int?
   answer     Answer?   @relation(fields: [answerId], references: [id])
+  question   Question? @relation(fields: [questionId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
 }
 
 model Reply {
@@ -88,8 +79,19 @@ model Reply {
   userId          Int
   answerId        Int
   mentionedUserId Int?
+  answer          Answer   @relation(fields: [answerId], references: [id])
+  mentionedUser   User?    @relation("MentionedUser", fields: [mentionedUserId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+}
 
-  user          User   @relation(fields: [userId], references: [id])
-  answer        Answer @relation(fields: [answerId], references: [id])
-  mentionedUser User?  @relation("MentionedUser", fields: [mentionedUserId], references: [id])
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum State {
+  PENDING
+  APPROVED
+  REJECTED
 }

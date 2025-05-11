@@ -1,5 +1,6 @@
 import { getToken, isLoggedIn, logout } from './auth.js'; // Added logout import
 import { showToast, showPopup } from './ui.js'; // Added showPopup import
+import { auth } from './utils/api.js';
 
 export async function fetchUserStats() {
   console.log('Fetching user stats');
@@ -9,13 +10,9 @@ export async function fetchUserStats() {
   }
 
   try {
-    const response = await fetch('/auth/stats', {
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-      },
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
+    const result = await auth.getUserStats();
+    
+    if (!result.success) {
       if (result.message === 'Invalid token: jwt expired') {
         showToast('error', 'Session expired, please log in again');
         logout(); // Clear token and update UI

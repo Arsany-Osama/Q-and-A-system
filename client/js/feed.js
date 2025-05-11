@@ -3,6 +3,7 @@ import { showPopup, showToast, showSection, showAnswerFormPopup } from './ui.js'
 import { getToken, isLoggedIn, fetchTopContributors } from './auth.js';
 import { getUserVotes } from './vote.js';
 import { setupReplyUI } from './reply.js';  // Add this import
+import { auth, answers } from './utils/api.js';
 
 let currentPage = 1;
 const questionsPerPage = 10;
@@ -420,7 +421,8 @@ async function renderTopContributors() {
   `;
 
   try {
-    const contributors = await fetchTopContributors();
+    const result = await auth.getTopContributors();
+    const contributors = result.contributors || [];
     
     if (contributors.length === 0) {
       contributorsContainer.innerHTML = `
@@ -481,35 +483,24 @@ function handleQuickAnswer(input) {
   }
   
   const questionId = input.getAttribute('data-question-id');
-  const answer = input.value.trim();
+  const content = input.value.trim();
   
-  if (!answer) return;
+  if (!content) return;
   
-  fetch('/answers', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${getToken()}`
-    },
-    body: JSON.stringify({
-      questionId: questionId,
-      content: answer
+  answers.create(questionId, content)
+    .then(data => {
+      if (data.success) {
+        input.value = '';
+        showToast('success', 'Your answer has been posted!');
+        setTimeout(() => renderFeed(), 1000);
+      } else {
+        throw new Error(data.message || 'Failed to post answer');
+      }
     })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      input.value = '';
-      showToast('success', 'Your answer has been posted!');
-      setTimeout(() => renderFeed(), 1000);
-    } else {
-      throw new Error(data.message || 'Failed to post answer');
-    }
-  })
-  .catch(error => {
-    console.error('Error posting answer:', error);
-    showToast('error', error.message || 'Failed to post your answer');
-  });
+    .catch(error => {
+      console.error('Error posting answer:', error);
+      showToast('error', error.message || 'Failed to post your answer');
+    });
 }
 
 export async function showQuestionDetails(questionId) {

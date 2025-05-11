@@ -105,6 +105,33 @@ export const auth = {
   
   getTopContributors: async () => {
     return fetchWithAuth('/auth/top-contributors');
+  },
+  
+  // 2FA methods
+  setup2FA: async () => {
+    return fetchWithAuth('/auth/2fa/setup', { method: 'GET' });
+  },
+  
+  verify2FA: async (code) => {
+    return fetchWithAuth('/auth/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+  },
+  
+  disable2FA: async (code) => {
+    return fetchWithAuth('/auth/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+  },
+  
+  // Security questions methods
+  verifySecurityQuestions: async (email, answers) => {
+    return fetchWithAuth('/auth/verify-security-questions', {
+      method: 'POST',
+      body: JSON.stringify({ email, answers })
+    });
   }
 };
 

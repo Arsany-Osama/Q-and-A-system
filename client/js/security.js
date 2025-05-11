@@ -1,5 +1,6 @@
 import { showToast, hidePopup, showPopup } from './ui.js';
 import { getToken, isLoggedIn } from './auth.js';
+import { auth } from './utils/api.js';
 
 // Password policy configuration
 const PASSWORD_POLICY = {
@@ -108,15 +109,7 @@ async function setup2FA() {
   }
 
   try {
-    const response = await fetch('/auth/2fa/setup', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const result = await response.json();
+    const result = await auth.setup2FA();
     
     if (result.success) {
       document.getElementById('qrCodeImage').src = result.qrCodeUrl;
@@ -142,16 +135,7 @@ async function verify2FA() {
   }
 
   try {
-    const response = await fetch('/auth/2fa/verify', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ code })
-    });
-
-    const result = await response.json();
+    const result = await auth.verify2FA(code);
     
     if (result.success) {
       showToast('success', '2FA enabled successfully');
@@ -175,16 +159,7 @@ async function disable2FA() {
   }
 
   try {
-    const response = await fetch('/auth/2fa/disable', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ code })
-    });
-
-    const result = await response.json();
+    const result = await auth.disable2FA(code);
     
     if (result.success) {
       showToast('success', '2FA disabled successfully');
@@ -212,15 +187,7 @@ export function initForgotPassword() {
       const email = document.getElementById('forgotEmail').value;
       
       try {
-        const response = await fetch('/auth/forgot-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email })
-        });
-
-        const result = await response.json();
+        const result = await auth.forgotPassword(email);
         
         if (result.success) {
           showToast('success', 'Recovery email sent with verification code. Please check your inbox.');
@@ -270,16 +237,8 @@ export function initForgotPassword() {
       const otp = document.getElementById('otpCode').value;
       
       try {
-        const response = await fetch('/auth/verify-otp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email, otp, type: 'forgot-password' })
-        });
+        const result = await auth.verifyOTP(email, otp, 'forgot-password');
 
-        const result = await response.json();
-        
         if (result.success) {
           showToast('success', 'Verification successful');
           
@@ -319,15 +278,7 @@ export function initForgotPassword() {
       ];
       
       try {
-        const response = await fetch('/auth/verify-security-questions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email, answers })
-        });
-
-        const result = await response.json();
+        const result = await auth.verifySecurityQuestions(email, answers);
         
         if (result.success) {
           // Show reset password form
@@ -366,15 +317,7 @@ export function initForgotPassword() {
       }
       
       try {
-        const response = await fetch('/auth/reset-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ token, password })
-        });
-
-        const result = await response.json();
+        const result = await auth.resetPassword(token, password);
         
         if (result.success) {
           showToast('success', 'Password reset successful! Please log in with your new password.');

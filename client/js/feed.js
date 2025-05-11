@@ -7,9 +7,17 @@ import { setupReplyUI } from './reply.js';  // Add this import
 let currentPage = 1;
 const questionsPerPage = 10;
 let currentFilter = 'trending'; // Default filter
+let currentTag = null; // Add new variable for tag filtering
 
 // Filter functions
 function applyFilter(questions, filter) {
+  if (currentTag) {
+    questions = questions.filter(q => 
+      q.tags && Array.isArray(q.tags) && 
+      q.tags.some(tag => tag.toLowerCase() === currentTag.toLowerCase())
+    );
+  }
+
   if (!questions || !questions.length) return [];
   
   const filtered = [...questions]; // Clone the array to avoid modifying original
@@ -54,6 +62,7 @@ export function setupFilterButtons() {
       button.classList.add('active');
       
       currentFilter = filter;
+      currentTag = null; // Reset tag when applying a different filter
       currentPage = 1;
       
       const feed = document.getElementById('questionFeed');
@@ -80,6 +89,16 @@ export function setupFilterButtons() {
   
   document.getElementById('sidebarAskQuestion')?.addEventListener('click', () => {
     showSection('questionForm');
+  });
+
+  // Add event listener for filtering by tag
+  document.addEventListener('filter-by-tag', (event) => {
+    const { tag } = event.detail;
+    currentTag = tag;
+    // Update filter button UI - deactivate all filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    currentPage = 1;
+    renderFeed();
   });
 }
 

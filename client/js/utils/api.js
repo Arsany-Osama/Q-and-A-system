@@ -119,6 +119,10 @@ export const questions = {
       method: 'POST',
       body: JSON.stringify(questionData)
     });
+  },
+  
+  getPopularTags: async () => {
+    return fetchWithAuth('/questions/popular-tags');
   }
 };
 

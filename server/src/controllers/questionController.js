@@ -50,4 +50,47 @@ const postQuestion = async (req, res) => {
   }
 };
 
-module.exports = { getQuestions, postQuestion };
+const getPopularTags = async (req, res) => {
+  try {
+    const questions = await prisma.question.findMany({
+      select: {
+        tags: true,
+      },
+    });
+
+    // Parse all tags and count occurrences
+    const tagCounts = {};
+    
+    questions.forEach(question => {
+      if (!question.tags) return;
+      
+      let tags = [];
+      try {
+        tags = JSON.parse(question.tags);
+      } catch (e) {
+        console.warn('Invalid tags format:', question.tags);
+        return;
+      }
+      
+      tags.forEach(tag => {
+        if (tag && tag.trim()) {
+          const cleanTag = tag.trim().toLowerCase();
+          tagCounts[cleanTag] = (tagCounts[cleanTag] || 0) + 1;
+        }
+      });
+    });
+    
+    // Convert to array, sort by count, and take top tags
+    const popularTags = Object.entries(tagCounts)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    
+    res.json(popularTags);
+  } catch (error) {
+    console.error('Error fetching popular tags:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+module.exports = { getQuestions, postQuestion, getPopularTags };

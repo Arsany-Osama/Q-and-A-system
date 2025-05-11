@@ -9,6 +9,7 @@ import { setupVoting } from './vote.js';
 import { initSidebar } from './sidebar.js';
 import { renderFeed, setupFilterButtons } from './feed.js';
 import { initSecurity } from './security.js';
+import { fetchAndRenderPopularTags } from './tags.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing main.js');
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAnimations();
   setupFilterButtons();
   renderFeed();
+  fetchAndRenderPopularTags(); // Fetch and render popular tags
   initSecurity();
   initFacebookLikeFeedUI();
   setupAdminNav();

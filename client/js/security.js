@@ -48,17 +48,37 @@ export function validatePassword(password) {
 
 // Update password requirements UI
 export function updatePasswordRequirements(password) {
-  const lengthReq = document.getElementById('lengthReq');
-  const upperReq = document.getElementById('upperReq');
-  const lowerReq = document.getElementById('lowerReq');
-  const numberReq = document.getElementById('numberReq');
-  const specialReq = document.getElementById('specialReq');
+  // Check for normal registration form requirements
+  updatePasswordRequirementElements(password, 'lengthReq', 'upperReq', 'lowerReq', 'numberReq', 'specialReq');
+  
+  // Check for reset password form requirements
+  updatePasswordRequirementElements(password, 'resetLengthReq', 'resetUpperReq', 'resetLowerReq', 'resetNumberReq', 'resetSpecialReq');
+}
 
-  if (lengthReq) lengthReq.className = password.length >= PASSWORD_POLICY.minLength ? 'text-green-500' : 'text-red-500';
-  if (upperReq) upperReq.className = /[A-Z]/.test(password) ? 'text-green-500' : 'text-red-500';
-  if (lowerReq) lowerReq.className = /[a-z]/.test(password) ? 'text-green-500' : 'text-red-500';
-  if (numberReq) numberReq.className = /[0-9]/.test(password) ? 'text-green-500' : 'text-red-500';
-  if (specialReq) specialReq.className = new RegExp(`[${PASSWORD_POLICY.specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`).test(password) ? 'text-green-500' : 'text-red-500';
+// Helper function to update either set of requirement elements
+function updatePasswordRequirementElements(password, lengthId, upperId, lowerId, numberId, specialId) {
+  const lengthReq = document.getElementById(lengthId);
+  const upperReq = document.getElementById(upperId);
+  const lowerReq = document.getElementById(lowerId);
+  const numberReq = document.getElementById(numberId);
+  const specialReq = document.getElementById(specialId);
+
+  // Function to update class while preserving other classes
+  const updateClass = (element, isValid) => {
+    if (!element) return;
+    // Remove both color classes
+    element.classList.remove('text-red-500', 'text-green-500');
+    // Add the appropriate color class
+    element.classList.add(isValid ? 'text-green-500' : 'text-red-500');
+  };
+
+  updateClass(lengthReq, password.length >= PASSWORD_POLICY.minLength);
+  updateClass(upperReq, /[A-Z]/.test(password));
+  updateClass(lowerReq, /[a-z]/.test(password));
+  updateClass(numberReq, /[0-9]/.test(password));
+  
+  const specialRegex = new RegExp(`[${PASSWORD_POLICY.specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`);
+  updateClass(specialReq, specialRegex.test(password));
 }
 
 // Initialize 2FA setup
@@ -181,6 +201,7 @@ async function disable2FA() {
 // Initialize forgot password functionality
 export function initForgotPassword() {
   const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+  const otpVerificationForm = document.getElementById('otpVerificationForm');
   const resetPasswordForm = document.getElementById('resetPasswordForm');
   const securityQuestionsVerifyForm = document.getElementById('securityQuestionsVerifyForm');
 
@@ -202,7 +223,8 @@ export function initForgotPassword() {
         const result = await response.json();
         
         if (result.success) {
-          showToast('success', 'Recovery email sent. Please check your inbox.');
+          showToast('success', 'Recovery email sent with verification code. Please check your inbox.');
+          
           // Show security questions if they exist for this account
           if (result.hasSecurityQuestions) {
             document.getElementById('forgotPasswordStep').classList.add('hidden');
@@ -216,7 +238,19 @@ export function initForgotPassword() {
               }
             });
           } else {
-            hidePopup();
+            // Show OTP verification step
+            document.getElementById('forgotPasswordStep').classList.add('hidden');
+            document.getElementById('otpVerificationStep').classList.remove('hidden');
+            document.getElementById('otpEmail').value = email;
+            
+            // Update wizard indicators
+            document.getElementById('forgotStep1Indicator').classList.remove('bg-primary');
+            document.getElementById('forgotStep1Indicator').classList.add('bg-gray-300', 'dark:bg-gray-600');
+            document.getElementById('forgotStep2Indicator').classList.remove('bg-gray-300', 'dark:bg-gray-600');
+            document.getElementById('forgotStep2Indicator').classList.add('bg-primary');
+            
+            // Focus on OTP input field
+            document.getElementById('otpCode').focus();
           }
         } else {
           showToast('error', result.message || 'Failed to send recovery email');
@@ -224,6 +258,51 @@ export function initForgotPassword() {
       } catch (error) {
         showToast('error', 'Network error occurred');
         console.error('Error initiating password recovery:', error);
+      }
+    });
+  }
+
+  if (otpVerificationForm) {
+    otpVerificationForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('otpEmail').value;
+      const otp = document.getElementById('otpCode').value;
+      
+      try {
+        const response = await fetch('/auth/verify-otp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, otp, type: 'forgot-password' })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showToast('success', 'Verification successful');
+          
+          // Show reset password step
+          document.getElementById('otpVerificationStep').classList.add('hidden');
+          document.getElementById('resetPasswordStep').classList.remove('hidden');
+          document.getElementById('resetToken').value = result.token;
+          document.getElementById('resetEmail').value = email;
+          
+          // Update wizard indicators
+          document.getElementById('forgotStep2Indicator').classList.remove('bg-primary');
+          document.getElementById('forgotStep2Indicator').classList.add('bg-gray-300', 'dark:bg-gray-600');
+          document.getElementById('forgotStep3Indicator').classList.remove('bg-gray-300', 'dark:bg-gray-600');
+          document.getElementById('forgotStep3Indicator').classList.add('bg-primary');
+          
+          // Focus on new password field
+          document.getElementById('newPassword').focus();
+        } else {
+          showToast('error', result.message || 'Invalid verification code');
+        }
+      } catch (error) {
+        showToast('error', 'Network error occurred');
+        console.error('Error verifying OTP:', error);
       }
     });
   }
@@ -299,7 +378,11 @@ export function initForgotPassword() {
         
         if (result.success) {
           showToast('success', 'Password reset successful! Please log in with your new password.');
-          hidePopup();
+          // Close the forgot password popup
+          const forgotPasswordPopup = document.getElementById('forgotPasswordPopup');
+          if (forgotPasswordPopup) {
+            forgotPasswordPopup.classList.add('hidden');
+          }
           // Redirect to login
           showPopup('login');
         } else {
@@ -323,22 +406,45 @@ export function initSecurity() {
   passwordFields.forEach(field => {
     if (field.id === 'password' || field.id === 'newPassword' || field.id === 'confirmNewPassword') {
       field.addEventListener('input', () => {
-        const password = document.getElementById('newPassword')?.value || '';
-        const confirmPassword = document.getElementById('confirmNewPassword')?.value || '';
-        updatePasswordRequirements(password);
-        if (field.id === 'confirmNewPassword' && password && confirmPassword) {
-          if (password !== confirmPassword) {
-            showToast('error', 'Passwords do not match');
-          } else {
-            const validation = validatePassword(password);
-            if (!validation.valid) {
-              showToast('error', validation.errors[0]);
+        // Get the current password value from the field being typed in
+        const currentPassword = field.value;
+        
+        // Show the appropriate password requirements div based on field id
+        if (field.id === 'password') {
+          const requirementsDiv = document.getElementById('passwordRequirements');
+          if (requirementsDiv) {
+            requirementsDiv.classList.remove('hidden');
+          }
+        } else if (field.id === 'newPassword' || field.id === 'confirmNewPassword') {
+          const resetRequirementsDiv = document.getElementById('resetPasswordRequirements');
+          if (resetRequirementsDiv) {
+            resetRequirementsDiv.classList.remove('hidden');
+          }
+        }
+        
+        // Update the requirements UI with the current password
+        updatePasswordRequirements(currentPassword);
+        
+        // Additional logic for confirm password matching
+        if (field.id === 'confirmNewPassword') {
+          const password = document.getElementById('newPassword')?.value || '';
+          const confirmPassword = currentPassword;
+          
+          if (password && confirmPassword) {
+            if (password !== confirmPassword) {
+              showToast('error', 'Passwords do not match');
             } else {
-              showToast('success', 'Passwords match and meet policy requirements');
+              const validation = validatePassword(password);
+              if (!validation.valid) {
+                showToast('error', validation.errors[0]);
+              } else {
+                showToast('success', 'Passwords match and meet policy requirements');
+              }
             }
           }
         }
       });
+      
       field.addEventListener('blur', () => {
         if (field.value) {
           const validation = validatePassword(field.value);

@@ -421,7 +421,20 @@
         </form>
       </div>
       
-      <!-- Step 2: Reset Password -->
+      <!-- Step 2: Verify OTP -->
+      <div id="otpVerificationStep" class="space-y-4 hidden">
+        <p class="text-gray-600 dark:text-gray-300">Please enter the verification code sent to your email.</p>
+        <form id="otpVerificationForm" class="space-y-4">
+          <input type="hidden" id="otpEmail" name="otpEmail">
+          <div class="form-group">
+            <label for="otpCode" class="label">Verification Code</label>
+            <input type="text" id="otpCode" class="input text-center text-lg tracking-widest" placeholder="000000" maxlength="6" pattern="[0-9]{6}" required aria-label="Verification code">
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Verify Code</button>
+        </form>
+      </div>
+      
+      <!-- Step 3: Reset Password -->
       <div id="resetPasswordStep" class="space-y-4 hidden">
         <p class="text-gray-600 dark:text-gray-300">Create a new password for your account.</p>
         <form id="resetPasswordForm" class="space-y-4">
@@ -435,13 +448,14 @@
             <label for="confirmNewPassword" class="label">Confirm New Password</label>
             <input type="password" id="confirmNewPassword" class="input" placeholder="Confirm new password" required aria-label="Confirm new password">
           </div>
-          <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+          <div id="resetPasswordRequirements" class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <p>Password must contain:</p>
             <ul class="list-disc pl-5">
-              <li>At least 8 characters</li>
-              <li>Uppercase and lowercase letters</li>
-              <li>At least one number</li>
-              <li>At least one special character</li>
+              <li id="resetLengthReq" class="text-red-500">At least 8 characters</li>
+              <li id="resetUpperReq" class="text-red-500">At least one uppercase letter</li>
+              <li id="resetLowerReq" class="text-red-500">At least one lowercase letter</li>
+              <li id="resetNumberReq" class="text-red-500">At least one number</li>
+              <li id="resetSpecialReq" class="text-red-500">At least one special character</li>
             </ul>
           </div>
           <button type="submit" class="btn btn-primary w-full">Reset Password</button>

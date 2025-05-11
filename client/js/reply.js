@@ -50,7 +50,7 @@ export function showReplyForm(button, answerId, answerUsername, answerUserId) {
   replyForm.innerHTML = `
     <div class="reply-header mb-2">
       <span class="text-sm font-medium">Replying to </span>
-      <span class="text-primary font-medium">@${answerUsername}</span>
+      <span class="text-primary font-bold">@${answerUsername}</span>
     </div>
     <div class="flex items-start">
       <div class="flex-1 relative">
@@ -122,12 +122,12 @@ function addReplyToUI(container, reply) {
   
   // If the content doesn't start with @username, add the mention at the beginning
   if (reply.mentionedUsername && !displayContent.startsWith(`@${reply.mentionedUsername}`)) {
-    displayContent = `<span class="text-primary">@${reply.mentionedUsername}</span> ${displayContent}`;
+    displayContent = `<span class="text-primary font-bold">@${reply.mentionedUsername}</span> ${displayContent}`;
   } else if (reply.mentionedUsername) {
     // Replace the @username with a highlighted version
     displayContent = displayContent.replace(
       new RegExp(`@${reply.mentionedUsername}\\b`, 'g'), 
-      `<span class="text-primary">@${reply.mentionedUsername}</span>`
+      `<span class="text-primary font-bold">@${reply.mentionedUsername}</span>`
     );
   }
   

@@ -1,5 +1,5 @@
 import { showToast, hidePopup, renderUserUI, showSection } from './ui.js';
-import { validatePassword } from './security.js';
+import { validatePassword, updatePasswordRequirements } from './security.js';
 import { auth as authApi } from './utils/api.js';
 
 const pendingUsers = new Map();
@@ -82,8 +82,49 @@ export function initAuth() {
 
   // Real-time password validation for register
   const passwordInput = document.getElementById('password');
+  const passwordRequirements = document.getElementById('passwordRequirements');
+  
+  // Hide password requirements by default and only show when needed
+  if (passwordRequirements) {
+    passwordRequirements.classList.add('hidden');
+  }
+  
+  // Update auth form based on action
+  const updateFormForAction = () => {
+    const action = document.getElementById('authTitle').textContent.toLowerCase();
+    // Only show password requirements for registration, hide for login
+    if (passwordRequirements) {
+      if (action === 'register') {
+        passwordRequirements.classList.remove('hidden');
+        // Update requirements based on current password
+        updatePasswordRequirements(passwordInput.value);
+      } else {
+        passwordRequirements.classList.add('hidden');
+      }
+    }
+  };
+  
+  // Call this when the auth popup is shown to set correct initial state
+  updateFormForAction();
+  
+  // Handle tab switching (login/register) to show/hide requirements
+  const authTabs = document.querySelectorAll('.auth-tab');
+  if (authTabs) {
+    authTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Small delay to allow the title to update
+        setTimeout(updateFormForAction, 50);
+      });
+    });
+  }
+  
   passwordInput.addEventListener('input', () => {
     if (document.getElementById('authTitle').textContent.toLowerCase() === 'register') {
+      // Show the requirements div for registration only
+      if (passwordRequirements) {
+        passwordRequirements.classList.remove('hidden');
+      }
+      // Update the requirements indicators
       updatePasswordRequirements(passwordInput.value);
     }
   });
@@ -308,26 +349,159 @@ function showOTPForm(email, type) {
   popup.id = `${type}-otp-popup`;
   popup.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
   popup.innerHTML = `
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
-      <h2 class="text-xl font-bold mb-4">${type === 'registration' ? 'Verify Your Email' : 'Verify OTP'}</h2>
-      <p class="mb-4">Enter the OTP sent to ${email}</p>
-      <form id="otpForm" class="space-y-4">
-        <input type="text" id="otpCode" pattern="[0-9]{6}" maxlength="6" class="input w-full" placeholder="000000" required>
-        <button type="submit" class="btn btn-primary w-full">Verify</button>
+    <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold mb-2">${type === 'registration' ? 'Verify Your Email' : 'Verify OTP'}</h2>
+        <p class="text-gray-600 dark:text-gray-400">We've sent a verification code to <span class="font-semibold">${email}</span></p>
+      </div>
+      
+      <div class="flex justify-center mb-6">
+        <svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+        </svg>
+      </div>
+      
+      <form id="otpForm" class="space-y-6">
+        <div class="space-y-2">
+          <label for="otpCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Enter 6-digit code</label>
+          <input 
+            type="text" 
+            id="otpCode" 
+            pattern="[0-9]{6}" 
+            maxlength="6" 
+            class="input w-full text-center text-lg font-mono tracking-widest py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+            placeholder="000000" 
+            autocomplete="one-time-code"
+            inputmode="numeric"
+            required
+          >
+        </div>
+        
+        <div id="otpTimer" class="text-center text-sm text-gray-600 dark:text-gray-400">
+          Code expires in <span id="otpCountdown">5:00</span>
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-full py-3 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center">
+          <span>Verify Code</span>
+          <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
       </form>
-      <button id="cancelOtpBtn" class="btn btn-secondary w-full mt-2">Cancel</button>
+      
+      <div class="mt-5 text-center">
+        <button id="resendOtpBtn" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+          Didn't receive the code? <span class="underline">Resend</span>
+        </button>
+      </div>
+      
+      <button id="cancelOtpBtn" class="mt-4 btn btn-secondary w-full flex items-center justify-center">
+        <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        Cancel
+      </button>
     </div>
   `;
   document.body.appendChild(popup);
 
+  // Focus on OTP input field
+  setTimeout(() => document.getElementById('otpCode').focus(), 100);
+
+  // Initialize countdown timer
+  let timeLeft = 300; // 5 minutes in seconds
+  const countdownEl = document.getElementById('otpCountdown');
+  const timerInterval = setInterval(() => {
+    timeLeft--;
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      countdownEl.textContent = 'Expired';
+      document.getElementById('resendOtpBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+  }, 1000);
+
+  // Add formatting to the OTP input to improve user experience
+  const otpInput = document.getElementById('otpCode');
+  otpInput.addEventListener('input', (e) => {
+    // Remove any non-digit characters
+    e.target.value = e.target.value.replace(/\D/g, '');
+    
+    // Add visual feedback as user types
+    if (e.target.value.length === 6) {
+      e.target.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+    } else {
+      e.target.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+    }
+  });
+
   document.getElementById('otpForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const otp = document.getElementById('otpCode').value;
-    await verifyOTP(email, otp, type);
-    popup.remove();
+    
+    // Disable submit button and show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg> Verifying...`;
+    
+    try {
+      await verifyOTP(email, otp, type);
+      clearInterval(timerInterval);
+      popup.remove();
+    } catch (err) {
+      // Restore button state on error
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
+    }
+  });
+
+  document.getElementById('resendOtpBtn').addEventListener('click', async () => {
+    // Simple debounce and visual feedback for resend
+    const resendBtn = document.getElementById('resendOtpBtn');
+    if (resendBtn.classList.contains('opacity-50')) return;
+    
+    resendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    resendBtn.innerHTML = 'Sending...';
+    
+    try {
+      // Implementation would depend on your API
+      if (type === 'registration') {
+        const userData = pendingUsers.get(email);
+        if (userData) {
+          await authApi.register(userData.username, userData.email, userData.password);
+          showToast('success', 'A new code has been sent to your email');
+        }
+      } else {
+        await authApi.resendOTP(email, type);
+        showToast('success', 'A new code has been sent to your email');
+      }
+      
+      // Reset timer
+      timeLeft = 300;
+      countdownEl.textContent = '5:00';
+      
+      // Reset the resend button after 30 seconds
+      setTimeout(() => {
+        resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        resendBtn.innerHTML = 'Didn\'t receive the code? <span class="underline">Resend</span>';
+      }, 30000);
+      
+    } catch (error) {
+      showToast('error', 'Failed to resend code. Please try again.');
+      resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      resendBtn.innerHTML = 'Didn\'t receive the code? <span class="underline">Resend</span>';
+    }
   });
 
   document.getElementById('cancelOtpBtn').addEventListener('click', () => {
+    clearInterval(timerInterval);
     popup.remove();
     if (type === 'registration') {
       pendingUsers.delete(email);
@@ -370,7 +544,26 @@ export async function forgotPassword(email) {
     const response = await authApi.forgotPassword(email);
     
     if (response.success) {
-      showToast('success', 'Password reset email sent. Please check your inbox.');
+      showToast('success', 'Password reset email sent. Please check your inbox for the verification code.');
+      
+      // Show OTP verification step
+      const forgotPasswordStep = document.getElementById('forgotPasswordStep');
+      const otpVerificationStep = document.getElementById('otpVerificationStep');
+      
+      if (forgotPasswordStep && otpVerificationStep) {
+        forgotPasswordStep.classList.add('hidden');
+        otpVerificationStep.classList.remove('hidden');
+        document.getElementById('otpEmail').value = email;
+        
+        // Update wizard indicators
+        document.getElementById('forgotStep1Indicator').classList.remove('bg-primary');
+        document.getElementById('forgotStep1Indicator').classList.add('bg-gray-300', 'dark:bg-gray-600');
+        document.getElementById('forgotStep2Indicator').classList.remove('bg-gray-300', 'dark:bg-gray-600');
+        document.getElementById('forgotStep2Indicator').classList.add('bg-primary');
+        
+        // Focus on OTP input field
+        document.getElementById('otpCode').focus();
+      }
     } else {
       showToast('error', response.message || 'Failed to process password reset');
     }
@@ -389,14 +582,14 @@ function showResetPasswordForm(token) {
   popup.innerHTML = `
     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
       <h2 class="text-xl font-bold mb-4">Reset Your Password</h2>
-      <div id="passwordRequirements" class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <div id="resetPasswordRequirements" class="text-sm text-gray-600 dark:text-gray-400 mb-4">
         <p>Password must contain:</p>
         <ul class="list-disc pl-5">
-          <li id="lengthReq" class="text-red-500">At least 8 characters</li>
-          <li id="upperReq" class="text-red-500">At least one uppercase letter</li>
-          <li id="lowerReq" class="text-red-500">At least one lowercase letter</li>
-          <li id="numberReq" class="text-red-500">At least one number</li>
-          <li id="specialReq" class="text-red-500">At least one special character</li>
+          <li id="resetLengthReq" class="text-red-500">At least 8 characters</li>
+          <li id="resetUpperReq" class="text-red-500">At least one uppercase letter</li>
+          <li id="resetLowerReq" class="text-red-500">At least one lowercase letter</li>
+          <li id="resetNumberReq" class="text-red-500">At least one number</li>
+          <li id="resetSpecialReq" class="text-red-500">At least one special character</li>
         </ul>
       </div>
       <form id="resetPasswordForm" class="space-y-4">
@@ -435,6 +628,14 @@ function showResetPasswordForm(token) {
   // Password toggle for new password
   const toggleNewPassword = document.getElementById('toggleNewPassword');
   const newPasswordField = document.getElementById('newPassword');
+  
+  if (newPasswordField) {
+    // Add input event for real-time password validation
+    newPasswordField.addEventListener('input', () => {
+      updatePasswordRequirements(newPasswordField.value);
+    });
+  }
+  
   if (toggleNewPassword && newPasswordField) {
     toggleNewPassword.addEventListener('click', () => {
       const isPassword = newPasswordField.type === 'password';

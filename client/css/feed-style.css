@@ -618,14 +618,16 @@
 .reply {
   transition: all 0.2s ease;
   position: relative;
+  border-radius: 8px;
+  margin-bottom: 6px;
 }
 
 .reply:hover {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 .dark .reply:hover {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .reply-input {
@@ -641,12 +643,16 @@
 
 .reply .text-primary,
 .reply-form-container .text-primary {
-  color: #3b82f6;
+  color: #2563eb;
 }
 
 .dark .reply .text-primary,
 .dark .reply-form-container .text-primary {
-  color: #60a5fa;
+  color: #3b82f6;
+}
+
+.reply-content {
+  line-height: 1.4;
 }
 
 .text-xxs {
@@ -668,6 +674,14 @@
 .loading-replies .loader-pulse {
   width: 15px;
   height: 15px;
+}
+
+.reply-form-container {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dark .reply-form-container {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Answers section animation styles */

@@ -293,15 +293,24 @@
       
       // Test Password Policy
       const testPassword = document.getElementById('testPassword');
+      
+      // Update requirements in real-time
+      const updateClass = (elementId, isValid) => {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        element.classList.remove('text-red-500', 'text-green-500');
+        element.classList.add(isValid ? 'text-green-500' : 'text-red-500');
+      };
+
       testPassword.addEventListener('input', () => {
         const password = testPassword.value;
         
         // Update requirements in real-time
-        document.getElementById('testLengthReq').className = password.length >= 8 ? 'text-green-500' : 'text-red-500';
-        document.getElementById('testUpperReq').className = /[A-Z]/.test(password) ? 'text-green-500' : 'text-red-500';
-        document.getElementById('testLowerReq').className = /[a-z]/.test(password) ? 'text-green-500' : 'text-red-500';
-        document.getElementById('testNumberReq').className = /[0-9]/.test(password) ? 'text-green-500' : 'text-red-500';
-        document.getElementById('testSpecialReq').className = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) ? 'text-green-500' : 'text-red-500';
+        updateClass('testLengthReq', password.length >= 8);
+        updateClass('testUpperReq', /[A-Z]/.test(password));
+        updateClass('testLowerReq', /[a-z]/.test(password));
+        updateClass('testNumberReq', /[0-9]/.test(password));
+        updateClass('testSpecialReq', /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password));
         
         // Validate password
         const validation = validatePassword(password);

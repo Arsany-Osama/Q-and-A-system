@@ -60,10 +60,10 @@ async function fetchWithAuth(endpoint, options = {}) {
 
 // Auth API
 export const auth = {
-  login: async (username, password) => {
+  login: async (email, password) => {
     return fetchWithAuth('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ email, password })
     });
   },
   

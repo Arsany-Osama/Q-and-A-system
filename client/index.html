@@ -188,7 +188,7 @@
         </div>
         <div class="relative">
           <label for="password" class="label">Password</label>
-          <input type="password" id="password" name="password" placeholder="Enter password" class="input pr-10" required aria-label="Password">
+          <input type="password" id="password" name="password" placeholder="Enter password" class="input pr-10" required aria-label="Password" autocomplete="current-password">
           <button type="button" id="togglePassword" class="absolute right-3 top-10 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" aria-label="Toggle password visibility">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -442,11 +442,11 @@
           <input type="hidden" id="resetEmail" name="resetEmail">
           <div class="form-group">
             <label for="newPassword" class="label">New Password</label>
-            <input type="password" id="newPassword" class="input" placeholder="Enter new password" required aria-label="New password">
+            <input type="password" id="newPassword" class="input" placeholder="Enter new password" required aria-label="New password" autocomplete="new-password">
           </div>
           <div class="form-group">
             <label for="confirmNewPassword" class="label">Confirm New Password</label>
-            <input type="password" id="confirmNewPassword" class="input" placeholder="Confirm new password" required aria-label="Confirm new password">
+            <input type="password" id="confirmNewPassword" class="input" placeholder="Confirm new password" required aria-label="Confirm new password" autocomplete="new-password">
           </div>
           <div id="resetPasswordRequirements" class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <p>Password must contain:</p>

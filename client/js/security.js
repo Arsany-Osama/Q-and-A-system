@@ -425,24 +425,7 @@ export function initSecurity() {
         // Update the requirements UI with the current password
         updatePasswordRequirements(currentPassword);
         
-        // Additional logic for confirm password matching
-        if (field.id === 'confirmNewPassword') {
-          const password = document.getElementById('newPassword')?.value || '';
-          const confirmPassword = currentPassword;
-          
-          if (password && confirmPassword) {
-            if (password !== confirmPassword) {
-              showToast('error', 'Passwords do not match');
-            } else {
-              const validation = validatePassword(password);
-              if (!validation.valid) {
-                showToast('error', validation.errors[0]);
-              } else {
-                showToast('success', 'Passwords match and meet policy requirements');
-              }
-            }
-          }
-        }
+        // No toast messages during typing - just visual indicators
       });
       
       field.addEventListener('blur', () => {
@@ -451,12 +434,59 @@ export function initSecurity() {
           if (!validation.valid) {
             const firstError = validation.errors[0];
             field.setCustomValidity(firstError);
-            showToast('error', firstError);
+            // Remove toast message on blur - just set the field validity
           } else {
             field.setCustomValidity('');
+            
+            // Only check for password match without showing toast
+            if (field.id === 'confirmNewPassword') {
+              const password = document.getElementById('newPassword')?.value || '';
+              const confirmPassword = field.value;
+              
+              if (password && confirmPassword && password !== confirmPassword) {
+                field.setCustomValidity('Passwords do not match');
+              }
+            }
           }
         }
       });
     }
   });
+  
+  // Add validation on form submission instead
+  const authForm = document.getElementById('authForm');
+  if (authForm) {
+    authForm.addEventListener('submit', (e) => {
+      const passwordField = document.getElementById('password');
+      if (passwordField && passwordField.value) {
+        const validation = validatePassword(passwordField.value);
+        if (!validation.valid) {
+          e.preventDefault();
+          showToast('error', validation.errors[0]);
+        }
+      }
+    });
+  }
+  
+  const resetPasswordForm = document.getElementById('resetPasswordForm');
+  if (resetPasswordForm) {
+    resetPasswordForm.addEventListener('submit', (e) => {
+      const newPassword = document.getElementById('newPassword');
+      const confirmNewPassword = document.getElementById('confirmNewPassword');
+      
+      if (newPassword && confirmNewPassword) {
+        if (newPassword.value !== confirmNewPassword.value) {
+          e.preventDefault();
+          showToast('error', 'Passwords do not match');
+          return;
+        }
+        
+        const validation = validatePassword(newPassword.value);
+        if (!validation.valid) {
+          e.preventDefault();
+          showToast('error', validation.errors[0]);
+        }
+      }
+    });
+  }
 }

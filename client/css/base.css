@@ -7,7 +7,9 @@
 
 :root {
   --primary: #3182ce; /* Blue */
+  --primary-rgb: 49, 130, 206; /* RGB values for blue */
   --secondary: #805ad5; /* Purple */
+  --secondary-rgb: 128, 90, 213; /* RGB values for purple */
   --success: #48bb78; /* Green */
   --error: #f56565; /* Red */
   --bg-primary: #edf2f7; /* Light Gray */
@@ -149,7 +151,7 @@ body {
 /* Responsive Grid */
 #questionFeed {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1.5rem;
 }
 
@@ -244,4 +246,48 @@ body {
 
 .dark .answer-input-container button:hover {
   background: #4299e1;
+}
+
+/* Animation Keyframes */
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-bottom {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease forwards;
+}
+
+.animate-slide-in-bottom {
+  animation: slide-in-bottom 0.3s ease forwards;
 }

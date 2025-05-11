@@ -1,5 +1,6 @@
-import { getToken, isAdmin } from './auth.js';
+import { isAdmin } from './auth.js';
 import { showToast } from './ui.js';
+import { admin as adminApi } from './utils/api.js';
 
 let currentFilter = {
   role: 'ALL',
@@ -8,18 +9,8 @@ let currentFilter = {
 
 async function fetchUsers() {
   try {
-    const response = await fetch('/admin/users', {
-      headers: {
-        'Authorization': `Bearer ${getToken()}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch users');
-    }
-    
-    const data = await response.json();
-    return data.success ? data.users : [];
+    const data = await adminApi.getUsers();
+    return data.users || [];
   } catch (error) {
     console.error('Error fetching users:', error);
     showToast('error', 'Failed to fetch users');
@@ -100,20 +91,8 @@ function renderUsers(users) {
 // Update user state
 async function updateUserState(userId, newState) {
   try {
-    const response = await fetch(`/admin/users/${userId}/state`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ state: newState })
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update user state');
-    }
-
-    const data = await response.json();
+    const data = await adminApi.updateUserState(userId, newState);
+    
     if (data.success) {
       showToast('success', 'User state updated successfully');
       await refreshUsers(); // Refresh the users list
@@ -169,15 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function updateUserStatus(userId, state) {
   try {
-    const response = await fetch(`/admin/users/${userId}/state`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ state })
-    });
-    const data = await response.json();
+    const data = await adminApi.updateUserState(userId, state);
+    
     if (data.success) {
       showToast('success', `User ${state.toLowerCase()} successfully`);
       await refreshUsersList();
@@ -193,17 +165,11 @@ async function updateUserStatus(userId, state) {
 
 async function updateUserRole(userId, role) {
   try {
-    const response = await fetch(`/admin/users/${userId}/role`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ role })
-    });
-    const data = await response.json();
+    const data = await adminApi.updateUserRole(userId, role);
+    
     if (data.success) {
       showToast('success', `User role updated to ${role.toLowerCase()}`);
+      await refreshUsersList();
       return true;
     }
     throw new Error(data.message);

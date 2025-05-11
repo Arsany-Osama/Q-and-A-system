@@ -561,13 +561,16 @@
 .lg\:col-span-9 {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 }
 
 #questionFeed {
   max-width: 100%;
   width: 100%;
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
 .question-card {
@@ -579,6 +582,7 @@
 @media (min-width: 768px) {
   #questionFeed {
     width: 100%;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -618,14 +622,16 @@
 .reply {
   transition: all 0.2s ease;
   position: relative;
+  border-radius: 8px;
+  margin-bottom: 6px;
 }
 
 .reply:hover {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 .dark .reply:hover {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .reply-input {
@@ -641,12 +647,16 @@
 
 .reply .text-primary,
 .reply-form-container .text-primary {
-  color: #3b82f6;
+  color: #2563eb;
 }
 
 .dark .reply .text-primary,
 .dark .reply-form-container .text-primary {
-  color: #60a5fa;
+  color: #3b82f6;
+}
+
+.reply-content {
+  line-height: 1.4;
 }
 
 .text-xxs {
@@ -668,4 +678,35 @@
 .loading-replies .loader-pulse {
   width: 15px;
   height: 15px;
+}
+
+.reply-form-container {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dark .reply-form-container {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Answers section animation styles */
+.answers-section .answers {
+  will-change: height, opacity;
+  transition: height 0.3s ease, opacity 0.3s ease;
+}
+
+.answers-section .answers.hidden {
+  display: none;
+}
+
+.toggle-answers-container {
+  margin-bottom: 0.5rem;
+}
+
+.toggle-answers {
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-icon {
+  transform-origin: center;
 }

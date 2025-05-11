@@ -1,5 +1,6 @@
 import { isLoggedIn, logout, forgotPassword, getUserRole, getUserState, isAdmin, isModerator, isApproved } from './auth.js';
 import { validatePassword } from './security.js';
+import { fetchQuestions } from './question.js';
 
 export function initUI() {
   const themeToggle = document.getElementById('themeToggle');
@@ -33,6 +34,8 @@ export function initUI() {
   setupFocusTrap('twoFactorPopup');
   setupFocusTrap('securityQuestionsPopup');
   setupFocusTrap('forgotPasswordPopup');
+  setupFocusTrap('questionFormPopup');
+  setupFocusTrap('answerFormPopup');
 }
 
 function updateThemeIcon(isDark) {
@@ -60,7 +63,12 @@ export function showPopup(action) {
   loginTab.classList.toggle('text-white', action === 'login');
   registerTab.classList.toggle('bg-primary', action === 'register');
   registerTab.classList.toggle('text-white', action === 'register');
-  passwordRequirements.classList.toggle('hidden', action !== 'register');
+  
+  // Always hide password requirements by default, we'll control this from auth.js
+  if (passwordRequirements) {
+    passwordRequirements.classList.add('hidden');
+  }
+  
   forgotPasswordLink.classList.toggle('hidden', action !== 'login');
   
   if (action === 'register') {
@@ -213,6 +221,7 @@ export function hideSecurityQuestionsPopup() {
 export function showForgotPasswordPopup() {
   const popup = document.getElementById('forgotPasswordPopup');
   const forgotPasswordStep = document.getElementById('forgotPasswordStep');
+  const otpVerificationStep = document.getElementById('otpVerificationStep');
   const securityQuestionsStep = document.getElementById('securityQuestionsStep');
   const resetPasswordStep = document.getElementById('resetPasswordStep');
   const forgotStep1Indicator = document.getElementById('forgotStep1Indicator');
@@ -224,6 +233,7 @@ export function showForgotPasswordPopup() {
 
   // Safely toggle visibility of steps with null checks
   if (forgotPasswordStep) forgotPasswordStep.classList.remove('hidden');
+  if (otpVerificationStep) otpVerificationStep.classList.add('hidden');
   if (securityQuestionsStep) securityQuestionsStep.classList.add('hidden');
   if (resetPasswordStep) resetPasswordStep.classList.add('hidden');
 
@@ -244,11 +254,6 @@ export function showForgotPasswordPopup() {
   if (forgotPasswordForm) {
     forgotPasswordForm.reset();
     document.getElementById('forgotEmail')?.focus();
-    forgotPasswordForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('forgotEmail').value;
-      await forgotPassword(email);
-    });
   }
 }
 
@@ -277,4 +282,44 @@ function setupFocusTrap(popupId) {
       }
     }
   });
+}
+
+export function showQuestionFormPopup() {
+  const popup = document.getElementById('questionFormPopup');
+  popup.classList.remove('hidden');
+  document.getElementById('questionTitle').focus();
+  document.getElementById('postQuestionForm').reset();
+}
+
+export function hideQuestionFormPopup() {
+  const popup = document.getElementById('questionFormPopup');
+  if (popup.classList.contains('hidden')) return;
+  popup.classList.add('hidden');
+  document.getElementById('postQuestionForm').reset();
+}
+
+export function showAnswerFormPopup(questionId = null) {
+  const popup = document.getElementById('answerFormPopup');
+  popup.classList.remove('hidden');
+  
+  if (questionId) {
+    fetchQuestions().then(questions => {
+      const question = questions.find(q => q.id == questionId);
+      if (question) {
+        document.getElementById('questionSearch').value = question.title;
+        document.getElementById('questionSelect').value = questionId;
+        document.getElementById('questionSelect').setAttribute('required', 'true');
+      }
+    });
+  }
+  
+  document.getElementById('questionSearch').focus();
+  document.getElementById('postAnswerForm').reset();
+}
+
+export function hideAnswerFormPopup() {
+  const popup = document.getElementById('answerFormPopup');
+  if (popup.classList.contains('hidden')) return;
+  popup.classList.add('hidden');
+  document.getElementById('postAnswerForm').reset();
 }

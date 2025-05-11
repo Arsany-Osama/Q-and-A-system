@@ -1,3 +1,8 @@
+// For development only: Disable SSL certificate verification
+if (process.env.NODE_ENV !== 'production') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');

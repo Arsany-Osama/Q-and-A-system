@@ -38,7 +38,11 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ 
+      where: { 
+        email: email 
+      } 
+    });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }

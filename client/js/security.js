@@ -1,5 +1,6 @@
 import { showToast, hidePopup, showPopup } from './ui.js';
 import { getToken, isLoggedIn } from './auth.js';
+import { auth } from './utils/api.js';
 
 // Password policy configuration
 const PASSWORD_POLICY = {
@@ -48,17 +49,37 @@ export function validatePassword(password) {
 
 // Update password requirements UI
 export function updatePasswordRequirements(password) {
-  const lengthReq = document.getElementById('lengthReq');
-  const upperReq = document.getElementById('upperReq');
-  const lowerReq = document.getElementById('lowerReq');
-  const numberReq = document.getElementById('numberReq');
-  const specialReq = document.getElementById('specialReq');
+  // Check for normal registration form requirements
+  updatePasswordRequirementElements(password, 'lengthReq', 'upperReq', 'lowerReq', 'numberReq', 'specialReq');
+  
+  // Check for reset password form requirements
+  updatePasswordRequirementElements(password, 'resetLengthReq', 'resetUpperReq', 'resetLowerReq', 'resetNumberReq', 'resetSpecialReq');
+}
 
-  if (lengthReq) lengthReq.className = password.length >= PASSWORD_POLICY.minLength ? 'text-green-500' : 'text-red-500';
-  if (upperReq) upperReq.className = /[A-Z]/.test(password) ? 'text-green-500' : 'text-red-500';
-  if (lowerReq) lowerReq.className = /[a-z]/.test(password) ? 'text-green-500' : 'text-red-500';
-  if (numberReq) numberReq.className = /[0-9]/.test(password) ? 'text-green-500' : 'text-red-500';
-  if (specialReq) specialReq.className = new RegExp(`[${PASSWORD_POLICY.specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`).test(password) ? 'text-green-500' : 'text-red-500';
+// Helper function to update either set of requirement elements
+function updatePasswordRequirementElements(password, lengthId, upperId, lowerId, numberId, specialId) {
+  const lengthReq = document.getElementById(lengthId);
+  const upperReq = document.getElementById(upperId);
+  const lowerReq = document.getElementById(lowerId);
+  const numberReq = document.getElementById(numberId);
+  const specialReq = document.getElementById(specialId);
+
+  // Function to update class while preserving other classes
+  const updateClass = (element, isValid) => {
+    if (!element) return;
+    // Remove both color classes
+    element.classList.remove('text-red-500', 'text-green-500');
+    // Add the appropriate color class
+    element.classList.add(isValid ? 'text-green-500' : 'text-red-500');
+  };
+
+  updateClass(lengthReq, password.length >= PASSWORD_POLICY.minLength);
+  updateClass(upperReq, /[A-Z]/.test(password));
+  updateClass(lowerReq, /[a-z]/.test(password));
+  updateClass(numberReq, /[0-9]/.test(password));
+  
+  const specialRegex = new RegExp(`[${PASSWORD_POLICY.specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`);
+  updateClass(specialReq, specialRegex.test(password));
 }
 
 // Initialize 2FA setup
@@ -88,15 +109,7 @@ async function setup2FA() {
   }
 
   try {
-    const response = await fetch('/auth/2fa/setup', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const result = await response.json();
+    const result = await auth.setup2FA();
     
     if (result.success) {
       document.getElementById('qrCodeImage').src = result.qrCodeUrl;
@@ -122,16 +135,7 @@ async function verify2FA() {
   }
 
   try {
-    const response = await fetch('/auth/2fa/verify', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ code })
-    });
-
-    const result = await response.json();
+    const result = await auth.verify2FA(code);
     
     if (result.success) {
       showToast('success', '2FA enabled successfully');
@@ -155,16 +159,7 @@ async function disable2FA() {
   }
 
   try {
-    const response = await fetch('/auth/2fa/disable', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ code })
-    });
-
-    const result = await response.json();
+    const result = await auth.disable2FA(code);
     
     if (result.success) {
       showToast('success', '2FA disabled successfully');
@@ -181,6 +176,7 @@ async function disable2FA() {
 // Initialize forgot password functionality
 export function initForgotPassword() {
   const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+  const otpVerificationForm = document.getElementById('otpVerificationForm');
   const resetPasswordForm = document.getElementById('resetPasswordForm');
   const securityQuestionsVerifyForm = document.getElementById('securityQuestionsVerifyForm');
 
@@ -191,18 +187,11 @@ export function initForgotPassword() {
       const email = document.getElementById('forgotEmail').value;
       
       try {
-        const response = await fetch('/auth/forgot-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email })
-        });
-
-        const result = await response.json();
+        const result = await auth.forgotPassword(email);
         
         if (result.success) {
-          showToast('success', 'Recovery email sent. Please check your inbox.');
+          showToast('success', 'Recovery email sent with verification code. Please check your inbox.');
+          
           // Show security questions if they exist for this account
           if (result.hasSecurityQuestions) {
             document.getElementById('forgotPasswordStep').classList.add('hidden');
@@ -216,7 +205,19 @@ export function initForgotPassword() {
               }
             });
           } else {
-            hidePopup();
+            // Show OTP verification step
+            document.getElementById('forgotPasswordStep').classList.add('hidden');
+            document.getElementById('otpVerificationStep').classList.remove('hidden');
+            document.getElementById('otpEmail').value = email;
+            
+            // Update wizard indicators
+            document.getElementById('forgotStep1Indicator').classList.remove('bg-primary');
+            document.getElementById('forgotStep1Indicator').classList.add('bg-gray-300', 'dark:bg-gray-600');
+            document.getElementById('forgotStep2Indicator').classList.remove('bg-gray-300', 'dark:bg-gray-600');
+            document.getElementById('forgotStep2Indicator').classList.add('bg-primary');
+            
+            // Focus on OTP input field
+            document.getElementById('otpCode').focus();
           }
         } else {
           showToast('error', result.message || 'Failed to send recovery email');
@@ -224,6 +225,43 @@ export function initForgotPassword() {
       } catch (error) {
         showToast('error', 'Network error occurred');
         console.error('Error initiating password recovery:', error);
+      }
+    });
+  }
+
+  if (otpVerificationForm) {
+    otpVerificationForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('otpEmail').value;
+      const otp = document.getElementById('otpCode').value;
+      
+      try {
+        const result = await auth.verifyOTP(email, otp, 'forgot-password');
+
+        if (result.success) {
+          showToast('success', 'Verification successful');
+          
+          // Show reset password step
+          document.getElementById('otpVerificationStep').classList.add('hidden');
+          document.getElementById('resetPasswordStep').classList.remove('hidden');
+          document.getElementById('resetToken').value = result.token;
+          document.getElementById('resetEmail').value = email;
+          
+          // Update wizard indicators
+          document.getElementById('forgotStep2Indicator').classList.remove('bg-primary');
+          document.getElementById('forgotStep2Indicator').classList.add('bg-gray-300', 'dark:bg-gray-600');
+          document.getElementById('forgotStep3Indicator').classList.remove('bg-gray-300', 'dark:bg-gray-600');
+          document.getElementById('forgotStep3Indicator').classList.add('bg-primary');
+          
+          // Focus on new password field
+          document.getElementById('newPassword').focus();
+        } else {
+          showToast('error', result.message || 'Invalid verification code');
+        }
+      } catch (error) {
+        showToast('error', 'Network error occurred');
+        console.error('Error verifying OTP:', error);
       }
     });
   }
@@ -240,15 +278,7 @@ export function initForgotPassword() {
       ];
       
       try {
-        const response = await fetch('/auth/verify-security-questions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ email, answers })
-        });
-
-        const result = await response.json();
+        const result = await auth.verifySecurityQuestions(email, answers);
         
         if (result.success) {
           // Show reset password form
@@ -287,19 +317,15 @@ export function initForgotPassword() {
       }
       
       try {
-        const response = await fetch('/auth/reset-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ token, password })
-        });
-
-        const result = await response.json();
+        const result = await auth.resetPassword(token, password);
         
         if (result.success) {
           showToast('success', 'Password reset successful! Please log in with your new password.');
-          hidePopup();
+          // Close the forgot password popup
+          const forgotPasswordPopup = document.getElementById('forgotPasswordPopup');
+          if (forgotPasswordPopup) {
+            forgotPasswordPopup.classList.add('hidden');
+          }
           // Redirect to login
           showPopup('login');
         } else {
@@ -323,34 +349,87 @@ export function initSecurity() {
   passwordFields.forEach(field => {
     if (field.id === 'password' || field.id === 'newPassword' || field.id === 'confirmNewPassword') {
       field.addEventListener('input', () => {
-        const password = document.getElementById('newPassword')?.value || '';
-        const confirmPassword = document.getElementById('confirmNewPassword')?.value || '';
-        updatePasswordRequirements(password);
-        if (field.id === 'confirmNewPassword' && password && confirmPassword) {
-          if (password !== confirmPassword) {
-            showToast('error', 'Passwords do not match');
-          } else {
-            const validation = validatePassword(password);
-            if (!validation.valid) {
-              showToast('error', validation.errors[0]);
-            } else {
-              showToast('success', 'Passwords match and meet policy requirements');
-            }
+        // Get the current password value from the field being typed in
+        const currentPassword = field.value;
+        
+        // Show the appropriate password requirements div based on field id
+        if (field.id === 'password') {
+          const requirementsDiv = document.getElementById('passwordRequirements');
+          if (requirementsDiv) {
+            requirementsDiv.classList.remove('hidden');
+          }
+        } else if (field.id === 'newPassword' || field.id === 'confirmNewPassword') {
+          const resetRequirementsDiv = document.getElementById('resetPasswordRequirements');
+          if (resetRequirementsDiv) {
+            resetRequirementsDiv.classList.remove('hidden');
           }
         }
+        
+        // Update the requirements UI with the current password
+        updatePasswordRequirements(currentPassword);
+        
+        // No toast messages during typing - just visual indicators
       });
+      
       field.addEventListener('blur', () => {
         if (field.value) {
           const validation = validatePassword(field.value);
           if (!validation.valid) {
             const firstError = validation.errors[0];
             field.setCustomValidity(firstError);
-            showToast('error', firstError);
+            // Remove toast message on blur - just set the field validity
           } else {
             field.setCustomValidity('');
+            
+            // Only check for password match without showing toast
+            if (field.id === 'confirmNewPassword') {
+              const password = document.getElementById('newPassword')?.value || '';
+              const confirmPassword = field.value;
+              
+              if (password && confirmPassword && password !== confirmPassword) {
+                field.setCustomValidity('Passwords do not match');
+              }
+            }
           }
         }
       });
     }
   });
+  
+  // Add validation on form submission instead
+  const authForm = document.getElementById('authForm');
+  if (authForm) {
+    authForm.addEventListener('submit', (e) => {
+      const passwordField = document.getElementById('password');
+      if (passwordField && passwordField.value) {
+        const validation = validatePassword(passwordField.value);
+        if (!validation.valid) {
+          e.preventDefault();
+          showToast('error', validation.errors[0]);
+        }
+      }
+    });
+  }
+  
+  const resetPasswordForm = document.getElementById('resetPasswordForm');
+  if (resetPasswordForm) {
+    resetPasswordForm.addEventListener('submit', (e) => {
+      const newPassword = document.getElementById('newPassword');
+      const confirmNewPassword = document.getElementById('confirmNewPassword');
+      
+      if (newPassword && confirmNewPassword) {
+        if (newPassword.value !== confirmNewPassword.value) {
+          e.preventDefault();
+          showToast('error', 'Passwords do not match');
+          return;
+        }
+        
+        const validation = validatePassword(newPassword.value);
+        if (!validation.valid) {
+          e.preventDefault();
+          showToast('error', validation.errors[0]);
+        }
+      }
+    });
+  }
 }

@@ -1,18 +1,11 @@
 import { showToast, showSection } from './ui.js';
-import { getToken, isLoggedIn } from './auth.js';
+import { isLoggedIn } from './auth.js';
+import { questions as questionsApi } from './utils/api.js';
 
 export async function fetchQuestions() {
   console.log('Fetching questions');
   try {
-    const response = await fetch('/questions', {
-      headers: {
-        'Authorization': `Bearer ${getToken()}`,
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch questions: ${response.status} ${response.statusText}`);
-    }
-    const questions = await response.json();
+    const questions = await questionsApi.fetchAll();
     return questions.map(question => {
       let tags = [];
       if (question.tags) {
@@ -71,19 +64,12 @@ export function setupQuestionForm() {
     const tags = document.getElementById('questionTags').value;
 
     try {
-      const response = await fetch('/questions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify({
-          title,
-          content,
-          tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        }),
+      const result = await questionsApi.create({
+        title,
+        content,
+        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
       });
-      const result = await response.json();
+      
       if (result.success) {
         showToast('success', 'Question posted successfully');
         form.reset();

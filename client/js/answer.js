@@ -1,6 +1,7 @@
 import { fetchQuestions } from './question.js';
-import { getToken, isLoggedIn } from './auth.js';
+import { isLoggedIn } from './auth.js';
 import { showToast, showPopup } from './ui.js';
+import { answers as answersApi } from './utils/api.js';
 
 export function setupAnswerForm() {
   console.log('Setting up answer form');
@@ -85,18 +86,8 @@ export function setupAnswerForm() {
     spinner.classList.remove('hidden');
 
     try {
-      const response = await fetch('/answers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify({
-          questionId,
-          content,
-        }),
-      });
-      const result = await response.json();
+      const result = await answersApi.create(questionId, content);
+      
       if (result.success) {
         showToast('success', 'Answer submitted successfully');
         form.reset();

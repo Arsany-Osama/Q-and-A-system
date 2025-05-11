@@ -1,5 +1,5 @@
 import { initAuth, isLoggedIn, isAdmin } from './auth.js';
-import { initUI, showSection, showPopup, showToast } from './ui.js';
+import { initUI, showSection, showPopup, showToast, hidePopup, showQuestionFormPopup, showAnswerFormPopup, hideQuestionFormPopup, hideAnswerFormPopup } from './ui.js';
 import { setupQuestionForm } from './question.js';
 import { setupAnswerForm } from './answer.js';
 import { renderProfile } from './profile.js';
@@ -9,6 +9,7 @@ import { setupVoting } from './vote.js';
 import { initSidebar } from './sidebar.js';
 import { renderFeed, setupFilterButtons } from './feed.js';
 import { initSecurity } from './security.js';
+import { fetchAndRenderPopularTags } from './tags.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing main.js');
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAnimations();
   setupFilterButtons();
   renderFeed();
+  fetchAndRenderPopularTags(); // Fetch and render popular tags
   initSecurity();
   initFacebookLikeFeedUI();
   setupAdminNav();
@@ -241,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
-      showSection('questionForm');
+      showQuestionFormPopup();
       closeSidebar();
     }
   });
@@ -251,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
-      showSection('answerForm');
+      showAnswerFormPopup();
       closeSidebar();
     }
   });
@@ -275,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
-      showSection('questionForm');
+      showQuestionFormPopup();
       closeSidebar();
     }
   });
@@ -285,8 +287,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
-      showSection('answerForm');
+      showAnswerFormPopup();
       closeSidebar();
     }
   });
+
+  // Setup popup close buttons
+  document.getElementById('closeQuestionFormBtn')?.addEventListener('click', hideQuestionFormPopup);
+  document.getElementById('closeAnswerFormBtn')?.addEventListener('click', hideAnswerFormPopup);
 });

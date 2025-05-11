@@ -1,15 +1,24 @@
 import { fetchQuestions } from './question.js';
-import { showPopup, showToast, showSection } from './ui.js';
+import { showPopup, showToast, showSection, showAnswerFormPopup } from './ui.js';
 import { getToken, isLoggedIn, fetchTopContributors } from './auth.js';
 import { getUserVotes } from './vote.js';
-import { setupReplyUI } from './reply.js';  // Add this import
+import { setupReplyUI, getReplies, postReply } from './reply.js';  // Import getReplies and postReply
+import { auth, answers, replies } from './utils/api.js';
 
 let currentPage = 1;
 const questionsPerPage = 10;
 let currentFilter = 'trending'; // Default filter
+let currentTag = null; // Add new variable for tag filtering
 
 // Filter functions
 function applyFilter(questions, filter) {
+  if (currentTag) {
+    questions = questions.filter(q => 
+      q.tags && Array.isArray(q.tags) && 
+      q.tags.some(tag => tag.toLowerCase() === currentTag.toLowerCase())
+    );
+  }
+
   if (!questions || !questions.length) return [];
   
   const filtered = [...questions]; // Clone the array to avoid modifying original
@@ -54,6 +63,7 @@ export function setupFilterButtons() {
       button.classList.add('active');
       
       currentFilter = filter;
+      currentTag = null; // Reset tag when applying a different filter
       currentPage = 1;
       
       const feed = document.getElementById('questionFeed');
@@ -81,6 +91,16 @@ export function setupFilterButtons() {
   document.getElementById('sidebarAskQuestion')?.addEventListener('click', () => {
     showSection('questionForm');
   });
+
+  // Add event listener for filtering by tag
+  document.addEventListener('filter-by-tag', (event) => {
+    const { tag } = event.detail;
+    currentTag = tag;
+    // Update filter button UI - deactivate all filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    currentPage = 1;
+    renderFeed();
+  });
 }
 
 export async function renderFeed() {
@@ -94,7 +114,7 @@ export async function renderFeed() {
 
   container.innerHTML = `
     <div class="loading-container flex justify-center items-center py-8">
-      <div class="loader-pulse"></div>
+      <div class="loader-pulse bg-blue-500"></div>
       <p class="ml-3 text-gray-600 dark:text-gray-400">Loading questions...</p>
     </div>
   `;
@@ -106,11 +126,11 @@ export async function renderFeed() {
     if (questions.length === 0) {
       container.innerHTML = `
         <div class="empty-state text-center py-10">
-          <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="mx-auto h-16 w-16 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p class="mt-4 text-gray-600 dark:text-gray-400">No questions available yet.</p>
-          <button id="askFirstQuestion" class="mt-3 btn btn-primary">Ask First Question</button>
+          <button id="askFirstQuestion" class="mt-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors">Ask First Question</button>
         </div>
       `;
       pagination.innerHTML = '';
@@ -133,7 +153,7 @@ export async function renderFeed() {
       const upvoteClass = userVotes.questions[q.id] === 'upvote' ? 'active' : '';
       const downvoteClass = userVotes.questions[q.id] === 'downvote' ? 'active' : '';
       const wrapper = document.createElement('div');
-      wrapper.classList.add('question-card', 'animate-fade-in');
+      wrapper.classList.add('question-card', 'animate-fade-in', 'hover:shadow-lg', 'transition-all', 'duration-300');
       wrapper.style.animationDelay = `${index * 0.1}s`;
       wrapper.setAttribute('data-id', q.id);
       
@@ -145,24 +165,24 @@ export async function renderFeed() {
         <div class="card-content ${engagementClass}">
           <div class="card-header flex items-start mb-3">
             <div class="avatar-container mr-3">
-              <div class="avatar bg-gradient-to-r from-primary to-primary-light text-white flex items-center justify-center rounded-full h-10 w-10 text-sm font-medium">
+              <div class="avatar bg-gradient-to-r from-indigo-500 to-blue-600 text-white flex items-center justify-center rounded-full h-10 w-10 text-sm font-medium">
                 ${q.username ? q.username.charAt(0).toUpperCase() : 'A'}
               </div>
             </div>
             <div class="flex-1">
               <div class="flex justify-between items-start">
                 <div>
-                  <h3 class="card-title font-semibold text-base sm:text-lg hover:text-primary transition-colors cursor-pointer">${q.title}</h3>
-                  <div class="meta flex items-center text-xs text-gray-500 dark:text-gray-400">
+                  <h3 class="card-title font-semibold text-base sm:text-lg hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">${q.title}</h3>
+                  <div class="meta flex items-center text-xs text-gray-600 dark:text-gray-400">
                     <span class="author font-medium">${q.username || 'Anonymous'}</span>
                     <span class="mx-1">•</span>
                     <span class="date">${new Date(q.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
-                    ${q.tags && q.tags.length ? `<span class="mx-1">•</span><span class="primary-tag">${q.tags[0]}</span>` : ''}
+                    ${q.tags && q.tags.length ? `<span class="mx-1">•</span><span class="primary-tag text-blue-600 dark:text-blue-400">${q.tags[0]}</span>` : ''}
                   </div>
                 </div>
                 <div class="dropdown relative">
-                  <button class="dropdown-toggle p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                  <button class="dropdown-toggle p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
                     </svg>
                   </button>
@@ -177,56 +197,65 @@ export async function renderFeed() {
           </div>
           
           <div class="card-body">
-            <p class="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-2">${q.content}</p>
+            <p class="text-gray-700 dark:text-gray-300 text-sm line-clamp-3 mb-2">${q.content}</p>
             ${q.tags && q.tags.length > 1 ? 
               `<div class="tags-container mb-3">
                 <div class="tags flex flex-wrap gap-1">
-                  ${q.tags.map(tag => `<span class="tag text-xs">${tag}</span>`).join('')}
+                  ${q.tags.map(tag => `<span class="tag text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">${tag}</span>`).join('')}
                 </div>
               </div>` : ''}
           </div>
           
-          <div class="card-footer mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div class="card-footer mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             ${voteRatio >= 75 ? 
-              `<div class="trending-indicator mb-2 text-xs text-orange-500">
+              `<div class="trending-indicator mb-2 text-xs text-orange-500 dark:text-orange-400 flex items-center">
                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path>
                 </svg>
                 <span>Trending</span>
               </div>` : ''}
             <div class="reaction-bar flex justify-between items-center">
-              <div class="vote-section flex items-center">
-                <button class="reaction-btn upvote-btn ${upvoteClass}" data-question-id="${q.id}" aria-label="Like question">
-                  <span class="reaction-icon">👍</span>
-                  <span class="vote-count">${q.upvotes || 0}</span>
+              <div class="vote-section flex items-center space-x-2">
+                <button class="reaction-btn upvote-btn ${upvoteClass} hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-md transition-colors" data-question-id="${q.id}" aria-label="Like question">
+                  <svg class="w-5 h-5 mr-1 text-blue-600 dark:text-blue-400" fill="${upvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                  </svg>
+                  <span class="vote-count text-gray-700 dark:text-gray-300">${q.upvotes || 0}</span>
                 </button>
-                <button class="reaction-btn downvote-btn ${downvoteClass}" data-question-id="${q.id}" aria-label="Dislike question">
-                  <span class="reaction-icon">👎</span>
-                  <span class="vote-count">${q.downvotes || 0}</span>
+                <button class="reaction-btn downvote-btn ${downvoteClass} hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-md transition-colors" data-question-id="${q.id}" aria-label="Dislike question">
+                  <svg class="w-5 h-5 mr-1 text-red-500 dark:text-red-400" fill="${downvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                  </svg>
+                  <span class="vote-count text-gray-700 dark:text-gray-300">${q.downvotes || 0}</span>
                 </button>
               </div>
               
               <div class="action-buttons flex items-center">
-                <button class="action-btn answers-counter flex items-center mr-2" aria-label="View answers">
-                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                <button class="action-btn answers-counter flex items-center mr-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" aria-label="View answers">
+                  <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                   <span>${q.answers.length}</span>
                 </button>
                 
-                <button class="action-btn share-btn flex items-center mr-2" aria-label="Share question">
-                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                <button class="action-btn share-btn flex items-center mr-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" aria-label="Share question">
+                  <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
                 </button>
                 
-                <button class="answer-btn btn-primary-outline text-xs px-3 py-1" data-question-id="${q.id}">Answer</button>
+                <button class="answer-btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-xs px-3 py-1.5 flex items-center rounded-md transition-colors" data-question-id="${q.id}">
+                  <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                  Answer
+                </button>
               </div>
             </div>
             
             <div class="answers-section mt-3">
               <div class="toggle-answers-container mb-2">
-                <button class="toggle-answers flex items-center text-primary hover:text-primary-dark text-sm" aria-expanded="false" aria-controls="answers-${q.id}">
+                <button class="toggle-answers flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm" aria-expanded="false" aria-controls="answers-${q.id}">
                   <svg class="w-4 h-4 mr-1 toggle-icon transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                   </svg>
@@ -236,7 +265,7 @@ export async function renderFeed() {
               
               <div id="answers-${q.id}" class="answers hidden space-y-3">
                 ${q.answers.length === 0 ? 
-                  `<div class="no-answers flex items-center text-sm text-gray-500 dark:text-gray-500 p-2">
+                  `<div class="no-answers flex items-center text-sm text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
                     <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                     </svg>
@@ -246,30 +275,39 @@ export async function renderFeed() {
                     const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
                     const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
                 return `
-                      <div class="answer-card" data-username="${a.username}" data-user-id="${a.userId}">
+                      <div class="answer-card p-2 bg-gray-50 dark:bg-gray-800 rounded-md" data-username="${a.username}" data-user-id="${a.userId}">
                         <div class="answer-header flex items-start mb-1">
                           <div class="avatar-container mr-2">
-                            <div class="avatar bg-gradient-to-r from-gray-400 to-gray-500 text-white flex items-center justify-center rounded-full h-7 w-7 text-xs font-medium">
+                            <div class="avatar bg-gradient-to-r from-gray-500 to-gray-600 text-white flex items-center justify-center rounded-full h-7 w-7 text-xs font-medium">
                               ${a.username ? a.username.charAt(0).toUpperCase() : 'A'}
                             </div>
                           </div>
                           <div>
                             <span class="font-medium text-xs">${a.username || 'Anonymous'}</span>
-                            <span class="text-xs text-gray-500 dark:text-gray-500 ml-1">${new Date(a.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">${new Date(a.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
                           </div>
                         </div>
                         <div class="answer-content ml-9">
-                    <p class="text-sm">${a.content}</p>
+                          <p class="text-sm text-gray-700 dark:text-gray-300">${a.content}</p>
                           <div class="answer-footer mt-1 flex items-center">
-                            <button class="reaction-btn reaction-btn-sm upvote-answer-btn ${answerUpvoteClass}" data-answer-id="${a.id}" aria-label="Like answer">
-                              <span class="reaction-icon text-xs">👍</span>
+                            <button class="reaction-btn reaction-btn-sm upvote-answer-btn ${answerUpvoteClass} text-blue-600 dark:text-blue-400" data-answer-id="${a.id}" aria-label="Like answer">
+                              <svg class="w-4 h-4 mr-1" fill="${answerUpvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                              </svg>
                               <span class="vote-count text-xs">${a.upvotes || 0}</span>
-                      </button>
-                            <button class="reaction-btn reaction-btn-sm downvote-answer-btn ${answerDownvoteClass}" data-answer-id="${a.id}" aria-label="Dislike answer">
-                              <span class="reaction-icon text-xs">👎</span>
+                            </button>
+                            <button class="reaction-btn reaction-btn-sm downvote-answer-btn ${answerDownvoteClass} text-red-500 dark:text-red-400" data-answer-id="${a.id}" aria-label="Dislike answer">
+                              <svg class="w-4 h-4 mr-1" fill="${answerDownvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                              </svg>
                               <span class="vote-count text-xs">${a.downvotes || 0}</span>
-                      </button>
-                            <button class="reply-btn text-xs text-gray-500 hover:text-primary ml-2">Reply</button>
+                            </button>
+                            <button class="reply-btn text-xs text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors">
+                              <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                              </svg>
+                              Reply
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -279,13 +317,13 @@ export async function renderFeed() {
                 
                 <div class="quick-answer flex items-start mt-2">
                   <div class="avatar-container mr-2">
-                    <div class="avatar bg-gradient-to-r from-primary to-primary-light text-white flex items-center justify-center rounded-full h-7 w-7 text-xs font-medium">
+                    <div class="avatar bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center rounded-full h-7 w-7 text-xs font-medium">
                       You
                     </div>
                   </div>
                   <div class="quick-answer-input-container flex-1 relative">
-                    <input type="text" class="quick-answer-input w-full rounded-full pl-4 pr-10 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 focus:ring-1 focus:ring-primary" placeholder="Write a quick answer..." data-question-id="${q.id}">
-                    <button class="send-answer-btn absolute right-2 top-1/2 transform -translate-y-1/2 text-primary">
+                    <input type="text" class="quick-answer-input w-full rounded-full pl-4 pr-10 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 text-gray-700 dark:text-gray-200" placeholder="Write a quick answer..." data-question-id="${q.id}">
+                    <button class="send-answer-btn absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
                       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11h2v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
                       </svg>
@@ -307,57 +345,6 @@ export async function renderFeed() {
       
       if (answerId) {
         setupReplyUI(answerCard, parseInt(answerId), username, userId);
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-      // Handle dropdown toggles with delegation
-      if (e.target.closest('.dropdown-toggle')) {
-        e.stopPropagation();
-        const button = e.target.closest('.dropdown-toggle');
-        const menu = button.nextElementSibling;
-        
-        document.querySelectorAll('.dropdown-menu').forEach(m => {
-          if (m !== menu) m.classList.add('hidden');
-        });
-        
-        menu.classList.toggle('hidden');
-      }
-
-      // Handle answers toggle with delegation
-      if (e.target.closest('.toggle-answers')) {
-        const button = e.target.closest('.toggle-answers');
-        const answersDiv = button.closest('.toggle-answers-container').nextElementSibling;
-        const isExpanded = button.getAttribute('aria-expanded') === 'true';
-        button.setAttribute('aria-expanded', !isExpanded);
-        const icon = button.querySelector('.toggle-icon');
-        
-        gsap.to(icon, {
-          rotation: isExpanded ? 0 : 180,
-          duration: 0.3,
-          ease: 'power2.out'
-        });
-
-        gsap.to(answersDiv, {
-          height: isExpanded ? 0 : 'auto',
-          opacity: isExpanded ? 0 : 1,
-          duration: 0.3,
-          ease: 'power2.out',
-          onStart: () => {
-            if (!isExpanded) {
-              answersDiv.classList.remove('hidden');
-            }
-          },
-          onComplete: () => {
-            if (isExpanded) {
-              answersDiv.classList.add('hidden');
-            }
-          },
-        });
-
-        button.querySelector('span').textContent = isExpanded ? 
-          `Show ${button.closest('.answers-section').querySelector('.answers').children.length - 1} answers` : 
-          `Hide answers`;
       }
     });
 
@@ -390,15 +377,7 @@ export async function renderFeed() {
           return;
         }
         const questionId = button.getAttribute('data-question-id');
-        showSection('answerForm');
-        fetchQuestions().then(questions => {
-          const question = questions.find(q => q.id == questionId);
-          if (question) {
-            document.getElementById('questionSearch').value = question.title;
-            document.getElementById('questionSelect').value = questionId;
-            document.getElementById('questionSelect').setAttribute('required', 'true');
-          }
-        });
+        showAnswerFormPopup(questionId);
       });
     });
 
@@ -415,11 +394,11 @@ export async function renderFeed() {
     console.error('Error rendering feed:', err);
     container.innerHTML = `
       <div class="error-state text-center py-8">
-        <svg class="mx-auto h-12 w-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg class="mx-auto h-12 w-12 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <p class="mt-3 text-gray-600 dark:text-gray-400">Error loading questions.</p>
-        <button class="retry-btn btn btn-primary mt-3">Retry</button>
+        <button class="retry-btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors mt-3">Retry</button>
       </div>
     `;
     showToast('error', 'Failed to load questions');
@@ -436,18 +415,19 @@ async function renderTopContributors() {
 
   contributorsContainer.innerHTML = `
     <div class="loading-indicator flex items-center justify-center py-2">
-      <div class="loader-pulse"></div>
-      <span class="ml-2 text-sm text-gray-500">Loading contributors...</span>
+      <div class="loader-pulse bg-blue-500"></div>
+      <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading contributors...</span>
     </div>
   `;
 
   try {
-    const contributors = await fetchTopContributors();
+    const result = await auth.getTopContributors();
+    const contributors = result.contributors || [];
     
     if (contributors.length === 0) {
       contributorsContainer.innerHTML = `
         <div class="text-center py-2">
-          <p class="text-sm text-gray-500">No contributors yet</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">No contributors yet</p>
         </div>
       `;
       return;
@@ -456,11 +436,11 @@ async function renderTopContributors() {
     contributorsContainer.innerHTML = '';
     
     const gradients = [
-      'from-blue-400 to-blue-600',
-      'from-purple-400 to-purple-600',
-      'from-green-400 to-green-600',
-      'from-red-400 to-red-600',
-      'from-yellow-400 to-yellow-600'
+      'from-blue-500 to-indigo-600',
+      'from-indigo-500 to-purple-600',
+      'from-purple-500 to-pink-600',
+      'from-teal-500 to-emerald-600',
+      'from-orange-500 to-amber-600'
     ];
 
     contributors.forEach((contributor, index) => {
@@ -473,14 +453,14 @@ async function renderTopContributors() {
       const gradientClass = gradients[index % gradients.length];
       
       const contributorElement = document.createElement('div');
-      contributorElement.className = 'contributor flex items-center';
+      contributorElement.className = 'contributor flex items-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors';
       contributorElement.innerHTML = `
-        <div class="avatar bg-gradient-to-r ${gradientClass} text-white flex items-center justify-center rounded-full h-8 w-8 text-xs font-medium mr-2">
+        <div class="avatar bg-gradient-to-r ${gradientClass} text-white flex items-center justify-center rounded-full h-8 w-8 text-xs font-medium mr-2 shadow-sm">
           ${initials}
         </div>
         <div>
-          <div class="font-medium text-sm">${contributor.username}</div>
-          <div class="text-xs text-gray-500">${contributor.answerCount} answers</div>
+          <div class="font-medium text-sm text-gray-800 dark:text-gray-200">${contributor.username}</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">${contributor.answerCount} answers</div>
         </div>
       `;
       
@@ -490,7 +470,7 @@ async function renderTopContributors() {
     console.error('Error rendering top contributors:', error);
     contributorsContainer.innerHTML = `
       <div class="text-center py-2">
-        <p class="text-sm text-gray-500">Failed to load contributors</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Failed to load contributors</p>
       </div>
     `;
   }
@@ -503,35 +483,24 @@ function handleQuickAnswer(input) {
   }
   
   const questionId = input.getAttribute('data-question-id');
-  const answer = input.value.trim();
+  const content = input.value.trim();
   
-  if (!answer) return;
+  if (!content) return;
   
-  fetch('/answers', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${getToken()}`
-    },
-    body: JSON.stringify({
-      questionId: questionId,
-      content: answer
+  answers.create(questionId, content)
+    .then(data => {
+      if (data.success) {
+        input.value = '';
+        showToast('success', 'Your answer has been posted!');
+        setTimeout(() => renderFeed(), 1000);
+      } else {
+        throw new Error(data.message || 'Failed to post answer');
+      }
     })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      input.value = '';
-      showToast('success', 'Your answer has been posted!');
-      setTimeout(() => renderFeed(), 1000);
-    } else {
-      throw new Error(data.message || 'Failed to post answer');
-    }
-  })
-  .catch(error => {
-    console.error('Error posting answer:', error);
-    showToast('error', error.message || 'Failed to post your answer');
-  });
+    .catch(error => {
+      console.error('Error posting answer:', error);
+      showToast('error', error.message || 'Failed to post your answer');
+    });
 }
 
 export async function showQuestionDetails(questionId) {
@@ -546,94 +515,493 @@ export async function showQuestionDetails(questionId) {
   question.answers.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
   const userVotes = getUserVotes();
 
-  const questionDetailsSection = document.createElement('section');
-  questionDetailsSection.id = 'questionDetailsSection';
-  questionDetailsSection.className = 'mt-8';
+  // Create popup container
+  const popup = document.createElement('div');
+  popup.id = 'questionDetailsPopup';
+  popup.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 overflow-y-auto';
+  
   const upvoteClass = userVotes.questions[question.id] === 'upvote' ? 'active' : '';
   const downvoteClass = userVotes.questions[question.id] === 'downvote' ? 'active' : '';
-  questionDetailsSection.innerHTML = `
-    <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-lg flex flex-col space-y-4">
-      <button id="backToFeedBtn" class="btn btn-secondary text-xs sm:text-sm px-3 py-1 w-fit">Back to Feed</button>
-      <div class="space-y-3">
-        <h2 class="text-lg sm:text-xl font-semibold">${question.title}</h2>
-        <p class="text-sm sm:text-base text-gray-600 dark:text-gray-400">${question.content}</p>
-        <p class="text-xs text-gray-500 dark:text-gray-500">Asked by ${question.username || 'Anonymous'} on ${new Date(question.createdAt).toLocaleDateString()}</p>
-        <div class="flex flex-wrap gap-2">
-          ${question.tags ? question.tags.map(tag => `<span class="tag">${tag}</span>`).join('') : ''}
-        </div>
-        <div class="flex items-center gap-3">
-          <button class="reaction-btn btn-vote upvote-btn ${upvoteClass}" data-question-id="${question.id}" aria-label="Like question">
-            <span class="text-xl">👍</span>
-            <span class="vote-count transition-all duration-300 font-medium">${question.upvotes || 0}</span>
-          </button>
-          <button class="reaction-btn btn-vote downvote-btn ${downvoteClass}" data-question-id="${question.id}" aria-label="Dislike question">
-            <span class="text-xl">👎</span>
-            <span class="vote-count transition-all duration-300 font-medium">${question.downvotes || 0}</span>
+  
+  popup.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col animate-scale-in">
+      <!-- Navigation bar -->
+      <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <button id="closeQuestionPopup" class="flex items-center text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors text-sm font-medium">
+          <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Close
+        </button>
+        <div class="flex items-center space-x-2">
+          <button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded-full transition-colors">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
           </button>
         </div>
-        <button class="answer-btn btn btn-primary mt-2 text-sm" data-question-id="${question.id}">Answer</button>
       </div>
-      <div class="space-y-3">
-        <h3 class="text-base font-semibold">Answers (${question.answers.length})</h3>
-        <div id="answersList" class="space-y-4">
-          ${question.answers.length > 0 ? question.answers.map(a => {
-            const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
-            const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
-            return `
-              <div class="border-t border-gray-200 dark:border-gray-700 pt-3 flex flex-col space-y-2">
-                <p class="text-sm">${a.content}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-500">Answered by ${a.username || 'Anonymous'} on ${new Date(a.createdAt).toLocaleDateString()}</p>
-                <div class="flex items-center gap-2">
-                  <button class="reaction-btn btn-vote upvote-answer-btn ${answerUpvoteClass}" data-answer-id="${a.id}" aria-label="Like answer">
-                    <span class="text-base">👍</span>
-                    <span class="vote-count transition-all duration-300">${a.upvotes || 0}</span>
-                  </button>
-                  <button class="reaction-btn btn-vote downvote-answer-btn ${answerDownvoteClass}" data-answer-id="${a.id}" aria-label="Dislike answer">
-                    <span class="text-base">👎</span>
-                    <span class="vote-count transition-all duration-300">${a.downvotes || 0}</span>
+      
+      <!-- Question content -->
+      <div class="px-6 py-5 overflow-y-auto flex-1">
+        <div class="flex items-start space-x-3 mb-4">
+          <div class="avatar-container flex-shrink-0">
+            <div class="avatar bg-gradient-to-r from-indigo-500 to-blue-600 text-white flex items-center justify-center rounded-full h-10 w-10 text-sm font-medium shadow-sm">
+              ${question.username ? question.username.charAt(0).toUpperCase() : 'A'}
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center">
+              <span class="font-medium text-gray-900 dark:text-gray-100">${question.username || 'Anonymous'}</span>
+              <span class="mx-2 text-gray-400 dark:text-gray-500">•</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">${new Date(question.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}</span>
+            </div>
+            <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              ${new Date(question.createdAt).toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}
+            </div>
+          </div>
+        </div>
+        
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">${question.title}</h2>
+        
+        <div class="prose dark:prose-invert prose-sm sm:prose-base max-w-none mb-4 text-gray-700 dark:text-gray-200">
+          <p>${question.content}</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-2 mb-6">
+          ${question.tags ? question.tags.map(tag => `<span class="tag bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2.5 py-0.5 rounded-full text-xs font-medium">${tag}</span>`).join('') : ''}
+        </div>
+        
+        <!-- Question stats and actions -->
+        <div class="flex items-center justify-between py-3 border-t border-b border-gray-100 dark:border-gray-700 mb-6">
+          <div class="flex items-center space-x-6">
+            <div class="flex items-center space-x-2">
+              <button class="reaction-btn btn-vote upvote-btn ${upvoteClass} hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 rounded-md transition-colors flex items-center" data-question-id="${question.id}" aria-label="Like question">
+                <svg class="w-5 h-5 mr-1 text-blue-600 dark:text-blue-400" fill="${upvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                </svg>
+                <span class="vote-count transition-all duration-300 font-medium text-gray-700 dark:text-gray-300">${question.upvotes || 0}</span>
+              </button>
+              <button class="reaction-btn btn-vote downvote-btn ${downvoteClass} hover:bg-gray-100 dark:hover:bg-gray-700 p-1.5 rounded-md transition-colors flex items-center" data-question-id="${question.id}" aria-label="Dislike question">
+                <svg class="w-5 h-5 mr-1 text-red-500 dark:text-red-400" fill="${downvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                </svg>
+                <span class="vote-count transition-all duration-300 font-medium text-gray-700 dark:text-gray-300">${question.downvotes || 0}</span>
+              </button>
+            </div>
+            
+            <div class="flex items-center text-gray-500 dark:text-gray-400">
+              <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              <span>${question.answers.length} ${question.answers.length === 1 ? 'answer' : 'answers'}</span>
+            </div>
+          </div>
+          
+          <button class="answer-btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition-colors flex items-center shadow-sm" data-question-id="${question.id}">
+            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            </svg>
+            Answer
+          </button>
+        </div>
+        
+        <!-- Answers section -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Answers (${question.answers.length})</h3>
+            <div class="flex items-center rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
+              <button class="py-1 px-3 text-xs font-medium rounded-md bg-white dark:bg-gray-600 shadow-sm text-gray-800 dark:text-gray-200">
+                Most Relevant
+              </button>
+              <button class="py-1 px-3 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                Newest
+              </button>
+            </div>
+          </div>
+          
+          <div id="answersList" class="space-y-6">
+            ${question.answers.length > 0 ? question.answers.map(a => {
+              const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
+              const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
+              return `
+                <div class="answer-item bg-gray-50 dark:bg-gray-800/70 rounded-lg p-4" data-answer-id="${a.id}" data-username="${a.username}" data-user-id="${a.userId}">
+                  <div class="flex items-start space-x-3 mb-2">
+                    <div class="avatar-container flex-shrink-0">
+                      <div class="avatar bg-gradient-to-r from-gray-500 to-gray-600 text-white flex items-center justify-center rounded-full h-8 w-8 text-xs font-medium shadow-sm">
+                        ${a.username ? a.username.charAt(0).toUpperCase() : 'A'}
+                      </div>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center">
+                        <span class="font-medium text-sm text-gray-900 dark:text-gray-100">${a.username || 'Anonymous'}</span>
+                        <span class="mx-2 text-xs text-gray-400 dark:text-gray-500">•</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${new Date(a.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                      </div>
+                      
+                      <div class="mt-2 text-sm text-gray-700 dark:text-gray-300">${a.content}</div>
+                      
+                      <div class="mt-3 flex items-center space-x-3">
+                        <button class="reaction-btn btn-vote upvote-answer-btn ${answerUpvoteClass} hover:bg-gray-200/70 dark:hover:bg-gray-700 p-1 rounded-md transition-colors flex items-center" data-answer-id="${a.id}" aria-label="Like answer">
+                          <svg class="w-4 h-4 mr-1 text-blue-600 dark:text-blue-400" fill="${answerUpvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                          </svg>
+                          <span class="vote-count transition-all duration-300 text-sm text-gray-700 dark:text-gray-300">${a.upvotes || 0}</span>
+                        </button>
+                        <button class="reaction-btn btn-vote downvote-answer-btn ${answerDownvoteClass} hover:bg-gray-200/70 dark:hover:bg-gray-700 p-1 rounded-md transition-colors flex items-center" data-answer-id="${a.id}" aria-label="Dislike answer">
+                          <svg class="w-4 h-4 mr-1 text-red-500 dark:text-red-400" fill="${answerDownvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                          </svg>
+                          <span class="vote-count transition-all duration-300 text-sm text-gray-700 dark:text-gray-300">${a.downvotes || 0}</span>
+                        </button>
+                        <button class="reply-btn text-xs text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors">
+                          <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                          </svg>
+                          Reply
+                        </button>
+                      </div>
+                      
+                      <!-- Reply container and replies list -->
+                      <div class="reply-container mt-3 hidden">
+                        <div class="flex items-start space-x-2">
+                          <div class="avatar-container flex-shrink-0">
+                            <div class="avatar bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center rounded-full h-6 w-6 text-xs font-medium">
+                              You
+                            </div>
+                          </div>
+                          <div class="flex-1">
+                            <div class="relative">
+                              <input type="text" class="reply-input w-full rounded-full pl-3 pr-10 py-1 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 text-gray-700 dark:text-gray-200" placeholder="Write a reply...">
+                              <button class="send-reply-btn absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11h2v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Replies list container -->
+                      <div class="replies-list-container mt-3 ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                        <div class="replies-list" data-answer-id="${a.id}">
+                          <div class="loading-replies text-xs text-gray-500 dark:text-gray-400">
+                            <div class="animate-pulse flex items-center">
+                              <div class="h-2 w-2 bg-blue-400 rounded-full mr-1"></div>
+                              <div class="h-2 w-2 bg-blue-400 rounded-full mr-1 animation-delay-200"></div>
+                              <div class="h-2 w-2 bg-blue-400 rounded-full animation-delay-400"></div>
+                              <span class="ml-2">Loading replies...</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('') : '<div class="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70 p-4 rounded-lg text-center">No answers yet. Be the first to contribute!</div>'}
+          </div>
+        </div>
+        
+        <!-- Answer input -->
+        <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div class="flex items-start space-x-3">
+            <div class="avatar-container flex-shrink-0">
+              <div class="avatar bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center rounded-full h-9 w-9 text-sm font-medium">
+                You
+              </div>
+            </div>
+            <div class="flex-1">
+              <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl p-3 relative">
+                <textarea id="questionDetailAnswer" class="bg-transparent w-full outline-none resize-none text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 text-sm min-h-[80px]" placeholder="Write your answer here..."></textarea>
+                <div class="flex justify-end mt-2">
+                  <button id="submitDetailAnswer" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm px-4 py-1.5 rounded-md transition-colors flex items-center shadow-sm" data-question-id="${question.id}">
+                    Submit Answer
                   </button>
                 </div>
               </div>
-            `;
-          }).join('') : '<p class="text-sm text-gray-500 dark:text-gray-500">No answers yet.</p>'}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   `;
 
-  document.getElementById('feedSection').classList.add('hidden');
-  const mainContent = document.getElementById('mainContent');
-  const existingDetailsSection = document.getElementById('questionDetailsSection');
-  if (existingDetailsSection) {
-    existingDetailsSection.remove();
-  }
-  mainContent.appendChild(questionDetailsSection);
+  // Add popup to the DOM
+  document.body.appendChild(popup);
+  
+  // Add CSS for animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes scale-in {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .animate-scale-in {
+      animation: scale-in 0.2s ease-out forwards;
+    }
+    .animation-delay-200 {
+      animation-delay: 0.2s;
+    }
+    .animation-delay-400 {
+      animation-delay: 0.4s;
+    }
+  `;
+  document.head.appendChild(style);
 
-  document.getElementById('backToFeedBtn').addEventListener('click', () => {
-    console.log('Back to feed clicked');
-    questionDetailsSection.remove();
-    showSection('feedSection');
-    renderFeed();
+  // Setup event listeners
+  document.getElementById('closeQuestionPopup').addEventListener('click', () => {
+    popup.classList.add('animate-fade-out');
+    setTimeout(() => {
+      popup.remove();
+      style.remove();
+    }, 200);
   });
 
-  document.querySelectorAll('.answer-btn').forEach(button => {
+  // Fetch and display replies for each answer
+  question.answers.forEach(async (answer) => {
+    const answerId = answer.id;
+    const repliesListContainer = document.querySelector(`.replies-list[data-answer-id="${answerId}"]`);
+    
+    if (repliesListContainer) {
+      try {
+        const replies = await getReplies(answerId);
+        
+        // Clear loading indicator
+        repliesListContainer.innerHTML = '';
+        
+        if (replies.length === 0) {
+          // Hide the empty container if there are no replies
+          const parentContainer = repliesListContainer.closest('.replies-list-container');
+          if (parentContainer) {
+            parentContainer.style.display = 'none';
+          }
+        } else {
+          // Display each reply
+          replies.forEach(reply => {
+            // Format content with mention highlight
+            let displayContent = reply.content;
+            
+            if (reply.mentionedUsername && !displayContent.startsWith(`@${reply.mentionedUsername}`)) {
+              displayContent = `<span class="text-blue-600 dark:text-blue-400 font-medium">@${reply.mentionedUsername}</span> ${displayContent}`;
+            } else if (reply.mentionedUsername) {
+              // Replace the @username with a highlighted version
+              displayContent = displayContent.replace(
+                new RegExp(`@${reply.mentionedUsername}\\b`, 'g'), 
+                `<span class="text-blue-600 dark:text-blue-400 font-medium">@${reply.mentionedUsername}</span>`
+              );
+            }
+            
+            const replyElement = document.createElement('div');
+            replyElement.className = 'reply mb-2 last:mb-0 text-sm';
+            replyElement.innerHTML = `
+              <div class="flex items-start">
+                <div class="flex-shrink-0 mr-2">
+                  <div class="avatar bg-gradient-to-r from-gray-400 to-gray-500 text-white flex items-center justify-center rounded-full h-5 w-5 text-xs font-medium shadow-sm">
+                    ${reply.username ? reply.username.charAt(0).toUpperCase() : 'A'}
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center">
+                    <span class="font-medium text-xs text-gray-900 dark:text-gray-100">${reply.username || 'Anonymous'}</span>
+                    <span class="mx-1 text-xs text-gray-400 dark:text-gray-500">•</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500">${new Date(reply.createdAt).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
+                  </div>
+                  <div class="reply-content text-xs text-gray-700 dark:text-gray-300">${displayContent}</div>
+                </div>
+              </div>
+            `;
+            
+            repliesListContainer.appendChild(replyElement);
+          });
+        }
+      } catch (error) {
+        console.error(`Error loading replies for answer ${answerId}:`, error);
+        repliesListContainer.innerHTML = `
+          <div class="text-xs text-red-500 dark:text-red-400">
+            Failed to load replies. Please try again later.
+          </div>
+        `;
+      }
+    }
+  });
+
+  // Setup reply functionality for each answer
+  document.querySelectorAll('.reply-btn').forEach(button => {
     button.addEventListener('click', () => {
       if (!isLoggedIn()) {
         showPopup('login');
         return;
       }
-      const questionId = button.getAttribute('data-question-id');
-      showSection('answerForm');
-      fetchQuestions().then(questions => {
-        const question = questions.find(q => q.id == questionId);
-        if (question) {
-          document.getElementById('questionSearch').value = question.title;
-          document.getElementById('questionSelect').value = questionId;
-          document.getElementById('questionSelect').setAttribute('required', 'true');
-        }
-      });
+      
+      const answerItem = button.closest('.answer-item');
+      const replyContainer = answerItem.querySelector('.reply-container');
+      replyContainer.classList.toggle('hidden');
+      
+      if (!replyContainer.classList.contains('hidden')) {
+        replyContainer.querySelector('.reply-input').focus();
+      }
     });
   });
+  
+  // Setup send reply functionality
+  document.querySelectorAll('.send-reply-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+      const answerItem = button.closest('.answer-item');
+      const input = button.closest('.relative').querySelector('.reply-input');
+      const content = input.value.trim();
+      
+      if (!content) return;
+      
+      const answerId = parseInt(answerItem.getAttribute('data-answer-id'));
+      const username = answerItem.getAttribute('data-username');
+      const userId = answerItem.getAttribute('data-user-id');
+      
+      try {
+        // Post the reply using the imported postReply function
+        const reply = await postReply(answerId, content, userId, username);
+        
+        if (reply) {
+          // Clear input and hide reply container
+          input.value = '';
+          answerItem.querySelector('.reply-container').classList.add('hidden');
+          
+          // Make sure replies container is visible
+          const repliesListContainer = answerItem.querySelector('.replies-list-container');
+          repliesListContainer.style.display = 'block';
+          
+          // Add the new reply to the UI
+          const repliesList = answerItem.querySelector('.replies-list');
+          
+          // Format content with mention highlight
+          let displayContent = reply.content;
+          
+          if (username && !displayContent.startsWith(`@${username}`)) {
+            displayContent = `<span class="text-blue-600 dark:text-blue-400 font-medium">@${username}</span> ${displayContent}`;
+          } else if (username) {
+            // Replace the @username with a highlighted version
+            displayContent = displayContent.replace(
+              new RegExp(`@${username}\\b`, 'g'), 
+              `<span class="text-blue-600 dark:text-blue-400 font-medium">@${username}</span>`
+            );
+          }
+          
+          const replyElement = document.createElement('div');
+          replyElement.className = 'reply mb-2 last:mb-0 text-sm animate-fade-in';
+          replyElement.innerHTML = `
+            <div class="flex items-start">
+              <div class="flex-shrink-0 mr-2">
+                <div class="avatar bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center rounded-full h-5 w-5 text-xs font-medium shadow-sm">
+                  You
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center">
+                  <span class="font-medium text-xs text-gray-900 dark:text-gray-100">You</span>
+                  <span class="mx-1 text-xs text-gray-400 dark:text-gray-500">•</span>
+                  <span class="text-xs text-gray-400 dark:text-gray-500">Just now</span>
+                </div>
+                <div class="reply-content text-xs text-gray-700 dark:text-gray-300">${displayContent}</div>
+              </div>
+            </div>
+          `;
+          
+          repliesList.appendChild(replyElement);
+          
+          // Add a subtle background highlight animation
+          replyElement.animate([
+            { backgroundColor: 'rgba(59, 130, 246, 0.1)' }, // Light blue highlight
+            { backgroundColor: 'transparent' }
+          ], {
+            duration: 2000,
+            easing: 'ease-out'
+          });
+          
+          showToast('success', 'Reply posted successfully');
+        }
+      } catch (error) {
+        console.error('Error posting reply:', error);
+        showToast('error', error.message || 'Failed to post reply');
+      }
+    });
+  });
+  
+  // Setup reply input keypress event
+  document.querySelectorAll('.reply-input').forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const button = input.nextElementSibling;
+        button.click();
+      }
+    });
+  });
+
+  // Setup answer submission in the popup
+  document.getElementById('submitDetailAnswer').addEventListener('click', () => {
+    if (!isLoggedIn()) {
+      showPopup('login');
+      return;
+    }
+    
+    const textarea = document.getElementById('questionDetailAnswer');
+    const content = textarea.value.trim();
+    const questionId = document.getElementById('submitDetailAnswer').getAttribute('data-question-id');
+    
+    if (!content) return;
+    
+    answers.create(questionId, content)
+      .then(data => {
+        if (data.success) {
+          textarea.value = '';
+          showToast('success', 'Your answer has been posted!');
+          
+          // Close the popup and refresh the feed
+          document.getElementById('closeQuestionPopup').click();
+          setTimeout(() => renderFeed(), 300);
+        } else {
+          throw new Error(data.message || 'Failed to post answer');
+        }
+      })
+      .catch(error => {
+        console.error('Error posting answer:', error);
+        showToast('error', error.message || 'Failed to post your answer');
+      });
+  });
+
+  // Handle clicking outside to close
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) {
+      document.getElementById('closeQuestionPopup').click();
+    }
+  });
+}
+
+// Update the handleReply function to use our imported postReply function
+function handleReply(answerId, content, username, userId) {
+  if (!isLoggedIn()) {
+    showPopup('login');
+    return;
+  }
+  
+  return postReply(answerId, content, userId, username)
+    .then(reply => {
+      if (reply) {
+        showToast('success', 'Your reply has been posted!');
+        return reply;
+      }
+      return false;
+    })
+    .catch(error => {
+      console.error('Error posting reply:', error);
+      showToast('error', error.message || 'Failed to post reply');
+      return false;
+    });
 }
 
 function renderPagination(totalQuestions, pagination) {
@@ -641,10 +1009,58 @@ function renderPagination(totalQuestions, pagination) {
   const totalPages = Math.ceil(totalQuestions / questionsPerPage);
   pagination.innerHTML = '';
 
-  for (let i = 1; i <= totalPages; i++) {
+  // Add prev button
+  const prevButton = document.createElement('button');
+  prevButton.className = `pagination-btn prev-btn ${currentPage === 1 ? 'disabled' : ''} flex items-center justify-center px-3 py-1 rounded-l-lg border border-gray-300 dark:border-gray-600 ${currentPage === 1 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed text-gray-400 dark:text-gray-600' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'}`;
+  prevButton.innerHTML = `
+    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+    </svg>
+  `;
+  prevButton.disabled = currentPage === 1;
+  prevButton.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderFeed();
+    }
+  });
+  pagination.appendChild(prevButton);
+
+  // Calculate visible page range
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, startPage + 4);
+  
+  if (endPage - startPage < 4 && startPage > 1) {
+    startPage = Math.max(1, endPage - 4);
+  }
+
+  // Add first page button if needed
+  if (startPage > 1) {
+    const firstPageBtn = document.createElement('button');
+    firstPageBtn.textContent = '1';
+    firstPageBtn.className = `pagination-btn flex items-center justify-center px-3 py-1 border border-gray-300 dark:border-gray-600 ${1 === currentPage ? 'bg-blue-600 text-white font-medium dark:bg-blue-500' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors'}`;
+    firstPageBtn.addEventListener('click', () => {
+      currentPage = 1;
+      renderFeed();
+    });
+    pagination.appendChild(firstPageBtn);
+    
+    // Add ellipsis if there's a gap
+    if (startPage > 2) {
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'pagination-ellipsis flex items-center justify-center px-3 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+      ellipsis.textContent = '...';
+      pagination.appendChild(ellipsis);
+    }
+  }
+
+  // Add page buttons
+  for (let i = startPage; i <= endPage; i++) {
+    if (i === 1 || i === totalPages) continue; // Skip first and last pages as they're handled separately
+    
     const button = document.createElement('button');
     button.textContent = i;
-    button.className = `px-3 py-1 rounded ${i === currentPage ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`;
+    button.className = `pagination-btn flex items-center justify-center px-3 py-1 border border-gray-300 dark:border-gray-600 ${i === currentPage ? 'bg-blue-600 text-white font-medium dark:bg-blue-500' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors'}`;
     button.addEventListener('click', () => {
       console.log(`Pagination page ${i} clicked`);
       currentPage = i;
@@ -652,15 +1068,64 @@ function renderPagination(totalQuestions, pagination) {
     });
     pagination.appendChild(button);
   }
+
+  // Add last page button if needed
+  if (endPage < totalPages) {
+    // Add ellipsis if there's a gap
+    if (endPage < totalPages - 1) {
+      const ellipsis = document.createElement('span');
+      ellipsis.className = 'pagination-ellipsis flex items-center justify-center px-3 py-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300';
+      ellipsis.textContent = '...';
+      pagination.appendChild(ellipsis);
+    }
+    
+    const lastPageBtn = document.createElement('button');
+    lastPageBtn.textContent = totalPages;
+    lastPageBtn.className = `pagination-btn flex items-center justify-center px-3 py-1 border border-gray-300 dark:border-gray-600 ${totalPages === currentPage ? 'bg-blue-600 text-white font-medium dark:bg-blue-500' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors'}`;
+    lastPageBtn.addEventListener('click', () => {
+      currentPage = totalPages;
+      renderFeed();
+    });
+    pagination.appendChild(lastPageBtn);
+  }
+
+  // Add next button
+  const nextButton = document.createElement('button');
+  nextButton.className = `pagination-btn next-btn ${currentPage === totalPages ? 'disabled' : ''} flex items-center justify-center px-3 py-1 rounded-r-lg border border-gray-300 dark:border-gray-600 ${currentPage === totalPages ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed text-gray-400 dark:text-gray-600' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors'}`;
+  nextButton.innerHTML = `
+    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
+  `;
+  nextButton.disabled = currentPage === totalPages;
+  nextButton.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderFeed();
+    }
+  });
+  pagination.appendChild(nextButton);
+  
+  // Add pagination styles
+  pagination.classList.add('flex', 'justify-center', 'space-x-1', 'mt-8');
 }
 
 export function updateVoteCount(button, newCount) {
   const countElement = button.querySelector('.vote-count');
+  const iconElement = button.querySelector('svg');
+  
   if (countElement) {
     const oldValue = parseInt(countElement.textContent);
     const newValue = newCount || 0;
     
     countElement.textContent = newValue;
+    
+    // Update the SVG fill if the button is now active
+    if (button.classList.contains('active')) {
+      iconElement.setAttribute('fill', 'currentColor');
+    } else {
+      iconElement.setAttribute('fill', 'none');
+    }
     
     if (newValue > oldValue) {
       countElement.animate([
@@ -671,6 +1136,17 @@ export function updateVoteCount(button, newCount) {
         duration: 300,
         easing: 'ease-out'
       });
+      
+      // Also animate the icon
+      iconElement.animate([
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.2)' },
+        { transform: 'scale(1)' }
+      ], {
+        duration: 300,
+        easing: 'ease-out'
+      });
+      
     } else if (newValue < oldValue) {
       countElement.animate([
         { transform: 'scale(1)', opacity: 0.5 },
@@ -686,4 +1162,99 @@ export function updateVoteCount(button, newCount) {
 
 document.addEventListener('DOMContentLoaded', () => {
   setupFilterButtons();
+
+  // Setup the delegated event listener for toggle-answers
+  document.addEventListener('click', (e) => {
+    // Handle dropdown toggles with delegation
+    if (e.target.closest('.dropdown-toggle')) {
+      e.stopPropagation();
+      const button = e.target.closest('.dropdown-toggle');
+      const menu = button.nextElementSibling;
+      
+      document.querySelectorAll('.dropdown-menu').forEach(m => {
+        if (m !== menu) m.classList.add('hidden');
+      });
+      
+      menu.classList.toggle('hidden');
+    }
+
+    // Handle answers toggle with delegation
+    if (e.target.closest('.toggle-answers')) {
+      const button = e.target.closest('.toggle-answers');
+      const answersDiv = button.closest('.toggle-answers-container').nextElementSibling;
+      const isExpanded = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', !isExpanded);
+      const icon = button.querySelector('.toggle-icon');
+      
+      // Ensure answersDiv exists before proceeding
+      if (!answersDiv) {
+        console.error('Could not find answers div element');
+        return;
+      }
+
+      // First make sure the element is visible before animating
+      if (!isExpanded) {
+        answersDiv.classList.remove('hidden');
+        // Set initial height to 0 for proper animation
+        answersDiv.style.height = '0px';
+        answersDiv.style.overflow = 'hidden';
+        answersDiv.style.display = 'block';
+      }
+      
+      // Animate the icon rotation
+      gsap.to(icon, {
+        rotation: isExpanded ? 0 : 180,
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+
+      // Use a more reliable animation approach
+      if (!isExpanded) {
+        // Get the natural height of the element to animate to
+        const height = answersDiv.scrollHeight;
+        
+        gsap.fromTo(answersDiv, 
+          { height: 0, opacity: 0 },
+          { 
+            height: height, 
+            opacity: 1, 
+            duration: 0.3, 
+            ease: 'power2.out',
+            onComplete: () => {
+              // Remove inline styles to allow natural resizing
+              answersDiv.style.height = 'auto';
+              answersDiv.style.overflow = 'visible';
+            }
+          }
+        );
+      } else {
+        // Closing animation
+        const height = answersDiv.offsetHeight;
+        
+        // First set fixed height for smooth animation
+        answersDiv.style.height = `${height}px`;
+        answersDiv.style.overflow = 'hidden';
+        
+        gsap.to(answersDiv, {
+          height: 0,
+          opacity: 0,
+          duration: 0.3,
+          ease: 'power2.out',
+          onComplete: () => {
+            answersDiv.classList.add('hidden');
+            // Reset styles
+            answersDiv.style.height = '';
+            answersDiv.style.overflow = '';
+            answersDiv.style.display = '';
+          }
+        });
+      }
+
+      // Update the button text
+      const answerCount = button.closest('.answers-section').querySelector('.answers').children.length - 1;
+      button.querySelector('span').textContent = isExpanded ? 
+        `Show ${answerCount > 0 ? answerCount : 0} answers` : 
+        `Hide answers`;
+    }
+  });
 });

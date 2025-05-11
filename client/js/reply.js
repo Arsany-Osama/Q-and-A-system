@@ -1,5 +1,6 @@
 import { getToken, isLoggedIn } from './auth.js';
 import { showPopup, showToast } from './ui.js';
+import { replies as repliesApi } from './utils/api.js';
 
 // Post a reply to an answer
 export async function postReply(answerId, content, mentionedUserId, mentionedUsername) {
@@ -14,21 +15,7 @@ export async function postReply(answerId, content, mentionedUserId, mentionedUse
       content = `@${mentionedUsername} ${content}`;
     }
     
-    const response = await fetch('/replies', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getToken()}`
-      },
-      body: JSON.stringify({
-        answerId,
-        content,
-        mentionedUserId,
-        mentionedUsername
-      })
-    });
-    
-    const data = await response.json();
+    const data = await repliesApi.create(answerId, content);
     
     if (data.success) {
       return {
@@ -63,7 +50,7 @@ export function showReplyForm(button, answerId, answerUsername, answerUserId) {
   replyForm.innerHTML = `
     <div class="reply-header mb-2">
       <span class="text-sm font-medium">Replying to </span>
-      <span class="text-primary font-medium">@${answerUsername}</span>
+      <span class="text-primary font-bold">@${answerUsername}</span>
     </div>
     <div class="flex items-start">
       <div class="flex-1 relative">
@@ -135,12 +122,12 @@ function addReplyToUI(container, reply) {
   
   // If the content doesn't start with @username, add the mention at the beginning
   if (reply.mentionedUsername && !displayContent.startsWith(`@${reply.mentionedUsername}`)) {
-    displayContent = `<span class="text-primary">@${reply.mentionedUsername}</span> ${displayContent}`;
+    displayContent = `<span class="text-primary font-bold">@${reply.mentionedUsername}</span> ${displayContent}`;
   } else if (reply.mentionedUsername) {
     // Replace the @username with a highlighted version
     displayContent = displayContent.replace(
       new RegExp(`@${reply.mentionedUsername}\\b`, 'g'), 
-      `<span class="text-primary">@${reply.mentionedUsername}</span>`
+      `<span class="text-primary font-bold">@${reply.mentionedUsername}</span>`
     );
   }
   

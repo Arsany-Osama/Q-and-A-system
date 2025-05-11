@@ -221,4 +221,7 @@ main > section {
 #questionFeed {
   max-width: 100% !important;
   margin: 0 auto !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
 }

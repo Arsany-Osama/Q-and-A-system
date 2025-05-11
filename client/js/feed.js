@@ -2,8 +2,8 @@ import { fetchQuestions } from './question.js';
 import { showPopup, showToast, showSection, showAnswerFormPopup } from './ui.js';
 import { getToken, isLoggedIn, fetchTopContributors } from './auth.js';
 import { getUserVotes } from './vote.js';
-import { setupReplyUI } from './reply.js';  // Add this import
-import { auth, answers } from './utils/api.js';
+import { setupReplyUI, getReplies, postReply } from './reply.js';  // Import getReplies and postReply
+import { auth, answers, replies } from './utils/api.js';
 
 let currentPage = 1;
 const questionsPerPage = 10;
@@ -302,7 +302,7 @@ export async function renderFeed() {
                               </svg>
                               <span class="vote-count text-xs">${a.downvotes || 0}</span>
                             </button>
-                            <button class="reply-btn text-xs text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 ml-2 flex items-center transition-colors">
+                            <button class="reply-btn text-xs text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors">
                               <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                               </svg>
@@ -515,28 +515,25 @@ export async function showQuestionDetails(questionId) {
   question.answers.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
   const userVotes = getUserVotes();
 
-  const questionDetailsSection = document.createElement('section');
-  questionDetailsSection.id = 'questionDetailsSection';
-  questionDetailsSection.className = 'mt-8 max-w-4xl mx-auto';
+  // Create popup container
+  const popup = document.createElement('div');
+  popup.id = 'questionDetailsPopup';
+  popup.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 overflow-y-auto';
+  
   const upvoteClass = userVotes.questions[question.id] === 'upvote' ? 'active' : '';
   const downvoteClass = userVotes.questions[question.id] === 'downvote' ? 'active' : '';
   
-  questionDetailsSection.innerHTML = `
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+  popup.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col animate-scale-in">
       <!-- Navigation bar -->
       <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-        <button id="backToFeedBtn" class="flex items-center text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors text-sm font-medium">
-          <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        <button id="closeQuestionPopup" class="flex items-center text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors text-sm font-medium">
+          <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
-          Back to Feed
+          Close
         </button>
         <div class="flex items-center space-x-2">
-          <button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded-full transition-colors">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-            </svg>
-          </button>
           <button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded-full transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -546,7 +543,7 @@ export async function showQuestionDetails(questionId) {
       </div>
       
       <!-- Question content -->
-      <div class="px-6 py-5">
+      <div class="px-6 py-5 overflow-y-auto flex-1">
         <div class="flex items-start space-x-3 mb-4">
           <div class="avatar-container flex-shrink-0">
             <div class="avatar bg-gradient-to-r from-indigo-500 to-blue-600 text-white flex items-center justify-center rounded-full h-10 w-10 text-sm font-medium shadow-sm">
@@ -628,7 +625,7 @@ export async function showQuestionDetails(questionId) {
               const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
               const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
               return `
-                <div class="answer-item bg-gray-50 dark:bg-gray-800/70 rounded-lg p-4">
+                <div class="answer-item bg-gray-50 dark:bg-gray-800/70 rounded-lg p-4" data-answer-id="${a.id}" data-username="${a.username}" data-user-id="${a.userId}">
                   <div class="flex items-start space-x-3 mb-2">
                     <div class="avatar-container flex-shrink-0">
                       <div class="avatar bg-gradient-to-r from-gray-500 to-gray-600 text-white flex items-center justify-center rounded-full h-8 w-8 text-xs font-medium shadow-sm">
@@ -664,6 +661,41 @@ export async function showQuestionDetails(questionId) {
                           Reply
                         </button>
                       </div>
+                      
+                      <!-- Reply container and replies list -->
+                      <div class="reply-container mt-3 hidden">
+                        <div class="flex items-start space-x-2">
+                          <div class="avatar-container flex-shrink-0">
+                            <div class="avatar bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center rounded-full h-6 w-6 text-xs font-medium">
+                              You
+                            </div>
+                          </div>
+                          <div class="flex-1">
+                            <div class="relative">
+                              <input type="text" class="reply-input w-full rounded-full pl-3 pr-10 py-1 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 text-gray-700 dark:text-gray-200" placeholder="Write a reply...">
+                              <button class="send-reply-btn absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11h2v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Replies list container -->
+                      <div class="replies-list-container mt-3 ml-6 border-l-2 border-gray-200 dark:border-gray-700 pl-3">
+                        <div class="replies-list" data-answer-id="${a.id}">
+                          <div class="loading-replies text-xs text-gray-500 dark:text-gray-400">
+                            <div class="animate-pulse flex items-center">
+                              <div class="h-2 w-2 bg-blue-400 rounded-full mr-1"></div>
+                              <div class="h-2 w-2 bg-blue-400 rounded-full mr-1 animation-delay-200"></div>
+                              <div class="h-2 w-2 bg-blue-400 rounded-full animation-delay-400"></div>
+                              <span class="ml-2">Loading replies...</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -682,9 +714,9 @@ export async function showQuestionDetails(questionId) {
             </div>
             <div class="flex-1">
               <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl p-3 relative">
-                <textarea class="bg-transparent w-full outline-none resize-none text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 text-sm min-h-[80px]" placeholder="Write your answer here..."></textarea>
+                <textarea id="questionDetailAnswer" class="bg-transparent w-full outline-none resize-none text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 text-sm min-h-[80px]" placeholder="Write your answer here..."></textarea>
                 <div class="flex justify-end mt-2">
-                  <button class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm px-4 py-1.5 rounded-md transition-colors flex items-center shadow-sm">
+                  <button id="submitDetailAnswer" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-sm px-4 py-1.5 rounded-md transition-colors flex items-center shadow-sm" data-question-id="${question.id}">
                     Submit Answer
                   </button>
                 </div>
@@ -696,31 +728,280 @@ export async function showQuestionDetails(questionId) {
     </div>
   `;
 
-  document.getElementById('feedSection').classList.add('hidden');
-  const mainContent = document.getElementById('mainContent');
-  const existingDetailsSection = document.getElementById('questionDetailsSection');
-  if (existingDetailsSection) {
-    existingDetailsSection.remove();
-  }
-  mainContent.appendChild(questionDetailsSection);
+  // Add popup to the DOM
+  document.body.appendChild(popup);
+  
+  // Add CSS for animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes scale-in {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .animate-scale-in {
+      animation: scale-in 0.2s ease-out forwards;
+    }
+    .animation-delay-200 {
+      animation-delay: 0.2s;
+    }
+    .animation-delay-400 {
+      animation-delay: 0.4s;
+    }
+  `;
+  document.head.appendChild(style);
 
-  document.getElementById('backToFeedBtn').addEventListener('click', () => {
-    console.log('Back to feed clicked');
-    questionDetailsSection.remove();
-    showSection('feedSection');
-    renderFeed();
+  // Setup event listeners
+  document.getElementById('closeQuestionPopup').addEventListener('click', () => {
+    popup.classList.add('animate-fade-out');
+    setTimeout(() => {
+      popup.remove();
+      style.remove();
+    }, 200);
   });
 
-  document.querySelectorAll('.answer-btn').forEach(button => {
+  // Fetch and display replies for each answer
+  question.answers.forEach(async (answer) => {
+    const answerId = answer.id;
+    const repliesListContainer = document.querySelector(`.replies-list[data-answer-id="${answerId}"]`);
+    
+    if (repliesListContainer) {
+      try {
+        const replies = await getReplies(answerId);
+        
+        // Clear loading indicator
+        repliesListContainer.innerHTML = '';
+        
+        if (replies.length === 0) {
+          // Hide the empty container if there are no replies
+          const parentContainer = repliesListContainer.closest('.replies-list-container');
+          if (parentContainer) {
+            parentContainer.style.display = 'none';
+          }
+        } else {
+          // Display each reply
+          replies.forEach(reply => {
+            // Format content with mention highlight
+            let displayContent = reply.content;
+            
+            if (reply.mentionedUsername && !displayContent.startsWith(`@${reply.mentionedUsername}`)) {
+              displayContent = `<span class="text-blue-600 dark:text-blue-400 font-medium">@${reply.mentionedUsername}</span> ${displayContent}`;
+            } else if (reply.mentionedUsername) {
+              // Replace the @username with a highlighted version
+              displayContent = displayContent.replace(
+                new RegExp(`@${reply.mentionedUsername}\\b`, 'g'), 
+                `<span class="text-blue-600 dark:text-blue-400 font-medium">@${reply.mentionedUsername}</span>`
+              );
+            }
+            
+            const replyElement = document.createElement('div');
+            replyElement.className = 'reply mb-2 last:mb-0 text-sm';
+            replyElement.innerHTML = `
+              <div class="flex items-start">
+                <div class="flex-shrink-0 mr-2">
+                  <div class="avatar bg-gradient-to-r from-gray-400 to-gray-500 text-white flex items-center justify-center rounded-full h-5 w-5 text-xs font-medium shadow-sm">
+                    ${reply.username ? reply.username.charAt(0).toUpperCase() : 'A'}
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center">
+                    <span class="font-medium text-xs text-gray-900 dark:text-gray-100">${reply.username || 'Anonymous'}</span>
+                    <span class="mx-1 text-xs text-gray-400 dark:text-gray-500">•</span>
+                    <span class="text-xs text-gray-400 dark:text-gray-500">${new Date(reply.createdAt).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
+                  </div>
+                  <div class="reply-content text-xs text-gray-700 dark:text-gray-300">${displayContent}</div>
+                </div>
+              </div>
+            `;
+            
+            repliesListContainer.appendChild(replyElement);
+          });
+        }
+      } catch (error) {
+        console.error(`Error loading replies for answer ${answerId}:`, error);
+        repliesListContainer.innerHTML = `
+          <div class="text-xs text-red-500 dark:text-red-400">
+            Failed to load replies. Please try again later.
+          </div>
+        `;
+      }
+    }
+  });
+
+  // Setup reply functionality for each answer
+  document.querySelectorAll('.reply-btn').forEach(button => {
     button.addEventListener('click', () => {
       if (!isLoggedIn()) {
         showPopup('login');
         return;
       }
-      const questionId = button.getAttribute('data-question-id');
-      showAnswerFormPopup(questionId);
+      
+      const answerItem = button.closest('.answer-item');
+      const replyContainer = answerItem.querySelector('.reply-container');
+      replyContainer.classList.toggle('hidden');
+      
+      if (!replyContainer.classList.contains('hidden')) {
+        replyContainer.querySelector('.reply-input').focus();
+      }
     });
   });
+  
+  // Setup send reply functionality
+  document.querySelectorAll('.send-reply-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+      const answerItem = button.closest('.answer-item');
+      const input = button.closest('.relative').querySelector('.reply-input');
+      const content = input.value.trim();
+      
+      if (!content) return;
+      
+      const answerId = parseInt(answerItem.getAttribute('data-answer-id'));
+      const username = answerItem.getAttribute('data-username');
+      const userId = answerItem.getAttribute('data-user-id');
+      
+      try {
+        // Post the reply using the imported postReply function
+        const reply = await postReply(answerId, content, userId, username);
+        
+        if (reply) {
+          // Clear input and hide reply container
+          input.value = '';
+          answerItem.querySelector('.reply-container').classList.add('hidden');
+          
+          // Make sure replies container is visible
+          const repliesListContainer = answerItem.querySelector('.replies-list-container');
+          repliesListContainer.style.display = 'block';
+          
+          // Add the new reply to the UI
+          const repliesList = answerItem.querySelector('.replies-list');
+          
+          // Format content with mention highlight
+          let displayContent = reply.content;
+          
+          if (username && !displayContent.startsWith(`@${username}`)) {
+            displayContent = `<span class="text-blue-600 dark:text-blue-400 font-medium">@${username}</span> ${displayContent}`;
+          } else if (username) {
+            // Replace the @username with a highlighted version
+            displayContent = displayContent.replace(
+              new RegExp(`@${username}\\b`, 'g'), 
+              `<span class="text-blue-600 dark:text-blue-400 font-medium">@${username}</span>`
+            );
+          }
+          
+          const replyElement = document.createElement('div');
+          replyElement.className = 'reply mb-2 last:mb-0 text-sm animate-fade-in';
+          replyElement.innerHTML = `
+            <div class="flex items-start">
+              <div class="flex-shrink-0 mr-2">
+                <div class="avatar bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center rounded-full h-5 w-5 text-xs font-medium shadow-sm">
+                  You
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center">
+                  <span class="font-medium text-xs text-gray-900 dark:text-gray-100">You</span>
+                  <span class="mx-1 text-xs text-gray-400 dark:text-gray-500">•</span>
+                  <span class="text-xs text-gray-400 dark:text-gray-500">Just now</span>
+                </div>
+                <div class="reply-content text-xs text-gray-700 dark:text-gray-300">${displayContent}</div>
+              </div>
+            </div>
+          `;
+          
+          repliesList.appendChild(replyElement);
+          
+          // Add a subtle background highlight animation
+          replyElement.animate([
+            { backgroundColor: 'rgba(59, 130, 246, 0.1)' }, // Light blue highlight
+            { backgroundColor: 'transparent' }
+          ], {
+            duration: 2000,
+            easing: 'ease-out'
+          });
+          
+          showToast('success', 'Reply posted successfully');
+        }
+      } catch (error) {
+        console.error('Error posting reply:', error);
+        showToast('error', error.message || 'Failed to post reply');
+      }
+    });
+  });
+  
+  // Setup reply input keypress event
+  document.querySelectorAll('.reply-input').forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const button = input.nextElementSibling;
+        button.click();
+      }
+    });
+  });
+
+  // Setup answer submission in the popup
+  document.getElementById('submitDetailAnswer').addEventListener('click', () => {
+    if (!isLoggedIn()) {
+      showPopup('login');
+      return;
+    }
+    
+    const textarea = document.getElementById('questionDetailAnswer');
+    const content = textarea.value.trim();
+    const questionId = document.getElementById('submitDetailAnswer').getAttribute('data-question-id');
+    
+    if (!content) return;
+    
+    answers.create(questionId, content)
+      .then(data => {
+        if (data.success) {
+          textarea.value = '';
+          showToast('success', 'Your answer has been posted!');
+          
+          // Close the popup and refresh the feed
+          document.getElementById('closeQuestionPopup').click();
+          setTimeout(() => renderFeed(), 300);
+        } else {
+          throw new Error(data.message || 'Failed to post answer');
+        }
+      })
+      .catch(error => {
+        console.error('Error posting answer:', error);
+        showToast('error', error.message || 'Failed to post your answer');
+      });
+  });
+
+  // Handle clicking outside to close
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) {
+      document.getElementById('closeQuestionPopup').click();
+    }
+  });
+}
+
+// Update the handleReply function to use our imported postReply function
+function handleReply(answerId, content, username, userId) {
+  if (!isLoggedIn()) {
+    showPopup('login');
+    return;
+  }
+  
+  return postReply(answerId, content, userId, username)
+    .then(reply => {
+      if (reply) {
+        showToast('success', 'Your reply has been posted!');
+        return reply;
+      }
+      return false;
+    })
+    .catch(error => {
+      console.error('Error posting reply:', error);
+      showToast('error', error.message || 'Failed to post reply');
+      return false;
+    });
 }
 
 function renderPagination(totalQuestions, pagination) {

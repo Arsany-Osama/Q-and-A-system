@@ -32,6 +32,15 @@ async function fetchWithAuth(endpoint, options = {}) {
 
   try {
     const response = await fetch(endpoint, mergedOptions);
+    
+    // Check if the response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const errorText = await response.text();
+      console.error(`Non-JSON response from server: ${errorText.substring(0, 100)}...`);
+      throw new Error(`Server returned non-JSON response with status ${response.status}`);
+    }
+    
     const data = await response.json();
     
     if (!response.ok) {
@@ -41,7 +50,11 @@ async function fetchWithAuth(endpoint, options = {}) {
     return data;
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
-    throw error;
+    // Return a standardized error object
+    return { 
+      success: false, 
+      message: error.message || 'Failed to communicate with server' 
+    };
   }
 }
 
@@ -122,19 +135,31 @@ export const answers = {
 // Votes API
 export const votes = {
   upvoteQuestion: async (questionId) => {
-    return fetchWithAuth(`/vote/upvote/question/${questionId}`, { method: 'POST' });
+    return fetchWithAuth(`/vote/question`, { 
+      method: 'POST',
+      body: JSON.stringify({ questionId: parseInt(questionId), voteType: 'upvote' })
+    });
   },
   
   downvoteQuestion: async (questionId) => {
-    return fetchWithAuth(`/vote/downvote/question/${questionId}`, { method: 'POST' });
+    return fetchWithAuth(`/vote/question`, { 
+      method: 'POST',
+      body: JSON.stringify({ questionId: parseInt(questionId), voteType: 'downvote' })
+    });
   },
   
   upvoteAnswer: async (answerId) => {
-    return fetchWithAuth(`/vote/upvote/answer/${answerId}`, { method: 'POST' });
+    return fetchWithAuth(`/vote/answer`, { 
+      method: 'POST',
+      body: JSON.stringify({ answerId: parseInt(answerId), voteType: 'upvote' })
+    });
   },
   
   downvoteAnswer: async (answerId) => {
-    return fetchWithAuth(`/vote/downvote/answer/${answerId}`, { method: 'POST' });
+    return fetchWithAuth(`/vote/answer`, { 
+      method: 'POST',
+      body: JSON.stringify({ answerId: parseInt(answerId), voteType: 'downvote' })
+    });
   }
 };
 

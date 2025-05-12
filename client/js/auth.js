@@ -1,7 +1,6 @@
 import { showToast, hidePopup, renderUserUI, showSection } from './ui.js';
 import { validatePassword, updatePasswordRequirements } from './security.js';
-import { auth as authApi } from './utils/api.js';
-
+import { auth as authApi, fetchWithAuth } from './utils/api.js';  
 const pendingUsers = new Map();
 
 export function isLoggedIn() {
@@ -14,13 +13,11 @@ export function getToken() {
 
 export function getUserRole() {
   const role = localStorage.getItem('role');
-  // Ensure we don't return undefined or null
   return role && role !== 'undefined' && role !== 'null' ? role : 'USER';
 }
 
 export function getUserState() {
   const state = localStorage.getItem('state');
-  // Ensure we don't return undefined or null
   return state && state !== 'undefined' && state !== 'null' ? state : 'APPROVED';
 }
 
@@ -67,7 +64,7 @@ export function logout() {
       }
     })
     .catch(() => {
-      showToast('success', 'Logged out successfully'); // Fallback for expired token
+      showToast('success', 'Logged out successfully');
     })
     .finally(() => {
       localStorage.removeItem('token');
@@ -84,16 +81,12 @@ export function initAuth() {
     return;
   }
 
-  // Real-time password validation for register
   const passwordInput = document.getElementById('password');
   const passwordRequirements = document.getElementById('passwordRequirements');
-
-  // Hide password requirements by default and only show when needed
   if (passwordRequirements) {
     passwordRequirements.classList.add('hidden');
   }
 
-  // Update auth form based on action
   const updateFormForAction = () => {
     const action = document.getElementById('authTitle').textContent.toLowerCase();
     if (passwordRequirements) {
@@ -119,7 +112,6 @@ export function initAuth() {
 
   passwordInput.addEventListener('input', () => {
     const action = document.getElementById('authTitle').textContent.toLowerCase();
-    // Only show password requirements during registration
     if (action === 'register') {
       if (passwordRequirements) {
         passwordRequirements.classList.remove('hidden');
@@ -138,7 +130,6 @@ export function initAuth() {
     const submitBtn = document.getElementById('authSubmitBtn');
     const spinner = document.getElementById('authSpinner');
 
-    // Only validate password complexity for registration, not login
     if (action === 'register') {
       const validation = validatePassword(password);
       if (!validation.valid) {
@@ -204,31 +195,14 @@ export function initAuth() {
 
     window.addEventListener('message', (event) => {
       console.log('Received message event:', event.data);
-      if (event.data.type === 'google-auth') {
-        if (event.data.success) {
-          console.log('Google login successful, setting localStorage:', {
-            token: event.data.token,
-            username: event.data.username,
-            role: event.data.role,
-            state: event.data.state
-          });
-          localStorage.setItem('token', event.data.token);
-          localStorage.setItem('username', event.data.username);
-          localStorage.setItem('role', event.data.role);
-          localStorage.setItem('state', event.data.state);
-          console.log('LocalStorage after setting:', {
-            token: localStorage.getItem('token'),
-            username: localStorage.getItem('username'),
-          });
 
-          showToast('success', 'Logged in with Google successfully');
-          hidePopup();
-          renderUserUI();
-          showSection('profileSection');
-          setTimeout(() => window.location.reload(), 100);
+      if (event.data.type === 'google-auth') {
+        const requires2FA = event.data.has2fa === true || event.data.has2fa === 'true' || event.data.requires2FA;
+
+        if (requires2FA) {
+          handleTwoFactorAuth(event.data);
         } else {
-          console.error('Google login failed:', event.data.message);
-          showToast('error', event.data.message || 'Google login failed');
+          finishLogin(event.data);
         }
       }
     });
@@ -274,8 +248,8 @@ export function initAuth() {
       const isPassword = passwordInput.type === 'password';
       passwordInput.type = isPassword ? 'text' : 'password';
       togglePassword.querySelector('svg').innerHTML = isPassword
-        ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />`
-        : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+        ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-1.563 3.029" />`
+        : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243" />`;
     });
   }
 
@@ -283,7 +257,15 @@ export function initAuth() {
   initializeForgotPasswordOTPForm();
 }
 
-function handleTwoFactorAuth(result) {
+export function handleTwoFactorAuth(result) {
+  // تخزين البيانات المؤقتة في localStorage
+  if (result.token) {
+    localStorage.setItem('tempToken', result.token);
+  }
+  if (result.username) {
+    localStorage.setItem('tempUsername', result.username);
+  }
+
   const modal = document.createElement('div');
   modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
   modal.innerHTML = `
@@ -305,12 +287,25 @@ function handleTwoFactorAuth(result) {
     const code = document.getElementById('twoFactorCode').value;
 
     try {
-      const response = await authApi.verifyTwoFactor(code);
+      const token = localStorage.getItem('tempToken') || getToken();
+      
+      const response = await fetchWithAuth('/auth/2fa/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ token: code })
+      });
 
       if (response.success) {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('username', response.username);
+        localStorage.setItem('token', response.token || token);
+        localStorage.setItem('username', response.username || localStorage.getItem('tempUsername'));
         localStorage.setItem('has2fa', 'true');
+        
+        localStorage.removeItem('tempToken');
+        localStorage.removeItem('tempUsername');
+        
         showToast('success', 'Two-factor authentication successful');
         modal.remove();
         hidePopup();
@@ -321,9 +316,23 @@ function handleTwoFactorAuth(result) {
         showToast('error', response.message || 'Invalid verification code');
       }
     } catch (error) {
-      showToast('error', 'Network error occurred');
+      console.error('Error verifying 2FA:', error);
+      showToast('error', error.message || 'Network error occurred');
     }
   });
+}function finishLogin(result) {
+  hidePopup();
+  localStorage.setItem('token', result.token);
+  localStorage.setItem('username', result.username);
+  localStorage.setItem('role', result.role || 'USER');
+  localStorage.setItem('state', result.state || 'APPROVED');
+  if (result.has2fa) {
+    localStorage.setItem('has2fa', 'true');
+  }
+  renderUserUI();
+  showSection('profileSection');
+  showToast('success', 'Logged in successfully');
+  setTimeout(() => window.location.reload(), 100);
 }
 
 async function handleAuth(action, username, email, password) {

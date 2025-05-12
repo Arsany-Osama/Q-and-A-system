@@ -23,7 +23,7 @@ async function fetchWithAuth(endpoint, options = {}) {
   const defaultOptions = {
     headers: {
       ...(!isFormData && { 'Content-Type': 'application/json' }),
-      'Authorization': `Bearer ${getToken()}`
+      'Authorization': `Bearer ${getToken()}`,
     }
   };
 
@@ -32,7 +32,7 @@ async function fetchWithAuth(endpoint, options = {}) {
     ...options,
     headers: {
       ...defaultOptions.headers,
-      ...(options.headers || {})
+      ...(options.headers || {}),
     }
   };
 
@@ -49,18 +49,18 @@ async function fetchWithAuth(endpoint, options = {}) {
         formDataContents: Array.from(options.body.entries()).reduce((acc, [key, val]) => {
           acc[key] = key === 'document' ? '[FILE]' : val;
           return acc;
-        }, {})
+        }, {}),
       });
     } else {
       console.log(`Making request to: ${url}`, { 
         method: mergedOptions.method, 
         isFormData: 'No',
-        body: options.body
+        body: options.body,
       });
     }
-    
+
     const response = await fetch(url, mergedOptions);
-    
+
     // Check if the response is JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -68,19 +68,19 @@ async function fetchWithAuth(endpoint, options = {}) {
       console.error(`Non-JSON response from server (${response.status}): ${errorText.substring(0, 200)}...`);
       throw new Error(`Server returned non-JSON response with status ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       console.error(`API request failed:`, { 
         status: response.status, 
         data,
         url,
-        method: mergedOptions.method
+        method: mergedOptions.method,
       });
       throw { status: response.status, message: data.message || 'API request failed' };
     }
-    
+
     return data;
   } catch (error) {
     console.error(`API Error (${url}):`, error);
@@ -88,7 +88,7 @@ async function fetchWithAuth(endpoint, options = {}) {
     return { 
       success: false, 
       message: error.message || 'Failed to communicate with server',
-      error: error
+      error: error,
     };
   }
 }
@@ -112,74 +112,67 @@ export const auth = {
   logout: async () => {
     return fetchWithAuth('/auth/logout', { method: 'POST' });
   },
-    verifyOTP: async (email, otp, type) => {
-    // Validate inputs
+  
+  verifyOTP: async (email, otp, type) => {
     if (!email || !otp || !type) {
       return {
         success: false,
         message: 'Email, OTP, and type are required'
       };
     }
-
-    // Ensure OTP is exactly 6 digits
     if (!/^\d{6}$/.test(otp)) {
       return {
         success: false,
         message: 'OTP must be exactly 6 digits'
       };
     }
-
     return fetchWithAuth('/auth/verify-otp', {
       method: 'POST',
-      body: JSON.stringify({ 
-        email: email.trim(),
-        otp: otp.trim(),
-        type: type.trim()
-      })
+      body: JSON.stringify({ email: email.trim(), otp: otp.trim(), type: type.trim() })
     });
   },
-  
+
   forgotPassword: async (email) => {
     return fetchWithAuth('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email })
     });
   },
-  
+
   resetPassword: async (token, password) => {
     return fetchWithAuth('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ token, password })
     });
   },
-  
+
   getUserStats: async () => {
     return fetchWithAuth('/auth/stats');
   },
-  
+
   getTopContributors: async () => {
     return fetchWithAuth('/auth/top-contributors');
   },
-  
+
   // 2FA methods
   setup2FA: async () => {
-    return fetchWithAuth('/auth/2fa/setup', { method: 'GET' });
+    return fetchWithAuth('/auth/2fa/setup', { method: 'POST' });
   },
-  
-  verify2FA: async (code) => {
+
+  verify2FA: async (token) => {
     return fetchWithAuth('/auth/2fa/verify', {
       method: 'POST',
-      body: JSON.stringify({ code })
+      body: JSON.stringify({ token }) 
     });
   },
-  
+
   disable2FA: async (code) => {
     return fetchWithAuth('/auth/2fa/disable', {
       method: 'POST',
       body: JSON.stringify({ code })
     });
   },
-  
+
   // Security questions methods
   verifySecurityQuestions: async (email, answers) => {
     return fetchWithAuth('/auth/verify-security-questions', {
@@ -194,14 +187,14 @@ export const questions = {
   fetchAll: async () => {
     return fetchWithAuth('/questions');
   },
-  
+
   create: async (questionData, isFormData = false) => {
     return fetchWithAuth('/questions', {
       method: 'POST',
       body: isFormData ? questionData : JSON.stringify(questionData)
     });
   },
-  
+
   getPopularTags: async () => {
     return fetchWithAuth('/questions/popular-tags');
   }
@@ -225,21 +218,21 @@ export const votes = {
       body: JSON.stringify({ questionId: parseInt(questionId), voteType: 'upvote' })
     });
   },
-  
+
   downvoteQuestion: async (questionId) => {
     return fetchWithAuth(`/vote/question`, { 
       method: 'POST',
       body: JSON.stringify({ questionId: parseInt(questionId), voteType: 'downvote' })
     });
   },
-  
+
   upvoteAnswer: async (answerId) => {
     return fetchWithAuth(`/vote/answer`, { 
       method: 'POST',
       body: JSON.stringify({ answerId: parseInt(answerId), voteType: 'upvote' })
     });
   },
-  
+
   downvoteAnswer: async (answerId) => {
     return fetchWithAuth(`/vote/answer`, { 
       method: 'POST',
@@ -263,21 +256,21 @@ export const admin = {
   getUsers: async () => {
     return fetchWithAuth('/admin/users');
   },
-  
+
   updateUserRole: async (userId, role) => {
     return fetchWithAuth('/admin/users/role', {
       method: 'PATCH',
       body: JSON.stringify({ userId, role })
     });
   },
-  
+
   updateUserState: async (userId, state) => {
     return fetchWithAuth('/admin/users/state', {
       method: 'PATCH',
       body: JSON.stringify({ userId, state })
     });
   },
-  
+
   deleteUser: async (userId) => {
     return fetchWithAuth(`/admin/users/${userId}`, { method: 'DELETE' });
   }
@@ -292,3 +285,4 @@ export default {
   replies,
   admin
 };
+export { fetchWithAuth };

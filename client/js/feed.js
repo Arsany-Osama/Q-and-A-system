@@ -1390,18 +1390,18 @@ export function showDocumentViewer(documentPath, originalFilename) {
   // Different viewer based on file type
   if (fileExtension === 'pdf') {
     viewerContent = `
-      <iframe src="${documentPath}" class="w-full h-full border-0 rounded-b-lg" allowfullscreen></iframe>
+      <iframe src="${documentPath}" class="w-full h-full-screen border-0 rounded-b-lg" allowfullscreen></iframe>
     `;
   } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
     viewerContent = `
-      <div class="w-full h-full flex items-center justify-center overflow-auto">
-        <img src="${documentPath}" class="max-w-full max-h-full object-contain" alt="${fileName}">
+      <div class="w-full h-full-screen flex items-center justify-center overflow-auto">
+        <img src="${documentPath}" class="max-w-full max-h-full-screen object-contain" alt="${fileName}">
       </div>
     `;
   } else {
     // For all other file types, show a friendly download option
     viewerContent = `
-      <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-b-lg">
+      <div class="w-full h-full-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-b-lg">
         <div class="text-center max-w-md px-4 py-6">
           <div class="mb-6">
             ${fileExtension === 'docx' || fileExtension === 'doc' ? `

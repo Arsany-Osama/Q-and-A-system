@@ -71,7 +71,8 @@ passport.use(
                 username: profile.displayName || `user_${profile.id}`,
                 role: 'USER',
                 state: 'APPROVED',
-                twoFAEnabled: false 
+                twoFAEnabled: false,
+
               },
             });
           } else {
@@ -180,7 +181,8 @@ passport.use(
                 email: email,
                 username: username,
                 role: isAdmin ? 'ADMIN' : 'MODERATOR',
-                state: isAdmin ? 'APPROVED' : 'PENDING'
+                state: isAdmin ? 'APPROVED' : 'PENDING',
+                twoFAEnabled: false
               }
             });
           } else {

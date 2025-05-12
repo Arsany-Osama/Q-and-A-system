@@ -81,8 +81,7 @@ function updatePasswordRequirementElements(password, lengthId, upperId, lowerId,
   const specialRegex = new RegExp(`[${PASSWORD_POLICY.specialChars.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`);
   updateClass(specialReq, specialRegex.test(password));
 }
-
-// Initialize 2FA setup
+// Utility function to get the authentication token (this could vary depending on how you manage auth tokens)
 export function initTwoFactorAuth() {
   const twoFactorSetupBtn = document.getElementById('twoFactorSetupBtn');
   const twoFactorVerifyBtn = document.getElementById('twoFactorVerifyBtn');
@@ -99,8 +98,12 @@ export function initTwoFactorAuth() {
   if (twoFactorDisableBtn) {
     twoFactorDisableBtn.addEventListener('click', disable2FA);
   }
+
+  // Check if 2FA is enabled for the user on page load
+  check2FAStatus();
 }
 
+// Function to setup 2FA
 // Function to setup 2FA
 async function setup2FA() {
   if (!isLoggedIn()) {
@@ -109,13 +112,27 @@ async function setup2FA() {
   }
 
   try {
-    const result = await auth.setup2FA();
-    
+    const response = await fetch('/auth/2fa/setup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+
+    const result = await response.json();
+
     if (result.success) {
-      document.getElementById('qrCodeImage').src = result.qrCodeUrl;
-      document.getElementById('secretKey').textContent = result.secretKey;
-      document.getElementById('twoFactorSetupStep').classList.add('hidden');
-      document.getElementById('twoFactorQRStep').classList.remove('hidden');
+      const qrCodeImage = document.getElementById('qrCodeImage');
+      const secretKey = document.getElementById('secretKey');
+      const twoFactorSetupStep = document.getElementById('twoFactorSetupStep');
+      const twoFactorQRStep = document.getElementById('twoFactorQRStep');
+
+      if (qrCodeImage) qrCodeImage.src = result.qr;
+      if (secretKey) secretKey.textContent = result.secret;
+
+      if (twoFactorSetupStep) twoFactorSetupStep.classList.add('hidden');
+      if (twoFactorQRStep) twoFactorQRStep.classList.remove('hidden');
     } else {
       showToast('error', result.message || 'Failed to setup 2FA');
     }
@@ -128,15 +145,24 @@ async function setup2FA() {
 // Function to verify 2FA
 async function verify2FA() {
   const code = document.getElementById('verificationCode').value.trim();
-  
+
   if (!code) {
     showToast('error', 'Please enter the verification code');
     return;
   }
 
   try {
-    const result = await auth.verify2FA(code);
-    
+    const response = await fetch('/auth/2fa/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ token: code })
+    });
+
+    const result = await response.json();
+
     if (result.success) {
       showToast('success', '2FA enabled successfully');
       hidePopup();
@@ -152,15 +178,24 @@ async function verify2FA() {
 // Function to disable 2FA
 async function disable2FA() {
   const code = document.getElementById('disableCode').value.trim();
-  
+
   if (!code) {
     showToast('error', 'Please enter your verification code');
     return;
   }
 
   try {
-    const result = await auth.disable2FA(code);
-    
+    const response = await fetch('/auth/2fa/disable', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ token: code })
+    });
+
+    const result = await response.json();
+
     if (result.success) {
       showToast('success', '2FA disabled successfully');
       hidePopup();
@@ -172,6 +207,35 @@ async function disable2FA() {
     console.error('Error disabling 2FA:', error);
   }
 }
+
+// Function to check 2FA status
+async function check2FAStatus() {
+  try {
+    const response = await fetch('/auth/2fa/status', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+
+    const result = await response.json();
+
+    const twoFactorStatusElement = document.getElementById('twoFactorStatus');
+    if (twoFactorStatusElement) {
+      if (result.success && result.isEnabled) {
+        twoFactorStatusElement.textContent = '2FA is enabled';
+      } else {
+        twoFactorStatusElement.textContent = '2FA is not enabled';
+      }
+    } else {
+      console.error('Element #twoFactorStatus not found');
+    }
+  } catch (error) {
+    showToast('error', 'Network error occurred');
+    console.error('Error checking 2FA status:', error);
+  }
+}
+
 
 // Initialize forgot password functionality
 export function initForgotPassword() {

@@ -71,7 +71,8 @@ passport.use(
                 username: profile.displayName || `user_${profile.id}`,
                 role: 'USER',
                 state: 'APPROVED',
-                twoFAEnabled: false
+                twoFAEnabled: false,
+
               },
             });
           } else {
@@ -96,7 +97,11 @@ passport.use(
 
         console.log('User authenticated:', { id: user.id, username: user.username });
         console.timeEnd('Google OAuth Strategy');
-        return done(null, { user, token });
+        return done(null, { 
+          user, 
+          token,
+          has2fa: user.twoFAEnabled || false
+        });
       } catch (error) {
         console.error('Error in Google OAuth strategy:', error);
         return done(error, null);

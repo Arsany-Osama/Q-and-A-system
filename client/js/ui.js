@@ -1,4 +1,4 @@
-import { isLoggedIn, logout, forgotPassword, getUserRole, getUserState, isAdmin, isModerator, isApproved } from './auth.js';
+import { isLoggedIn, logout, forgotPassword, getUserRole, getUserState, isAdmin, isModerator, isApproved, getToken } from './auth.js';
 import { validatePassword } from './security.js';
 import { fetchQuestions } from './question.js';
 
@@ -64,7 +64,6 @@ export function showPopup(action) {
   registerTab.classList.toggle('bg-primary', action === 'register');
   registerTab.classList.toggle('text-white', action === 'register');
   
-  // Show password requirements only for registration
   if (passwordRequirements) {
     passwordRequirements.classList.toggle('hidden', action !== 'register');
   }
@@ -123,7 +122,8 @@ export function showToast(type, message) {
   }, 3000);
 }
 
-export function renderUserUI() {  const userStatus = document.getElementById('userStatus');
+export function renderUserUI() {
+  const userStatus = document.getElementById('userStatus');
   if (isLoggedIn()) {
     console.log('Rendering user UI - localStorage state:', {
       username: localStorage.getItem('username'),
@@ -169,9 +169,9 @@ export function renderUserUI() {  const userStatus = document.getElementById('us
     `;
     document.getElementById('logoutBtn').addEventListener('click', logout);
     document.getElementById('userMenuBtn').addEventListener('click', toggleUserMenu);
-    document.getElementById('twoFactorAuthBtn').addEventListener('click', () => {
+    document.getElementById('twoFactorAuthBtn').addEventListener('click', async () => {
       toggleUserMenu();
-      showTwoFactorPopup();
+      await showTwoFactorPopup();
     });
 
     document.addEventListener('click', (e) => {
@@ -196,18 +196,40 @@ function toggleUserMenu() {
   userMenu.classList.toggle('hidden');
 }
 
-export function showTwoFactorPopup(hasTwoFactor = false) {
+export async function showTwoFactorPopup() {
   const popup = document.getElementById('twoFactorPopup');
   popup.classList.remove('hidden');
   
+  // Hide all steps first
   document.getElementById('twoFactorSetupStep').classList.add('hidden');
   document.getElementById('twoFactorQRStep').classList.add('hidden');
   document.getElementById('twoFactorDisableStep').classList.add('hidden');
   
-  if (hasTwoFactor) {
-    document.getElementById('twoFactorDisableStep').classList.remove('hidden');
-  } else {
-    document.getElementById('twoFactorSetupStep').classList.remove('hidden');
+  try {
+    // Check 2FA status
+    const response = await fetch('/auth/2fa/status', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      if (result.isEnabled) {
+        // Show disable step if 2FA is enabled
+        document.getElementById('twoFactorDisableStep').classList.remove('hidden');
+      } else {
+        // Show setup step if 2FA is disabled
+        document.getElementById('twoFactorSetupStep').classList.remove('hidden');
+      }
+    } else {
+      showToast('error', 'Failed to check 2FA status');
+    }
+  } catch (error) {
+    showToast('error', 'Network error occurred');
+    console.error('Error checking 2FA status:', error);
   }
 }
 
@@ -236,13 +258,11 @@ export function showForgotPasswordPopup() {
 
   if (popup) popup.classList.remove('hidden');
 
-  // Safely toggle visibility of steps with null checks
   if (forgotPasswordStep) forgotPasswordStep.classList.remove('hidden');
   if (otpVerificationStep) otpVerificationStep.classList.add('hidden');
   if (securityQuestionsStep) securityQuestionsStep.classList.add('hidden');
   if (resetPasswordStep) resetPasswordStep.classList.add('hidden');
 
-  // Update wizard indicators with null checks
   if (forgotStep1Indicator) {
     forgotStep1Indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600');
     forgotStep1Indicator.classList.add('bg-primary');

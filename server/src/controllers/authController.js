@@ -146,7 +146,7 @@ const verifyOTP = async (req, res) => {
   }  if (type === 'registration') {
     const { username, email, password, role, state } = storedData;
     const user = await prisma.user.create({
-      data: { username, email, password, role, state },
+      data: { username, email, password, role, state, twoFAEnabled: false },
     });
     const token = jwt.sign({ 
       id: user.id, 

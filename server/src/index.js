@@ -9,6 +9,7 @@ const cors = require('cors');
 const path = require('path');
 const session = require('express-session');
 const authRoutes = require('./routes/authRoutes');
+const twoFaRoutes = require('./routes/twofaRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const answerRoutes = require('./routes/answerRoutes');
 const voteRoutes = require('./routes/voteRoutes');
@@ -55,6 +56,7 @@ app.use('/answers', answerRoutes);
 app.use('/vote', voteRoutes);
 app.use('/replies', replyRoutes);
 app.use('/admin', adminRoutes);
+app.use('/auth/2fa', twoFaRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

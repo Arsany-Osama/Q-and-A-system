@@ -16,16 +16,18 @@ router.post('/reset-password', resetPassword);
 // Google OAuth routes
 router.get(
   '/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
 );
 
 router.get(
   '/google/callback',
   passport.authenticate('google', { session: false }),
-  (req, res) => {    const { token, user } = req.user;
+  (req, res) => {        const { token, user } = req.user;
     const safeUsername = encodeURIComponent(user.username);
     const safeRole = encodeURIComponent(user.role);
     const safeState = encodeURIComponent(user.state);
+    const has2fa = user.twoFAEnabled ? 'true' : 'false';
+
 
     res.send(`
       <script>
@@ -35,7 +37,8 @@ router.get(
           token: '${token}',
           username: '${safeUsername}',
           role: '${safeRole}',
-          state: '${safeState}'
+          state: '${safeState}',
+          has2fa: '${has2fa}'
         }, '*');
         window.close();
       </script>

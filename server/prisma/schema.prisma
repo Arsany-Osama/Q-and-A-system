@@ -23,6 +23,7 @@ model User {
   votes       Vote[]
   twoFASecret String?
   twoFAEnabled Boolean
+  documents   Document[]
 
   @@index([email])
   @@index([googleId])
@@ -38,12 +39,10 @@ model Question {
   downvotes        Int      @default(0)
   tags             String
   upvotes          Int      @default(0)
-  documentPath     String?
-  originalFilename String?
-  filePublicId     String?
   answers          Answer[]
   user             User     @relation(fields: [userId], references: [id])
   votes            Vote[]
+  documents        Document[] // Link questions to documents
 }
 
 model Answer {
@@ -82,6 +81,30 @@ model Reply {
   answer          Answer   @relation(fields: [answerId], references: [id])
   mentionedUser   User?    @relation("MentionedUser", fields: [mentionedUserId], references: [id])
   user            User     @relation(fields: [userId], references: [id])
+}
+
+model Document {
+  id                Int      @id @default(autoincrement())
+  filename          String
+  mimeType          String
+  size              Int
+  firebaseUrl       String   // URL to access the file in Firebase Storage
+  firebasePath      String   // Path in Firebase Storage (e.g., "documents/userId/filename")
+  hash              String   // SHA-256 hash of the original document
+  hmac              String   // HMAC for integrity verification
+  hmacKey           String   // Key used for HMAC
+  signature         String   // Digital signature (OpenSSL)
+  encryptionKey     String   // AES encryption key (encrypted with user's public key)
+  encryptionIv      String   // AES initialization vector
+  authTag           String   // AES-GCM authentication tag
+  createdAt         DateTime @default(now())
+  userId            Int
+  questionId        Int?     // Optional link to a question
+  user              User     @relation(fields: [userId], references: [id])
+  question          Question? @relation(fields: [questionId], references: [id])
+  
+  @@index([userId])
+  @@index([questionId])
 }
 
 enum Role {

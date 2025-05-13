@@ -1,9 +1,9 @@
-import { fetchQuestions } from './question.js';
+import { fetchQuestions, displayDocumentLink } from './question.js';
 import { showPopup, showToast, showSection, showAnswerFormPopup } from './ui.js';
-import { getToken, isLoggedIn, fetchTopContributors } from './auth.js';
+import { getToken, isLoggedIn, fetchTopContributors, isApproved } from './auth.js';
 import { getUserVotes } from './vote.js';
 import { setupReplyUI, getReplies, postReply } from './reply.js';  // Import getReplies and postReply
-import { auth, answers, replies } from './utils/api.js';
+import { auth, answers, replies, documents } from './utils/api.js';
 
 let currentPage = 1;
 const questionsPerPage = 10;
@@ -13,28 +13,28 @@ let currentTag = null; // Add new variable for tag filtering
 // Filter functions
 function applyFilter(questions, filter) {
   if (currentTag) {
-    questions = questions.filter(q => 
-      q.tags && Array.isArray(q.tags) && 
+    questions = questions.filter(q =>
+      q.tags && Array.isArray(q.tags) &&
       q.tags.some(tag => tag.toLowerCase() === currentTag.toLowerCase())
     );
   }
 
   if (!questions || !questions.length) return [];
-  
+
   const filtered = [...questions]; // Clone the array to avoid modifying original
-  
-  switch(filter) {
+
+  switch (filter) {
     case 'trending':
       return filtered.sort((a, b) => (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes));
-    
+
     case 'newest':
       return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
+
     case 'unanswered':
       return filtered
         .filter(q => !q.answers || q.answers.length === 0)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
+
     default:
       return filtered;
   }
@@ -43,7 +43,7 @@ function applyFilter(questions, filter) {
 // Initialize event listeners for filters
 export function setupFilterButtons() {
   console.log('Setting up filter buttons');
-  
+
   const activeFilterBtn = document.querySelector(`.filter-btn[data-filter="${currentFilter}"]`);
   if (activeFilterBtn) {
     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -51,21 +51,21 @@ export function setupFilterButtons() {
     });
     activeFilterBtn.classList.add('active');
   }
-  
+
   document.querySelectorAll('.filter-btn').forEach(button => {
     button.addEventListener('click', () => {
       const filter = button.getAttribute('data-filter');
       if (filter === currentFilter) return;
-      
+
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active');
       });
       button.classList.add('active');
-      
+
       currentFilter = filter;
       currentTag = null; // Reset tag when applying a different filter
       currentPage = 1;
-      
+
       const feed = document.getElementById('questionFeed');
       if (feed) {
         gsap.to(feed, {
@@ -87,7 +87,7 @@ export function setupFilterButtons() {
       }
     });
   });
-  
+
   document.getElementById('sidebarAskQuestion')?.addEventListener('click', () => {
     showSection('questionForm');
   });
@@ -134,7 +134,7 @@ export async function renderFeed() {
         </div>
       `;
       pagination.innerHTML = '';
-      
+
       document.getElementById('askFirstQuestion')?.addEventListener('click', () => {
         showSection('askQuestion');
       });
@@ -142,7 +142,7 @@ export async function renderFeed() {
     }
 
     questions = applyFilter(questions, currentFilter);
-    
+
     const start = (currentPage - 1) * questionsPerPage;
     const end = start + questionsPerPage;
     const paginatedQuestions = questions.slice(start, end);
@@ -156,11 +156,11 @@ export async function renderFeed() {
       wrapper.classList.add('question-card', 'animate-fade-in', 'hover:shadow-lg', 'transition-all', 'duration-300');
       wrapper.style.animationDelay = `${index * 0.1}s`;
       wrapper.setAttribute('data-id', q.id);
-      
+
       const totalVotes = (q.upvotes || 0) + (q.downvotes || 0);
       const voteRatio = totalVotes > 0 ? Math.round((q.upvotes / totalVotes) * 100) : 0;
-      const engagementClass = q.answers.length > 2 ? 'high-engagement' : (q.answers.length > 0 ? 'medium-engagement' : '');
-      
+      const engagementClass = q.answers.length > 2 ? 'high-engagement' : q.answers.length > 0 ? 'medium-engagement' : '';
+
       wrapper.innerHTML = `
         <div class="card-content ${engagementClass}">
           <div class="card-header flex items-start mb-3">
@@ -176,7 +176,7 @@ export async function renderFeed() {
                   <div class="meta flex items-center text-xs text-gray-600 dark:text-gray-400">
                     <span class="author font-medium">${q.username || 'Anonymous'}</span>
                     <span class="mx-1">•</span>
-                    <span class="date">${new Date(q.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                    <span class="date">${new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                     ${q.tags && q.tags.length ? `<span class="mx-1">•</span><span class="primary-tag text-blue-600 dark:text-blue-400">${q.tags[0]}</span>` : ''}
                   </div>
                 </div>
@@ -195,29 +195,21 @@ export async function renderFeed() {
               </div>
             </div>
           </div>
-          
+
           <div class="card-body">
             <p class="text-gray-700 dark:text-gray-300 text-sm line-clamp-3 mb-2">${q.content}</p>
-            ${q.tags && q.tags.length > 1 ? 
-              `<div class="tags-container mb-3">
+            ${q.tags && q.tags.length > 1 ?
+          `<div class="tags-container mb-3">
                 <div class="tags flex flex-wrap gap-1">
                   ${q.tags.map(tag => `<span class="tag text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">${tag}</span>`).join('')}
                 </div>
               </div>` : ''}
-              
-            ${q.documentPath ? `
-            <div class="document-attachment-indicator flex items-center mb-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer view-document" data-document-path="${q.documentPath}" data-original-filename="${q.originalFilename || ''}">
-              <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-              <span>View attached document</span>
-            </div>
-            ` : ''}
+            ${q.documents && q.documents.length > 0 ? q.documents.map(doc => displayDocumentLink(doc)).join('') : ''}
           </div>
-          
+
           <div class="card-footer mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-            ${voteRatio >= 75 ? 
-              `<div class="trending-indicator mb-2 text-xs text-orange-500 dark:text-orange-400 flex items-center">
+            ${voteRatio >= 75 ?
+          `<div class="trending-indicator mb-2 text-xs text-orange-500 dark:text-orange-400 flex items-center">
                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path>
                 </svg>
@@ -238,7 +230,7 @@ export async function renderFeed() {
                   <span class="vote-count text-gray-700 dark:text-gray-300">${q.downvotes || 0}</span>
                 </button>
               </div>
-              
+
               <div class="action-buttons flex items-center">
                 <button class="action-btn answers-counter flex items-center mr-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" aria-label="View answers">
                   <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -246,13 +238,13 @@ export async function renderFeed() {
                   </svg>
                   <span>${q.answers.length}</span>
                 </button>
-                
+
                 <button class="action-btn share-btn flex items-center mr-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" aria-label="Share question">
                   <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
                 </button>
-                
+
                 <button class="answer-btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-xs px-3 py-1.5 flex items-center rounded-md transition-colors" data-question-id="${q.id}">
                   <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -261,7 +253,7 @@ export async function renderFeed() {
                 </button>
               </div>
             </div>
-            
+
             <div class="answers-section mt-3">
               <div class="toggle-answers-container mb-2">
                 <button class="toggle-answers flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm" aria-expanded="false" aria-controls="answers-${q.id}">
@@ -271,19 +263,19 @@ export async function renderFeed() {
                   <span>${q.answers.length > 0 ? `Show ${q.answers.length} answers` : 'No answers yet'}</span>
                 </button>
               </div>
-              
+
               <div id="answers-${q.id}" class="answers hidden space-y-3">
-                ${q.answers.length === 0 ? 
-                  `<div class="no-answers flex items-center text-sm text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                ${q.answers.length === 0 ?
+          `<div class="no-answers flex items-center text-sm text-gray-500 dark:text-gray-400 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
                     <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                     </svg>
                     <span>Be the first to answer this question!</span>
-                  </div>` : 
-                  q.answers.map(a => {
-                    const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
-                    const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
-                return `
+                  </div>` :
+          q.answers.map(a => {
+            const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
+            const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
+            return `
                       <div class="answer-card p-2 bg-gray-50 dark:bg-gray-800 rounded-md" data-username="${a.username}" data-user-id="${a.userId}">
                         <div class="answer-header flex items-start mb-1">
                           <div class="avatar-container mr-2">
@@ -293,7 +285,7 @@ export async function renderFeed() {
                           </div>
                           <div>
                             <span class="font-medium text-xs">${a.username || 'Anonymous'}</span>
-                            <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">${new Date(a.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">${new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                           </div>
                         </div>
                         <div class="answer-content ml-9">
@@ -307,7 +299,7 @@ export async function renderFeed() {
                             </button>
                             <button class="reaction-btn reaction-btn-sm downvote-answer-btn ${answerDownvoteClass} text-red-500 dark:text-red-400" data-answer-id="${a.id}" aria-label="Dislike answer">
                               <svg class="w-4 h-4 mr-1" fill="${answerDownvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l-3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
                               </svg>
                               <span class="vote-count text-xs">${a.downvotes || 0}</span>
                             </button>
@@ -321,9 +313,9 @@ export async function renderFeed() {
                         </div>
                       </div>
                     `;
-                  }).join('')
-                }
-                
+          }).join('')
+        }
+
                 <div class="quick-answer flex items-start mt-2">
                   <div class="avatar-container mr-2">
                     <div class="avatar bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center rounded-full h-7 w-7 text-xs font-medium">
@@ -351,7 +343,7 @@ export async function renderFeed() {
       const answerId = answerCard.querySelector('.reaction-btn-sm')?.dataset.answerId;
       const username = answerCard.getAttribute('data-username');
       const userId = answerCard.getAttribute('data-user-id');
-      
+
       if (answerId) {
         setupReplyUI(answerCard, parseInt(answerId), username, userId);
       }
@@ -363,7 +355,7 @@ export async function renderFeed() {
           handleQuickAnswer(input);
         }
       });
-      
+
       input.addEventListener('focus', () => {
         if (!isLoggedIn()) {
           showPopup('login');
@@ -371,7 +363,7 @@ export async function renderFeed() {
         }
       });
     });
-    
+
     document.querySelectorAll('.send-answer-btn').forEach(button => {
       button.addEventListener('click', () => {
         const input = button.previousElementSibling;
@@ -410,8 +402,8 @@ export async function renderFeed() {
         <button class="retry-btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors mt-3">Retry</button>
       </div>
     `;
-    showToast('error', 'Failed to load questions');
-    
+    showToast('Failed to load questions', 'error');
+
     document.querySelector('.retry-btn')?.addEventListener('click', () => {
       renderFeed();
     });
@@ -432,7 +424,7 @@ async function renderTopContributors() {
   try {
     const result = await auth.getTopContributors();
     const contributors = result.contributors || [];
-    
+
     if (contributors.length === 0) {
       contributorsContainer.innerHTML = `
         <div class="text-center py-2">
@@ -443,7 +435,7 @@ async function renderTopContributors() {
     }
 
     contributorsContainer.innerHTML = '';
-    
+
     const gradients = [
       'from-blue-500 to-indigo-600',
       'from-indigo-500 to-purple-600',
@@ -458,9 +450,9 @@ async function renderTopContributors() {
         .map(name => name.charAt(0).toUpperCase())
         .join('')
         .substring(0, 2);
-      
+
       const gradientClass = gradients[index % gradients.length];
-      
+
       const contributorElement = document.createElement('div');
       contributorElement.className = 'contributor flex items-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors';
       contributorElement.innerHTML = `
@@ -472,7 +464,7 @@ async function renderTopContributors() {
           <div class="text-xs text-gray-500 dark:text-gray-400">${contributor.answerCount} answers</div>
         </div>
       `;
-      
+
       contributorsContainer.appendChild(contributorElement);
     });
   } catch (error) {
@@ -490,12 +482,12 @@ function handleQuickAnswer(input) {
     showPopup('login');
     return;
   }
-  
+
   const questionId = input.getAttribute('data-question-id');
   const content = input.value.trim();
-  
+
   if (!content) return;
-  
+
   answers.create(questionId, content)
     .then(data => {
       if (data.success) {
@@ -516,18 +508,18 @@ function handleQuickAnswer(input) {
 function getOriginalFilename(cloudinaryUrl, originalFilename) {
   // If originalFilename is provided, use it directly
   if (originalFilename) return originalFilename;
-  
+
   if (!cloudinaryUrl) return '';
-  
+
   // Extract the filename from the path
   const parts = cloudinaryUrl.split('/');
   let filename = parts[parts.length - 1];
-  
+
   // If there are URL parameters, remove them
   if (filename.includes('?')) {
     filename = filename.split('?')[0];
   }
-  
+
   // Decode URL-encoded characters
   try {
     return decodeURIComponent(filename);
@@ -540,7 +532,7 @@ export async function showQuestionDetails(questionId) {
   console.log('Showing question details for ID:', questionId);
   // Ensure animation styles are added
   ensureAnimationStyles();
-  
+
   const questions = await fetchQuestions();
   const question = questions.find(q => q.id === parseInt(questionId));
   if (!question) {
@@ -555,10 +547,10 @@ export async function showQuestionDetails(questionId) {
   const popup = document.createElement('div');
   popup.id = 'questionDetailsPopup';
   popup.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 overflow-y-auto';
-  
+
   const upvoteClass = userVotes.questions[question.id] === 'upvote' ? 'active' : '';
   const downvoteClass = userVotes.questions[question.id] === 'downvote' ? 'active' : '';
-  
+
   popup.innerHTML = `
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col animate-scale-in">
       <!-- Navigation bar -->
@@ -590,10 +582,10 @@ export async function showQuestionDetails(questionId) {
             <div class="flex items-center">
               <span class="font-medium text-gray-900 dark:text-gray-100">${question.username || 'Anonymous'}</span>
               <span class="mx-2 text-gray-400 dark:text-gray-500">•</span>
-              <span class="text-sm text-gray-500 dark:text-gray-400">${new Date(question.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">${new Date(question.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
             <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              ${new Date(question.createdAt).toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}
+              ${new Date(question.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         </div>
@@ -618,7 +610,7 @@ export async function showQuestionDetails(questionId) {
                 </svg>
               ` : `
                 <svg class="w-8 h-8 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM9 18h6v-1H9v1zm7-3H8v1h8v-1zm0-2H8v1h8v-1zM9 9h1V4H9v5zM6 4v16h12V9h-5V4H6z"/>
                 </svg>
               `}
             </div>
@@ -636,12 +628,12 @@ export async function showQuestionDetails(questionId) {
                 </svg>
                 View
               </button>
-              <a href="${question.documentPath}" download="${getOriginalFilename(question.documentPath, question.originalFilename)}" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center">
-                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download
-              </a>
+              <button class="view-document bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center" data-document-id="${question.documentId || ''}" data-original-filename="${question.originalFilename || getOriginalFilename(question.documentPath, question.originalFilename)}">
+              <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download
+            </button>
             </div>
           </div>
         </div>
@@ -701,9 +693,9 @@ export async function showQuestionDetails(questionId) {
           
           <div id="answersList" class="space-y-6">
             ${question.answers.length > 0 ? question.answers.map(a => {
-              const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
-              const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
-              return `
+    const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
+    const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
+    return `
                 <div class="answer-item bg-gray-50 dark:bg-gray-800/70 rounded-lg p-4" data-answer-id="${a.id}" data-username="${a.username}" data-user-id="${a.userId}">
                   <div class="flex items-start space-x-3 mb-2">
                     <div class="avatar-container flex-shrink-0">
@@ -715,7 +707,7 @@ export async function showQuestionDetails(questionId) {
                       <div class="flex items-center">
                         <span class="font-medium text-sm text-gray-900 dark:text-gray-100">${a.username || 'Anonymous'}</span>
                         <span class="mx-2 text-xs text-gray-400 dark:text-gray-500">•</span>
-                        <span class="text-xs text-gray-500 dark:text-gray-400">${new Date(a.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                       </div>
                       
                       <div class="mt-2 text-sm text-gray-700 dark:text-gray-300">${a.content}</div>
@@ -779,7 +771,7 @@ export async function showQuestionDetails(questionId) {
                   </div>
                 </div>
               `;
-            }).join('') : '<div class="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70 p-4 rounded-lg text-center">No answers yet. Be the first to contribute!</div>'}
+  }).join('') : '<div class="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70 p-4 rounded-lg text-center">No answers yet. Be the first to contribute!</div>'}
           </div>
         </div>
         
@@ -809,7 +801,7 @@ export async function showQuestionDetails(questionId) {
 
   // Add popup to the DOM
   document.body.appendChild(popup);
-  
+
   // Add CSS for animation
   const style = document.createElement('style');
   style.textContent = `
@@ -855,14 +847,14 @@ export async function showQuestionDetails(questionId) {
   question.answers.forEach(async (answer) => {
     const answerId = answer.id;
     const repliesListContainer = document.querySelector(`.replies-list[data-answer-id="${answerId}"]`);
-    
+
     if (repliesListContainer) {
       try {
         const replies = await getReplies(answerId);
-        
+
         // Clear loading indicator
         repliesListContainer.innerHTML = '';
-        
+
         if (replies.length === 0) {
           // Hide the empty container if there are no replies
           const parentContainer = repliesListContainer.closest('.replies-list-container');
@@ -874,17 +866,17 @@ export async function showQuestionDetails(questionId) {
           replies.forEach(reply => {
             // Format content with mention highlight
             let displayContent = reply.content;
-            
+
             if (reply.mentionedUsername && !displayContent.startsWith(`@${reply.mentionedUsername}`)) {
               displayContent = `<span class="text-blue-600 dark:text-blue-400 font-medium">@${reply.mentionedUsername}</span> ${displayContent}`;
             } else if (reply.mentionedUsername) {
               // Replace the @username with a highlighted version
               displayContent = displayContent.replace(
-                new RegExp(`@${reply.mentionedUsername}\\b`, 'g'), 
+                new RegExp(`@${reply.mentionedUsername}\\b`, 'g'),
                 `<span class="text-blue-600 dark:text-blue-400 font-medium">@${reply.mentionedUsername}</span>`
               );
             }
-            
+
             const replyElement = document.createElement('div');
             replyElement.className = 'reply mb-2 last:mb-0 text-sm';
             replyElement.innerHTML = `
@@ -899,17 +891,17 @@ export async function showQuestionDetails(questionId) {
                     <span class="font-medium text-xs text-gray-900 dark:text-gray-100">${reply.username || 'Anonymous'}</span>
                     <span class="mx-1 text-xs text-gray-400 dark:text-gray-500">•</span>
                     <span class="text-xs text-gray-400 dark:text-gray-500">${new Date(reply.createdAt).toLocaleString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</span>
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}</span>
                   </div>
                   <div class="reply-content text-xs text-gray-700 dark:text-gray-300">${displayContent}</div>
                 </div>
               </div>
             `;
-            
+
             repliesListContainer.appendChild(replyElement);
           });
         }
@@ -931,59 +923,59 @@ export async function showQuestionDetails(questionId) {
         showPopup('login');
         return;
       }
-      
+
       const answerItem = button.closest('.answer-item');
       const replyContainer = answerItem.querySelector('.reply-container');
       replyContainer.classList.toggle('hidden');
-      
+
       if (!replyContainer.classList.contains('hidden')) {
         replyContainer.querySelector('.reply-input').focus();
       }
     });
   });
-  
+
   // Setup send reply functionality
   document.querySelectorAll('.send-reply-btn').forEach(button => {
     button.addEventListener('click', async () => {
       const answerItem = button.closest('.answer-item');
       const input = button.closest('.relative').querySelector('.reply-input');
       const content = input.value.trim();
-      
+
       if (!content) return;
-      
+
       const answerId = parseInt(answerItem.getAttribute('data-answer-id'));
       const username = answerItem.getAttribute('data-username');
       const userId = answerItem.getAttribute('data-user-id');
-      
+
       try {
         // Post the reply using the imported postReply function
         const reply = await postReply(answerId, content, userId, username);
-        
+
         if (reply) {
           // Clear input and hide reply container
           input.value = '';
           answerItem.querySelector('.reply-container').classList.add('hidden');
-          
+
           // Make sure replies container is visible
           const repliesListContainer = answerItem.querySelector('.replies-list-container');
           repliesListContainer.style.display = 'block';
-          
+
           // Add the new reply to the UI
           const repliesList = answerItem.querySelector('.replies-list');
-          
+
           // Format content with mention highlight
           let displayContent = reply.content;
-          
+
           if (username && !displayContent.startsWith(`@${username}`)) {
             displayContent = `<span class="text-blue-600 dark:text-blue-400 font-medium">@${username}</span> ${displayContent}`;
           } else if (username) {
             // Replace the @username with a highlighted version
             displayContent = displayContent.replace(
-              new RegExp(`@${username}\\b`, 'g'), 
+              new RegExp(`@${username}\\b`, 'g'),
               `<span class="text-blue-600 dark:text-blue-400 font-medium">@${username}</span>`
             );
           }
-          
+
           const replyElement = document.createElement('div');
           replyElement.className = 'reply mb-2 last:mb-0 text-sm animate-fade-in';
           replyElement.innerHTML = `
@@ -1003,9 +995,9 @@ export async function showQuestionDetails(questionId) {
               </div>
             </div>
           `;
-          
+
           repliesList.appendChild(replyElement);
-          
+
           // Add a subtle background highlight animation
           replyElement.animate([
             { backgroundColor: 'rgba(59, 130, 246, 0.1)' }, // Light blue highlight
@@ -1014,7 +1006,7 @@ export async function showQuestionDetails(questionId) {
             duration: 2000,
             easing: 'ease-out'
           });
-          
+
           showToast('success', 'Reply posted successfully');
         }
       } catch (error) {
@@ -1023,7 +1015,7 @@ export async function showQuestionDetails(questionId) {
       }
     });
   });
-  
+
   // Setup reply input keypress event
   document.querySelectorAll('.reply-input').forEach(input => {
     input.addEventListener('keypress', (e) => {
@@ -1040,19 +1032,19 @@ export async function showQuestionDetails(questionId) {
       showPopup('login');
       return;
     }
-    
+
     const textarea = document.getElementById('questionDetailAnswer');
     const content = textarea.value.trim();
     const questionId = document.getElementById('submitDetailAnswer').getAttribute('data-question-id');
-    
+
     if (!content) return;
-    
+
     answers.create(questionId, content)
       .then(data => {
         if (data.success) {
           textarea.value = '';
           showToast('success', 'Your answer has been posted!');
-          
+
           // Close the popup and refresh the feed
           document.getElementById('closeQuestionPopup').click();
           setTimeout(() => renderFeed(), 300);
@@ -1072,17 +1064,6 @@ export async function showQuestionDetails(questionId) {
       document.getElementById('closeQuestionPopup').click();
     }
   });
-  
-  // Add document viewer functionality to the view button
-  const viewDocumentBtn = popup.querySelector('.view-document-btn');
-  if (viewDocumentBtn) {
-    viewDocumentBtn.addEventListener('click', () => {
-      const documentPath = viewDocumentBtn.getAttribute('data-document-path');
-      if (documentPath) {
-        showDocumentViewer(documentPath, question.originalFilename);
-      }
-    });
-  }
 }
 
 // Update the handleReply function to use our imported postReply function
@@ -1091,7 +1072,7 @@ function handleReply(answerId, content, username, userId) {
     showPopup('login');
     return;
   }
-  
+
   return postReply(answerId, content, userId, username)
     .then(reply => {
       if (reply) {
@@ -1132,7 +1113,7 @@ function renderPagination(totalQuestions, pagination) {
   // Calculate visible page range
   let startPage = Math.max(1, currentPage - 2);
   let endPage = Math.min(totalPages, startPage + 4);
-  
+
   if (endPage - startPage < 4 && startPage > 1) {
     startPage = Math.max(1, endPage - 4);
   }
@@ -1147,7 +1128,7 @@ function renderPagination(totalQuestions, pagination) {
       renderFeed();
     });
     pagination.appendChild(firstPageBtn);
-    
+
     // Add ellipsis if there's a gap
     if (startPage > 2) {
       const ellipsis = document.createElement('span');
@@ -1160,7 +1141,7 @@ function renderPagination(totalQuestions, pagination) {
   // Add page buttons
   for (let i = startPage; i <= endPage; i++) {
     if (i === 1 || i === totalPages) continue; // Skip first and last pages as they're handled separately
-    
+
     const button = document.createElement('button');
     button.textContent = i;
     button.className = `pagination-btn flex items-center justify-center px-3 py-1 border border-gray-300 dark:border-gray-600 ${i === currentPage ? 'bg-blue-600 text-white font-medium dark:bg-blue-500' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors'}`;
@@ -1181,7 +1162,7 @@ function renderPagination(totalQuestions, pagination) {
       ellipsis.textContent = '...';
       pagination.appendChild(ellipsis);
     }
-    
+
     const lastPageBtn = document.createElement('button');
     lastPageBtn.textContent = totalPages;
     lastPageBtn.className = `pagination-btn flex items-center justify-center px-3 py-1 border border-gray-300 dark:border-gray-600 ${totalPages === currentPage ? 'bg-blue-600 text-white font-medium dark:bg-blue-500' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors'}`;
@@ -1208,7 +1189,7 @@ function renderPagination(totalQuestions, pagination) {
     }
   });
   pagination.appendChild(nextButton);
-  
+
   // Add pagination styles
   pagination.classList.add('flex', 'justify-center', 'space-x-1', 'mt-8');
 }
@@ -1216,20 +1197,20 @@ function renderPagination(totalQuestions, pagination) {
 export function updateVoteCount(button, newCount) {
   const countElement = button.querySelector('.vote-count');
   const iconElement = button.querySelector('svg');
-  
+
   if (countElement) {
     const oldValue = parseInt(countElement.textContent);
     const newValue = newCount || 0;
-    
+
     countElement.textContent = newValue;
-    
+
     // Update the SVG fill if the button is now active
     if (button.classList.contains('active')) {
       iconElement.setAttribute('fill', 'currentColor');
     } else {
       iconElement.setAttribute('fill', 'none');
     }
-    
+
     if (newValue > oldValue) {
       countElement.animate([
         { transform: 'scale(1)', opacity: 0.5 },
@@ -1239,7 +1220,7 @@ export function updateVoteCount(button, newCount) {
         duration: 300,
         easing: 'ease-out'
       });
-      
+
       // Also animate the icon
       iconElement.animate([
         { transform: 'scale(1)' },
@@ -1249,7 +1230,7 @@ export function updateVoteCount(button, newCount) {
         duration: 300,
         easing: 'ease-out'
       });
-      
+
     } else if (newValue < oldValue) {
       countElement.animate([
         { transform: 'scale(1)', opacity: 0.5 },
@@ -1263,31 +1244,88 @@ export function updateVoteCount(button, newCount) {
   }
 }
 
+// Document download handler for APPROVED users only
+export function setupDocumentDownloadHandlers() {
+  document.addEventListener('click', async (e) => {
+    const target = e.target.closest('.view-document');
+    if (!target) return;
+    e.preventDefault();
+
+    if (!isApproved()) {
+      showToast('Only approved users can download documents', 'error');
+      return;
+    }
+
+    const documentId = target.getAttribute('data-document-id');
+    const documentPath = target.getAttribute('data-document-path');
+    const originalFilename = target.getAttribute('data-original-filename') || 'document';
+
+    if (!documentId && !documentPath) {
+      showToast('Invalid document identifier', 'error');
+      return;
+    }
+
+    try {
+      let response;
+      if (documentId) {
+        response = await documents.download(documentId);
+      } else {
+        // Fallback to downloading via documentPath
+        // Assuming the documents.download API can handle a path or you need to fetch the documentId
+        // This is a placeholder; adjust based on your API capabilities
+        response = await documents.downloadByPath(documentPath); // Hypothetical API call
+      }
+
+      if (response.success === false) {
+        showToast(response.message || 'Download failed', 'error');
+        return;
+      }
+
+      const { blob, filename } = response;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || originalFilename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      }, 100);
+    } catch (err) {
+      showToast(err.message || 'Download error', 'error');
+      console.error('Download error:', err);
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   setupFilterButtons();
+  setupDocumentDownloadHandlers();
 
   // Setup the delegated event listener for toggle-answers
   document.addEventListener('click', (e) => {
     // Handle document viewer clicks
-    if (e.target.closest('.view-document') || e.target.closest('.view-document-btn')) {
-      const element = e.target.closest('.view-document') || e.target.closest('.view-document-btn');
+    if (e.target.closest('.view-document-btn')) {
+      e.preventDefault();
+      const element = e.target.closest('.view-document-btn');
       const documentPath = element.getAttribute('data-document-path');
       const originalFilename = element.getAttribute('data-original-filename');
       if (documentPath) {
         showDocumentViewer(documentPath, originalFilename);
       }
     }
-    
+
     // Handle dropdown toggles with delegation
     if (e.target.closest('.dropdown-toggle')) {
       e.stopPropagation();
       const button = e.target.closest('.dropdown-toggle');
       const menu = button.nextElementSibling;
-      
+
       document.querySelectorAll('.dropdown-menu').forEach(m => {
         if (m !== menu) m.classList.add('hidden');
       });
-      
+
       menu.classList.toggle('hidden');
     }
 
@@ -1298,7 +1336,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isExpanded = button.getAttribute('aria-expanded') === 'true';
       button.setAttribute('aria-expanded', !isExpanded);
       const icon = button.querySelector('.toggle-icon');
-      
+
       // Ensure answersDiv exists before proceeding
       if (!answersDiv) {
         console.error('Could not find answers div element');
@@ -1313,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         answersDiv.style.overflow = 'hidden';
         answersDiv.style.display = 'block';
       }
-      
+
       // Animate the icon rotation
       gsap.to(icon, {
         rotation: isExpanded ? 0 : 180,
@@ -1325,13 +1363,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!isExpanded) {
         // Get the natural height of the element to animate to
         const height = answersDiv.scrollHeight;
-        
-        gsap.fromTo(answersDiv, 
+
+        gsap.fromTo(answersDiv,
           { height: 0, opacity: 0 },
-          { 
-            height: height, 
-            opacity: 1, 
-            duration: 0.3, 
+          {
+            height: height,
+            opacity: 1,
+            duration: 0.3,
             ease: 'power2.out',
             onComplete: () => {
               // Remove inline styles to allow natural resizing
@@ -1343,11 +1381,11 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         // Closing animation
         const height = answersDiv.offsetHeight;
-        
+
         // First set fixed height for smooth animation
         answersDiv.style.height = `${height}px`;
         answersDiv.style.overflow = 'hidden';
-        
+
         gsap.to(answersDiv, {
           height: 0,
           opacity: 0,
@@ -1365,8 +1403,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update the button text
       const answerCount = button.closest('.answers-section').querySelector('.answers').children.length - 1;
-      button.querySelector('span').textContent = isExpanded ? 
-        `Show ${answerCount > 0 ? answerCount : 0} answers` : 
+      button.querySelector('span').textContent = isExpanded ?
+        `Show ${answerCount > 0 ? answerCount : 0} answers` :
         `Hide answers`;
     }
   });
@@ -1376,17 +1414,17 @@ document.addEventListener('DOMContentLoaded', () => {
 export function showDocumentViewer(documentPath, originalFilename) {
   // Ensure animation styles are added
   ensureAnimationStyles();
-  
+
   // Create the document viewer popup
   const viewerPopup = document.createElement('div');
   viewerPopup.id = 'documentViewerPopup';
   viewerPopup.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4 overflow-y-auto animate-fade-in';
-  
+
   const fileName = getOriginalFilename(documentPath, originalFilename);
   const fileExtension = fileName.split('.').pop().toLowerCase();
-  
+
   let viewerContent = '';
-  
+
   // Different viewer based on file type
   if (fileExtension === 'pdf') {
     viewerContent = `
@@ -1414,28 +1452,28 @@ export function showDocumentViewer(documentPath, originalFilename) {
               </svg>
             ` : `
               <svg class="w-20 h-20 mx-auto text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
               </svg>
             `}
           </div>
           <h3 class="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">This file cannot be previewed</h3>
           <p class="text-gray-600 dark:text-gray-300 mb-6">${fileName} needs to be downloaded to view its contents.</p>
-          <a href="${documentPath}" download="${fileName}" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-6 py-3 rounded-md transition-colors inline-flex items-center shadow-sm font-medium">
+          <button class="view-document bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-6 py-3 rounded-md transition-colors inline-flex items-center shadow-sm font-medium" data-document-id="${documentId || ''}" data-original-filename="${fileName}">
             <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Download File
-          </a>
+          </button>
           <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            ${fileExtension === 'docx' || fileExtension === 'doc' ? 'This is a Microsoft Word document that requires an appropriate application to open.' : 
-            fileExtension === 'txt' ? 'This is a plain text file that can be opened with any text editor.' : 
-            `This is a ${fileExtension.toUpperCase()} file that requires an appropriate application to open.`}
+            ${fileExtension === 'docx' || fileExtension === 'doc' ? 'This is a Microsoft Word document that requires an appropriate application to open.' :
+        fileExtension === 'txt' ? 'This is a plain text file that can be opened with any text editor.' :
+          `This is a ${fileExtension.toUpperCase()} file that requires an appropriate application to open.`}
           </p>
         </div>
       </div>
     `;
   }
-  
+
   viewerPopup.innerHTML = `
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden w-full max-w-5xl max-h-[90vh] flex flex-col animate-scale-in">
       <!-- Viewer header -->
@@ -1488,10 +1526,10 @@ export function showDocumentViewer(documentPath, originalFilename) {
       </div>
     </div>
   `;
-  
+
   // Add to DOM
   document.body.appendChild(viewerPopup);
-  
+
   // Add event listeners
   document.getElementById('closeDocumentViewer').addEventListener('click', () => {
     viewerPopup.classList.add('animate-fade-out');
@@ -1499,7 +1537,7 @@ export function showDocumentViewer(documentPath, originalFilename) {
       viewerPopup.remove();
     }, 200);
   });
-  
+
   // Close when clicking outside of the content
   viewerPopup.addEventListener('click', (e) => {
     if (e.target === viewerPopup) {
@@ -1549,7 +1587,7 @@ function ensureAnimationStyles() {
 
 function renderQuestionCard(question) {
   const tagsArray = JSON.parse(question.tags || '[]');
-  const tagElements = tagsArray.map(tag => 
+  const tagElements = tagsArray.map(tag =>
     `<span class="tag text-xs mr-1">${tag}</span>`
   ).join('');
 
@@ -1561,15 +1599,15 @@ function renderQuestionCard(question) {
   });
 
   // Document attachment element
-  const documentAttachment = question.documentPath ? 
+  const documentAttachment = question.documentPath ?
     `<div class="document-attachment mt-2 bg-gray-50 dark:bg-gray-800 p-2 rounded-md border border-gray-200 dark:border-gray-700">
-      <a href="${question.documentPath}" download="${getOriginalFilename(question.documentPath, question.originalFilename)}" target="_blank" class="flex items-center text-sm text-primary hover:underline view-document" data-document-path="${question.documentPath}" data-original-filename="${question.originalFilename || ''}">
-        <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <span class="ml-2">View attached document</span>
-      </a>
-    </div>` : '';
+    <button class="view-document flex items-center text-sm text-primary hover:underline" data-document-id="${question.documentId || ''}" data-document-path="${question.documentPath}" data-original-filename="${question.originalFilename || ''}">
+      <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <span class="ml-2">View attached document</span>
+    </button>
+  </div>` : '';
 
   return `
     <div class="question-card bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">

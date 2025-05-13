@@ -14,12 +14,13 @@ function getToken() {
  * Base fetch function with error handling
  * @param {string} endpoint - The API endpoint to fetch from
  * @param {object} options - Fetch options including method, headers, body, etc.
+ * @param {boolean} isBinary - Flag to indicate if the response is binary (e.g., file download)
  * @returns {Promise<object>} - The response data or error
  */
-async function fetchWithAuth(endpoint, options = {}) {
+async function fetchWithAuth(endpoint, options = {}, isBinary = false) {
   // Check if body is FormData - if so, don't set Content-Type header (browser will set it with boundary)
   const isFormData = options.body instanceof FormData;
-  
+
   const defaultOptions = {
     headers: {
       ...(!isFormData && { 'Content-Type': 'application/json' }),
@@ -43,8 +44,8 @@ async function fetchWithAuth(endpoint, options = {}) {
   try {
     // Log the request details for debugging
     if (isFormData) {
-      console.log(`Making request to: ${url}`, { 
-        method: mergedOptions.method, 
+      console.log(`Making request to: ${url}`, {
+        method: mergedOptions.method,
         isFormData: 'Yes (FormData)',
         formDataContents: Array.from(options.body.entries()).reduce((acc, [key, val]) => {
           acc[key] = key === 'document' ? '[FILE]' : val;
@@ -52,8 +53,8 @@ async function fetchWithAuth(endpoint, options = {}) {
         }, {}),
       });
     } else {
-      console.log(`Making request to: ${url}`, { 
-        method: mergedOptions.method, 
+      console.log(`Making request to: ${url}`, {
+        method: mergedOptions.method,
         isFormData: 'No',
         body: options.body,
       });
@@ -61,7 +62,22 @@ async function fetchWithAuth(endpoint, options = {}) {
 
     const response = await fetch(url, mergedOptions);
 
-    // Check if the response is JSON
+    // Handle binary response (e.g., file download)
+    if (isBinary) {
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Binary response error (${response.status}): ${errorText.substring(0, 200)}...`);
+        throw { status: response.status, message: errorText || 'API request failed' };
+      }
+      const blob = await response.blob();
+      const contentType = response.headers.get('content-type') || 'application/octet-stream';
+      const contentDisposition = response.headers.get('content-disposition') || '';
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      const filename = filenameMatch ? filenameMatch[1] : 'downloaded_file';
+      return { blob, contentType, filename };
+    }
+
+    // Handle JSON response
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       const errorText = await response.text();
@@ -72,8 +88,8 @@ async function fetchWithAuth(endpoint, options = {}) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error(`API request failed:`, { 
-        status: response.status, 
+      console.error(`API request failed:`, {
+        status: response.status,
         data,
         url,
         method: mergedOptions.method,
@@ -85,8 +101,8 @@ async function fetchWithAuth(endpoint, options = {}) {
   } catch (error) {
     console.error(`API Error (${url}):`, error);
     // Return a standardized error object
-    return { 
-      success: false, 
+    return {
+      success: false,
       message: error.message || 'Failed to communicate with server',
       error: error,
     };
@@ -101,18 +117,18 @@ export const auth = {
       body: JSON.stringify({ email, password })
     });
   },
-  
+
   register: async (username, email, password) => {
     return fetchWithAuth('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ username, email, password })
     });
   },
-  
+
   logout: async () => {
     return fetchWithAuth('/auth/logout', { method: 'POST' });
   },
-  
+
   verifyOTP: async (email, otp, type) => {
     if (!email || !otp || !type) {
       return {
@@ -162,7 +178,7 @@ export const auth = {
   verify2FA: async (token) => {
     return fetchWithAuth('/auth/2fa/verify', {
       method: 'POST',
-      body: JSON.stringify({ token }) 
+      body: JSON.stringify({ token })
     });
   },
 
@@ -189,7 +205,7 @@ export const questions = {
   },
 
   create: async (questionData, isFormData = false) => {
-    return fetchWithAuth('/questions', {
+    return fetchWithAuth(isFormData ? '/questions/with-document' : '/questions', {
       method: 'POST',
       body: isFormData ? questionData : JSON.stringify(questionData)
     });
@@ -213,28 +229,28 @@ export const answers = {
 // Votes API
 export const votes = {
   upvoteQuestion: async (questionId) => {
-    return fetchWithAuth(`/vote/question`, { 
+    return fetchWithAuth(`/vote/question`, {
       method: 'POST',
       body: JSON.stringify({ questionId: parseInt(questionId), voteType: 'upvote' })
     });
   },
 
   downvoteQuestion: async (questionId) => {
-    return fetchWithAuth(`/vote/question`, { 
+    return fetchWithAuth(`/vote/question`, {
       method: 'POST',
       body: JSON.stringify({ questionId: parseInt(questionId), voteType: 'downvote' })
     });
   },
 
   upvoteAnswer: async (answerId) => {
-    return fetchWithAuth(`/vote/answer`, { 
+    return fetchWithAuth(`/vote/answer`, {
       method: 'POST',
       body: JSON.stringify({ answerId: parseInt(answerId), voteType: 'upvote' })
     });
   },
 
   downvoteAnswer: async (answerId) => {
-    return fetchWithAuth(`/vote/answer`, { 
+    return fetchWithAuth(`/vote/answer`, {
       method: 'POST',
       body: JSON.stringify({ answerId: parseInt(answerId), voteType: 'downvote' })
     });
@@ -248,6 +264,80 @@ export const replies = {
       method: 'POST',
       body: JSON.stringify({ answerId, content })
     });
+  }
+};
+
+// Documents API
+export const documents = {
+  upload: async (file, questionId = null) => {
+    if (!file) {
+      console.error('Document upload failed: No file provided');
+      return { success: false, message: 'No file provided' };
+    }
+    if (!(file instanceof File)) {
+      console.error('Document upload failed: Invalid file object', file);
+      return { success: false, message: 'Invalid file object' };
+    }
+    if (!window.isApproved()) {
+      console.error('Document upload failed: User not approved');
+      return { success: false, message: 'Only approved users can upload documents' };
+    }
+
+    const formData = new FormData();
+    formData.append('document', file);
+    if (questionId) {
+      formData.append('questionId', questionId.toString());
+    }
+
+    console.log('Uploading document:', {
+      fileName: file.name,
+      fileSize: file.size,
+      questionId: questionId
+    });
+
+    const response = await fetchWithAuth('/documents/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.success) {
+      console.error('Document upload failed:', response.message, response.error);
+    }
+    return response;
+  },
+
+  download: async (documentId) => {
+    if (!documentId) {
+      console.error('Document download failed: Document ID is required');
+      return { success: false, message: 'Document ID is required' };
+    }
+    if (!window.isApproved()) {
+      console.error('Document download failed: User not approved');
+      return { success: false, message: 'Only approved users can download documents' };
+    }
+
+    console.log('Initiating download for document ID:', documentId);
+    try {
+      const response = await fetchWithAuth(`/documents/download/${documentId}`, {}, true);
+      if (!response.blob) {
+        console.error('Download failed: No blob in response', response);
+        return { success: false, message: response.message || 'Invalid download response' };
+      }
+      return { success: true, blob: response.blob, filename: response.filename };
+    } catch (error) {
+      console.error('Document download error:', error);
+      // Handle JSON error response
+      let message = 'Failed to download document';
+      if (error.status && error.message) {
+        try {
+          const errorData = JSON.parse(error.message);
+          message = errorData.message || message;
+        } catch (parseError) {
+          message = error.message;
+        }
+      }
+      return { success: false, message };
+    }
   }
 };
 
@@ -265,9 +355,9 @@ export const admin = {
   },
 
   updateUserState: async (userId, state) => {
-    return fetchWithAuth('/admin/users/state', {
-      method: 'PATCH',
-      body: JSON.stringify({ userId, state })
+    return fetchWithAuth(`/admin/users/${userId}/state`, { // Updated URL to include userId
+      method: 'PUT', // Changed from PATCH to PUT to match server route
+      body: JSON.stringify({ state }) // Only send state, as userId is in the URL
     });
   },
 
@@ -283,6 +373,12 @@ export default {
   answers,
   votes,
   replies,
+  documents,
   admin
 };
+
+// Expose isApproved globally for use in other scripts
+import { isApproved } from '../auth.js';
+window.isApproved = isApproved;
+
 export { fetchWithAuth };

@@ -1,6 +1,4 @@
 const jwt = require('jsonwebtoken');
-const { Router } = require('express');
-const router = Router();
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -14,8 +12,8 @@ const authenticateToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('Verified user:', { id: decoded.id, role: decoded.role, state: decoded.state });
-    if (!decoded.role || !decoded.state) {
-      return res.status(403).json({ success: false, message: 'Invalid token: Missing role or state' });
+    if (!decoded.id || !decoded.role || !decoded.state) {
+      return res.status(403).json({ success: false, message: 'Invalid token: Missing id, role, or state' });
     }
     req.user = decoded;
     next();
@@ -32,23 +30,23 @@ const checkRole = (allowedRoles) => {
     }
 
     if (Array.isArray(allowedRoles) && !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        success: false, 
-        message: `Access denied: Required role is one of [${allowedRoles.join(', ')}]`
+      return res.status(403).json({
+        success: false,
+        message: `Access denied: Required role is one of [${allowedRoles.join(', ')}]`,
       });
     }
 
     if (!Array.isArray(allowedRoles) && req.user.role !== allowedRoles) {
-      return res.status(403).json({ 
-        success: false, 
-        message: `Access denied: Required role is ${allowedRoles}`
+      return res.status(403).json({
+        success: false,
+        message: `Access denied: Required role is ${allowedRoles}`,
       });
     }
 
     if (req.user.state !== 'APPROVED') {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied: Account is not approved'
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Account is not approved',
       });
     }
 

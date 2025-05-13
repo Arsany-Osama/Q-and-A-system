@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const path = require('path');
+const DocumentService = require('../services/documentService');
 
 const prisma = new PrismaClient();
 
@@ -11,10 +11,10 @@ const getQuestions = async (req, res) => {
         answers: {
           include: { user: true },
         },
+        documents: true,
       },
     });
 
-    // Deserialize tags from JSON string to array
     const questionsWithTags = questions.map(question => ({
       ...question,
       tags: question.tags ? JSON.parse(question.tags) : [],
@@ -29,53 +29,42 @@ const getQuestions = async (req, res) => {
 
 const postQuestion = async (req, res) => {
   try {
-    // Log the received data for debugging
     console.log('Question data received:', {
       title: req.body.title,
       contentLength: req.body.content ? req.body.content.length : 'undefined',
       tagsType: typeof req.body.tags,
       userId: req.user.id,
-      file: req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'No file'
     });
 
-    // Get title and content directly from req.body
-    let { title, content } = req.body;
+    let { title, content, tags } = req.body;
     const userId = req.user.id;
-    
-    // Validate required fields
+
     if (!title || title.trim() === '') {
       return res.status(400).json({ success: false, message: 'Title is required' });
     }
-    
+
     if (!content || content.trim() === '') {
       return res.status(400).json({ success: false, message: 'Content is required' });
     }
-    
-    // Handle tags processing
-    let tags = [];
-    if (req.body.tags) {
-      if (typeof req.body.tags === 'string') {
+
+    let tagsArray = [];
+    if (tags) {
+      if (typeof tags === 'string') {
         try {
-          // Try to parse as JSON string (from FormData)
-          tags = JSON.parse(req.body.tags);
+          tagsArray = JSON.parse(tags);
         } catch (e) {
-          // If parsing fails, assume comma-separated string
-          tags = req.body.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+          tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
         }
-      } else if (Array.isArray(req.body.tags)) {
-        // Direct array (from JSON body)
-        tags = req.body.tags;
+      } else if (Array.isArray(tags)) {
+        tagsArray = tags;
       }
     }
-    
-    // Ensure all values are trimmed strings
+
     title = title.trim();
     content = content.trim();
-    
-    // Serialize tags array to JSON string
-    const tagsJson = JSON.stringify(tags);
 
-    // Create question data object
+    const tagsJson = JSON.stringify(tagsArray);
+
     const questionData = {
       title,
       content,
@@ -83,42 +72,20 @@ const postQuestion = async (req, res) => {
       tags: tagsJson,
     };
 
-    // If there's an uploaded file, add the document path from Cloudinary
-    if (req.fileUrl) {
-      // Store the Cloudinary URL
-      questionData.documentPath = req.fileUrl;
-      
-      // Store the original filename separately to ensure we have it for reference
-      questionData.originalFilename = req.file.originalname;
-      
-      // Add file extension info for debugging
-      const fileExtension = path.extname(req.file.originalname);
-      
-      // Log detailed file information
-      console.log('File upload details:');
-      console.log(`Original filename: ${req.file.originalname}`);
-      console.log(`File extension: ${fileExtension}`);
-      console.log(`Cloudinary URL: ${req.fileUrl}`);
-      console.log(`Cloudinary public ID: ${req.filePublicId}`);
-      console.log(`Mime type: ${req.file.mimetype}`);
-    }
-
     const question = await prisma.question.create({
-      data: questionData
+      data: questionData,
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       question,
-      documentPath: questionData.documentPath || null,
-      originalFilename: questionData.originalFilename || null
     });
   } catch (error) {
     console.error('Error posting question:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error', 
-      details: error.message 
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      details: error.message,
     });
   }
 };
@@ -131,12 +98,11 @@ const getPopularTags = async (req, res) => {
       },
     });
 
-    // Parse all tags and count occurrences
     const tagCounts = {};
-    
+
     questions.forEach(question => {
       if (!question.tags) return;
-      
+
       let tags = [];
       try {
         tags = JSON.parse(question.tags);
@@ -144,7 +110,7 @@ const getPopularTags = async (req, res) => {
         console.warn('Invalid tags format:', question.tags);
         return;
       }
-      
+
       tags.forEach(tag => {
         if (tag && tag.trim()) {
           const cleanTag = tag.trim().toLowerCase();
@@ -152,13 +118,12 @@ const getPopularTags = async (req, res) => {
         }
       });
     });
-    
-    // Convert to array, sort by count, and take top tags
+
     const popularTags = Object.entries(tagCounts)
       .map(([tag, count]) => ({ tag, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
-    
+
     res.json(popularTags);
   } catch (error) {
     console.error('Error fetching popular tags:', error);
@@ -166,4 +131,75 @@ const getPopularTags = async (req, res) => {
   }
 };
 
-module.exports = { getQuestions, postQuestion, getPopularTags };
+const createQuestionWithDocument = async (req, res) => {
+  try {
+    const { title, content, tags } = req.body;
+    const file = req.file;
+    const userId = req.user.id;
+
+    console.log('Creating question with document:', {
+      title,
+      contentLength: content ? content.length : 'undefined',
+      tags,
+      hasFile: !!file,
+      userId,
+    });
+
+    if (!title || title.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Title is required' });
+    }
+
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Content is required' });
+    }
+
+    let tagsArray = [];
+    if (tags) {
+      if (typeof tags === 'string') {
+        tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
+      } else if (Array.isArray(tags)) {
+        tagsArray = tags;
+      }
+    }
+
+    const question = await prisma.question.create({
+      data: {
+        title: title.trim(),
+        content: content.trim(),
+        tags: JSON.stringify(tagsArray),
+        userId,
+      },
+    });
+
+    let document = null;
+    if (file) {
+      document = await DocumentService.uploadDocument(
+        {
+          buffer: file.buffer,
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+        },
+        userId,
+        { questionId: question.id }
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      question: {
+        ...question,
+        document: document || null,
+      },
+    });
+  } catch (error) {
+    console.error('Error creating question with document:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create question',
+      error: error.message,
+    });
+  }
+};
+
+module.exports = { getQuestions, postQuestion, getPopularTags, createQuestionWithDocument };

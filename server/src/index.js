@@ -15,13 +15,14 @@ const answerRoutes = require('./routes/answerRoutes');
 const voteRoutes = require('./routes/voteRoutes');
 const replyRoutes = require('./routes/replyRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const documentRoutes = require('./routes/documentRoutes'); // Added
 const passport = require('./services/passport');
 
 const app = express();
 
 // Create upload directory if it doesn't exist
 const fs = require('fs');
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(__dirname, '../Uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -47,7 +48,7 @@ app.use(passport.initialize());
 // Serve static files from client folder
 app.use(express.static(path.join(__dirname, '../..', 'client')));
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../Uploads')));
 
 // Routes
 app.use('/auth', authRoutes);
@@ -57,6 +58,7 @@ app.use('/vote', voteRoutes);
 app.use('/replies', replyRoutes);
 app.use('/admin', adminRoutes);
 app.use('/auth/2fa', twoFaRoutes);
+app.use('/documents', documentRoutes); // Added
 
 // Error handling middleware
 app.use((err, req, res, next) => {

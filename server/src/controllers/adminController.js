@@ -185,6 +185,11 @@ const deleteUser = async (req, res) => {
       where: { userId }
     });
     
+    // Delete documents by this user
+    await prisma.document.deleteMany({
+      where: { userId }
+    });
+
     // Finally delete the user
     await prisma.user.delete({
       where: { id: userId }

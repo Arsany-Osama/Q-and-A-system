@@ -8,22 +8,24 @@ datasource db {
 }
 
 model User {
-  id          Int        @id @default(autoincrement())
-  username    String     @unique
-  password    String?
-  email       String     @unique
-  googleId    String?    @unique
-  auth0Id     String?    @unique
-  role        Role       @default(USER)
-  state       State      @default(APPROVED)
-  answers     Answer[]
-  questions   Question[]
-  mentionedIn Reply[]    @relation("MentionedUser")
-  replies     Reply[]
-  votes       Vote[]
-  twoFASecret String?
+  id           Int        @id @default(autoincrement())
+  username     String     @unique
+  password     String?
+  email        String     @unique
+  googleId     String?    @unique
+  auth0Id      String?    @unique
+  role         Role       @default(USER)
+  state        State      @default(APPROVED)
+  lastLoginAt  DateTime?
+  lastLoginIp  String? // Add this field to track login IP
+  answers      Answer[]
+  questions    Question[]
+  mentionedIn  Reply[]    @relation("MentionedUser")
+  replies      Reply[]
+  votes        Vote[]
+  twoFASecret  String?
   twoFAEnabled Boolean
-  documents   Document[]
+  documents    Document[]
 
   @@index([email])
   @@index([googleId])
@@ -31,18 +33,18 @@ model User {
 }
 
 model Question {
-  id               Int      @id @default(autoincrement())
-  title            String
-  content          String
-  userId           Int
-  createdAt        DateTime @default(now())
-  downvotes        Int      @default(0)
-  tags             String
-  upvotes          Int      @default(0)
-  answers          Answer[]
-  user             User     @relation(fields: [userId], references: [id])
-  votes            Vote[]
-  documents        Document[] // Link questions to documents
+  id        Int        @id @default(autoincrement())
+  title     String
+  content   String
+  userId    Int
+  createdAt DateTime   @default(now())
+  downvotes Int        @default(0)
+  tags      String
+  upvotes   Int        @default(0)
+  answers   Answer[]
+  user      User       @relation(fields: [userId], references: [id])
+  votes     Vote[]
+  documents Document[] // Link questions to documents
 }
 
 model Answer {
@@ -84,25 +86,25 @@ model Reply {
 }
 
 model Document {
-  id                Int      @id @default(autoincrement())
-  filename          String
-  mimeType          String
-  size              Int
-  firebaseUrl       String   // URL to access the file in Firebase Storage
-  firebasePath      String   // Path in Firebase Storage (e.g., "documents/userId/filename")
-  hash              String   // SHA-256 hash of the original document
-  hmac              String   // HMAC for integrity verification
-  hmacKey           String   // Key used for HMAC
-  signature         String   // Digital signature (OpenSSL)
-  encryptionKey     String   // AES encryption key (encrypted with user's public key)
-  encryptionIv      String   // AES initialization vector
-  authTag           String   // AES-GCM authentication tag
-  createdAt         DateTime @default(now())
-  userId            Int
-  questionId        Int?     // Optional link to a question
-  user              User     @relation(fields: [userId], references: [id])
-  question          Question? @relation(fields: [questionId], references: [id])
-  
+  id            Int       @id @default(autoincrement())
+  filename      String
+  mimeType      String
+  size          Int
+  firebaseUrl   String // URL to access the file in Firebase Storage
+  firebasePath  String // Path in Firebase Storage (e.g., "documents/userId/filename")
+  hash          String // SHA-256 hash of the original document
+  hmac          String // HMAC for integrity verification
+  hmacKey       String // Key used for HMAC
+  signature     String // Digital signature (OpenSSL)
+  encryptionKey String // AES encryption key (encrypted with user's public key)
+  encryptionIv  String // AES initialization vector
+  authTag       String // AES-GCM authentication tag
+  createdAt     DateTime  @default(now())
+  userId        Int
+  questionId    Int? // Optional link to a question
+  user          User      @relation(fields: [userId], references: [id])
+  question      Question? @relation(fields: [questionId], references: [id])
+
   @@index([userId])
   @@index([questionId])
 }

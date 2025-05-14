@@ -83,9 +83,20 @@ const getAllUsers = async (req, res) => {
         username: true,
         email: true,
         role: true,
-        state: true
+        state: true,
+        lastLoginAt: true,
+        lastLoginIp: true
       }
     });
+    
+    // Add debugging for login info
+    console.log('User login info:', users.map(u => ({
+      id: u.id, 
+      username: u.username,
+      lastLoginAt: u.lastLoginAt,
+      lastLoginIp: u.lastLoginIp
+    })));
+    
     res.json({ success: true, users });
   } catch (error) {
     console.error('Error fetching users:', error);

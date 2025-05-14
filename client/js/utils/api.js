@@ -385,6 +385,14 @@ export const admin = {
       };
     }
   },
+  
+  createUser: async (userData) => {
+    console.log('API: Creating user:', userData);
+    return fetchWithAuth('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+  },
 };
 
 // Default export of all API modules

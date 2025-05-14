@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const bcrypt = require('bcrypt'); // Import bcrypt
 
 const getPendingModerators = async (req, res) => {
   try {
@@ -204,6 +205,67 @@ const deleteUser = async (req, res) => {
     });
   }
 };
+const createUser = async (req, res) => {
+  try {
+    const { username, email, password, role, state } = req.body;
+    
+    console.log(`Backend: Request to create new user with email: ${email}`);
+    
+    // Validate required fields
+    if (!username || !email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username, email, and password are required' 
+      });
+    }
+    
+    // Check if user with this email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+    
+    if (existingUser) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'User with this email already exists' 
+      });
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Create new user with only the fields that exist in your schema
+    const newUser = await prisma.user.create({
+      data: {
+        username,
+        email,
+        password: hashedPassword,
+        role: role || 'USER',
+        state: state || 'APPROVED',
+        twoFAEnabled: false,  // Assuming twoFAEnabled is part of the schema
+        twoFASecret: null,    // Replace 'totpSecret' with 'twoFASecret'
+        // Add any other required fields from your schema here
+      }
+    });
+    
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = newUser;
+    
+    console.log(`Successfully created new user: ${username} (ID: ${newUser.id})`);
+    return res.status(201).json({ 
+      success: true, 
+      message: 'User created successfully',
+      user: userWithoutPassword
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error when creating user',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 
 module.exports = {
   getPendingModerators,
@@ -211,5 +273,6 @@ module.exports = {
   updateUserRole,
   getAllUsers,
   getLoginLogs,
-  deleteUser
+  deleteUser,
+  createUser
 };

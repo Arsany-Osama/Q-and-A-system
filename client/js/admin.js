@@ -365,10 +365,94 @@ function renderPendingModerators(moderators) {
   `).join('') : '<p class="text-gray-600 dark:text-gray-400">No pending moderators</p>';
 }
 
+// Create a new user
+async function createUser(userData) {
+  console.log('Creating user:', userData);
+  
+  try {
+    const data = await adminApi.createUser(userData);
+    
+    if (data.success) {
+      showToast('success', `User ${userData.username} created successfully`);
+      
+      // Close the modal
+      const modal = document.getElementById('addUserModal');
+      if (modal) modal.classList.remove('modal-open');
+      
+      // Reset the form
+      document.getElementById('addUserForm').reset();
+      
+      // Refresh the users list
+      await refreshUsers();
+      return true;
+    } else {
+      showToast('error', data.message || 'Failed to create user');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error creating user:', error);
+    showToast('error', error.message || 'An error occurred');
+    return false;
+  }
+}
+
+// Set up the add user modal and form
+function setupAddUserModal() {
+  // Get elements
+  const showModalBtn = document.getElementById('showAddUserModal');
+  const cancelBtn = document.getElementById('cancelAddUser');
+  const modal = document.getElementById('addUserModal');
+  const form = document.getElementById('addUserForm');
+  
+  // Show modal
+  if (showModalBtn && modal) {
+    showModalBtn.addEventListener('click', () => {
+      modal.classList.add('modal-open');
+    });
+  }
+  
+  // Hide modal
+  if (cancelBtn && modal) {
+    cancelBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      modal.classList.remove('modal-open');
+      form.reset();
+    });
+  }
+  
+  // Handle form submission
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Get form data
+      const userData = {
+        username: document.getElementById('newUsername').value.trim(),
+        email: document.getElementById('newEmail').value.trim(),
+        password: document.getElementById('newPassword').value,
+        role: document.getElementById('newRole').value,
+        state: document.getElementById('newState').value
+      };
+      
+      // Validate
+      if (!userData.username || !userData.email || !userData.password) {
+        showToast('error', 'All fields are required');
+        return;
+      }
+      
+      // Create user
+      await createUser(userData);
+    });
+  }
+}
+
+// Update your initAdminDashboard or initAdminPage function to include the modal setup
 export function initAdminDashboard() {
   if (!isAdmin()) {
     window.location.href = '/';
     return;
   }
+  
   initAdminPage();
+  setupAddUserModal(); // Add this line
 }

@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { sendEmail } = require('../services/emailService');
+const { getFormattedClientIp } = require('../utils/ipHelper');
 require('dotenv').config();
 
 const prisma = new PrismaClient();
@@ -39,9 +40,7 @@ const login = async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await prisma.user.findUnique({ 
-      where: { 
-        email: email 
-      } 
+      where: { email }
     });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -58,12 +57,30 @@ const login = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Your account has been rejected' });
     }
     
+    // Get formatted client IP
+    const ip = getFormattedClientIp(req);
+    
+    // Update the user's last login information
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        lastLoginAt: new Date(),
+        lastLoginIp: ip
+      }
+    });
+    
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, state: user.state },
       secretKey, 
       { expiresIn: '1h' }
     );
-    res.json({ success: true, token, username: user.username, role: user.role, state: user.state });
+    res.json({ 
+      success: true, 
+      token, 
+      username: user.username, 
+      role: user.role, 
+      state: user.state 
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ success: false, message: 'Server error' });

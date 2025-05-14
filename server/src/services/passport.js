@@ -6,6 +6,7 @@ const ExtractJwt = require('passport-jwt').ExtractJwt;
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 const { getAuth0UserRoles } = require('./auth0');
+const { getFormattedClientIp } = require('../utils/ipHelper'); // Import helper
 
 const prisma = new PrismaClient();
 const secretKey = process.env.JWT_SECRET;
@@ -41,8 +42,9 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: process.env.GOOGLE_REDIRECT_URI,
+      passReqToCallback: true, // Added to pass request object to callback
     },
-    async (accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
         console.log('Google OAuth profile received:', {
           id: profile.id,
@@ -50,6 +52,9 @@ passport.use(
           displayName: profile.displayName,
         });
         console.time('Google OAuth Strategy');
+
+        // Get formatted client IP
+        const ip = getFormattedClientIp(req);
 
         // Check if user exists by Google ID
         let user = await prisma.user.findFirst({
@@ -72,7 +77,8 @@ passport.use(
                 role: 'USER',
                 state: 'APPROVED',
                 twoFAEnabled: false,
-
+                lastLoginAt: new Date(), // Record initial login time
+                lastLoginIp: ip // Record IP address
               },
             });
           } else {
@@ -80,10 +86,25 @@ passport.use(
             console.log('Linking Google ID to existing user:', user.email);
             user = await prisma.user.update({
               where: { email: profile.emails[0].value },
-              data: { googleId: profile.id },
+              data: { 
+                googleId: profile.id,
+                lastLoginAt: new Date(), // Update login time
+                lastLoginIp: ip // Update IP address
+              },
             });
           }
-        }        // Generate JWT token
+        } else {
+          // Update existing user's login information
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              lastLoginAt: new Date(),
+              lastLoginIp: ip
+            }
+          });
+        }        
+
+        // Generate JWT token
         const token = jwt.sign(
           { 
             id: user.id, 
@@ -124,10 +145,15 @@ passport.use(
     },
     async (req, accessToken, refreshToken, extraParams, profile, done) => {
       try {
+        // Get formatted client IP
+        const ip = getFormattedClientIp(req);
+
         // Check if user exists by Auth0 ID
         let user = await prisma.user.findFirst({
           where: { auth0Id: profile.id }
-        });        if (!user) {
+        });        
+        
+        if (!user) {
           // Get email from profile, with fallback
           const email = profile.emails && profile.emails[0] ? profile.emails[0].value : 
                        profile._json.email || `${profile.id}@auth0user.com`;
@@ -142,7 +168,9 @@ passport.use(
             const rolesResponse = await getAuth0UserRoles(profile.id);
             console.log('Auth0 user roles:', rolesResponse);
             const roles = rolesResponse.data || [];
-            const isAdmin = roles.some(role => role.name === 'Admin');            // Generate base username from available profile data
+            const isAdmin = roles.some(role => role.name === 'Admin');            
+            
+            // Generate base username from available profile data
             let baseUsername = profile.displayName || 
                              profile.username || 
                              (email ? email.split('@')[0] : `user_${profile.id}`);
@@ -182,7 +210,9 @@ passport.use(
                 username: username,
                 role: isAdmin ? 'ADMIN' : 'MODERATOR',
                 state: isAdmin ? 'APPROVED' : 'PENDING',
-                twoFAEnabled: false
+                twoFAEnabled: false,
+                lastLoginAt: new Date(),
+                lastLoginIp: ip
               }
             });
           } else {
@@ -192,10 +222,21 @@ passport.use(
               data: { 
                 auth0Id: profile.id,
                 role: 'MODERATOR',
-                state: 'PENDING'
+                state: 'PENDING',
+                lastLoginAt: new Date(),
+                lastLoginIp: ip
               }
             });
           }
+        } else {
+          // Update existing user's login information
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              lastLoginAt: new Date(),
+              lastLoginIp: ip
+            }
+          });
         }
 
         // Generate JWT token

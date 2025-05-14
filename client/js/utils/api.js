@@ -42,26 +42,18 @@ async function fetchWithAuth(endpoint, options = {}, isBinary = false) {
   const url = `${API_BASE_URL}${normalizedEndpoint}`;
 
   try {
-    // Log the request details for debugging
-    if (isFormData) {
-      console.log(`Making request to: ${url}`, {
-        method: mergedOptions.method,
-        isFormData: 'Yes (FormData)',
-        formDataContents: Array.from(options.body.entries()).reduce((acc, [key, val]) => {
-          acc[key] = key === 'document' ? '[FILE]' : val;
-          return acc;
-        }, {}),
-      });
-    } else {
-      console.log(`Making request to: ${url}`, {
-        method: mergedOptions.method,
-        isFormData: 'No',
-        body: options.body,
-      });
+    console.log(`API Request: ${options.method || 'GET'} ${url}`);
+    if (options.body && options.body !== '{}') {
+      console.log('Request payload:', 
+        options.body instanceof FormData 
+          ? 'FormData object' 
+          : JSON.parse(options.body)
+      );
     }
-
+    
     const response = await fetch(url, mergedOptions);
-
+    console.log(`API Response status: ${response.status} ${response.statusText}`);
+    
     // Handle binary response (e.g., file download)
     if (isBinary) {
       if (!response.ok) {
@@ -97,6 +89,8 @@ async function fetchWithAuth(endpoint, options = {}, isBinary = false) {
       throw { status: response.status, message: data.message || 'API request failed' };
     }
 
+    // Before returning response data
+    console.log(`API Response data for ${options.method || 'GET'} ${url}:`, data);
     return data;
   } catch (error) {
     console.error(`API Error (${url}):`, error);
@@ -346,24 +340,51 @@ export const admin = {
   getUsers: async () => {
     return fetchWithAuth('/admin/users');
   },
-
+  
+  updateUserState: async (userId, state) => {
+    return fetchWithAuth(`/admin/users/${userId}/state`, {
+      method: 'PUT',
+      body: JSON.stringify({ state })
+    });
+  },
+  
   updateUserRole: async (userId, role) => {
     return fetchWithAuth('/admin/users/role', {
-      method: 'PATCH',
+      method: 'POST',
       body: JSON.stringify({ userId, role })
     });
   },
-
-  updateUserState: async (userId, state) => {
-    return fetchWithAuth(`/admin/users/${userId}/state`, { // Updated URL to include userId
-      method: 'PUT', // Changed from PATCH to PUT to match server route
-      body: JSON.stringify({ state }) // Only send state, as userId is in the URL
-    });
+  
+  // Make sure this function is defined properly
+  getLoginLogs: async () => {
+    return fetchWithAuth('/admin/login-logs');
   },
-
+  
   deleteUser: async (userId) => {
-    return fetchWithAuth(`/admin/users/${userId}`, { method: 'DELETE' });
-  }
+    console.log(`API: Preparing to delete user with ID: ${userId}`);
+    
+    try {
+      // Make API request
+      const response = await fetchWithAuth(`/admin/users/${userId}`, {
+        method: 'DELETE'
+      });
+      
+      console.log(`API: Delete user response:`, response);
+      
+      // Return standardized response
+      return {
+        success: !!response.success,
+        message: response.message || 'User deleted successfully',
+        ...response
+      };
+    } catch (error) {
+      console.error('Error in deleteUser API call:', error);
+      return {
+        success: false,
+        message: error.message || 'Failed to delete user'
+      };
+    }
+  },
 };
 
 // Default export of all API modules

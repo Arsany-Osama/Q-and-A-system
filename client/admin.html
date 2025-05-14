@@ -1,88 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Q&A System</title>
-  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/components.css">
-  <link rel="stylesheet" href="/css/animations.css">
-  <link rel="stylesheet" href="/css/pages.css">
-</head>
-<body>
-  <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-    <!-- Header -->
-    <header id="mainHeader" class="bg-white dark:bg-gray-800 shadow-sm">
-      <div class="container mx-auto px-4 py-4">
-        <div class="flex justify-between items-center">
-          <a href="/" class="flex items-center space-x-2">
-            <img src="/assets/logo.svg" alt="Logo" class="h-8 w-8">
-            <span class="text-xl font-bold text-gray-900 dark:text-white">Q&A System</span>
-          </a>
-          <div id="userStatus"></div>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
-
-        <!-- Filter Controls -->
-        <div class="mb-6 flex space-x-4">
-          <select id="roleFilter" class="select">
-            <option value="ALL">All Roles</option>
-            <option value="ADMIN">Admins</option>
-            <option value="MODERATOR">Moderators</option>
-            <option value="USER">Regular Users</option>
-          </select>
-          <select id="stateFilter" class="select">
-            <option value="ALL">All States</option>
-            <option value="PENDING">Pending</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-          </select>
-        </div>          <!-- Users List -->
-        <section class="mb-8">
-          <h2 class="text-xl font-semibold mb-4">User Management</h2>
-          <div class="overflow-x-auto">
-            <table class="min-w-full table-auto">
-              <thead>
-                <tr class="bg-gray-100 dark:bg-gray-700">
-                  <th class="px-6 py-4 text-left">Username</th>
-                  <th class="px-6 py-4 text-left">Email</th>
-                  <th class="px-6 py-4 text-left">Role</th>
-                  <th class="px-6 py-4 text-left">State</th>
-                  <th class="px-6 py-4 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="usersTableBody">
-                <!-- Users will be rendered here -->
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Loading Indicator -->
-        <div id="loadingIndicator" class="hidden">
-          <div class="flex justify-center items-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Q&A System</title>
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/components.css" />
+    <link rel="stylesheet" href="/css/animations.css" />
+    <link rel="stylesheet" href="/css/pages.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+  <body>
+    <div class="admin-dashboard min-h-screen">
+      <!-- Header -->
+      <header
+        id="mainHeader"
+        class="bg-white dark:bg-gray-800 shadow-sm"
+        role="banner"
+      >
+        <div class="container mx-auto px-4 py-4">
+          <div class="flex justify-between items-center">
+            <a href="/" class="flex items-center space-x-2">
+              <img
+                src="/assets/logo.svg"
+                alt="Q&A System Logo"
+                class="h-8 w-8"
+              />
+              <span class="text-xl font-bold text-gray-900 dark:text-white">
+                Q&A System
+              </span>
+            </a>
+            <div id="userStatus"></div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </header>
 
-  <script type="module">
-    import { initUI } from '/js/ui.js';
-    import { initAdminDashboard } from '/js/admin.js';
+      <!-- Main Content -->
+      <main class="container mx-auto px-4 py-8" role="main">
+        <div class="admin-card">
+          <div class="admin-card-header">Admin Dashboard</div>
+          <div class="admin-card-body">
+            <!-- Filter Controls -->
+            <div class="admin-filter-bar mb-4">
+              <select id="roleFilter" class="admin-select">
+                <option value="ALL">All Roles</option>
+                <option value="ADMIN">Admins</option>
+                <option value="MODERATOR">Moderators</option>
+                <option value="USER">Regular Users</option>
+              </select>
+              <select id="stateFilter" class="admin-select">
+                <option value="ALL">All States</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </div>
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initUI();
-      initAdminDashboard();
-    });
-  </script>
-</body>
+            <!-- Users List -->
+            <section class="admin-section">
+              <div class="admin-section-header">
+                <h2 class="text-xl font-semibold">User Management</h2>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Username</th>
+                      <th scope="col">Email</th>
+                      <th scope="col">Role</th>
+                      <th scope="col">State</th>
+                      <th scope="col">Last Login</th>
+                      <th scope="col">IP Address</th>
+                      <th scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody">
+                    <!-- Users will be rendered here -->
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Login History Section -->
+            <section class="admin-section">
+              <div
+                class="admin-section-header flex justify-between items-center"
+              >
+                <h2 class="text-xl font-semibold">Login History</h2>
+                <button
+                  id="refreshLoginHistory"
+                  class="admin-btn admin-btn-primary"
+                >
+                  Refresh History
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Username</th>
+                      <th scope="col">Email</th>
+                      <th scope="col">Login Time</th>
+                      <th scope="col">IP Address</th>
+                    </tr>
+                  </thead>
+                  <tbody id="loginLogsTableBody">
+                    <tr>
+                      <td colspan="4" class="text-center py-4 text-gray-500">
+                        Loading login history...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="hidden mt-4">
+              <div class="flex justify-center items-center">
+                <div
+                  class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Ensure these imports are present in your script section -->
+    <script type="module">
+      import { initUI } from "/js/ui.js";
+      import { initAdminDashboard } from "/js/admin.js";
+      import { admin as adminApi } from "/js/utils/api.js";
+      import { showToast } from "/js/ui.js";
+
+      async function fetchAndRenderLoginLogs() {
+        try {
+          const tbody = document.getElementById("loginLogsTableBody");
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" class="text-center py-4 text-gray-500">
+                Loading login history...
+              </td>
+            </tr>
+          `;
+
+          const data = await adminApi.getLoginLogs();
+          const logs = data.logs || [];
+          tbody.innerHTML = "";
+
+          if (logs.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="4" class="text-center py-4 text-gray-500">
+                  No login history available
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          logs.forEach((log) => {
+            const tr = document.createElement("tr");
+            tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700";
+
+            const loginTime = log.loginTime
+              ? new Date(log.loginTime).toLocaleString()
+              : "Unknown";
+            const ipAddress = log.ipAddress || "Unknown";
+
+            tr.innerHTML = `
+              <td class="px-6 py-4 whitespace-nowrap text-sm">${
+                log.username || "Unknown"
+              }</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">${
+                log.email || "Unknown"
+              }</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">${loginTime}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">${ipAddress}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (error) {
+          console.error("Error fetching login logs:", error);
+          document.getElementById("loginLogsTableBody").innerHTML = `
+            <tr>
+              <td colspan="4" class="text-center py-4 text-red-500">
+                Failed to load login history: ${
+                  error.message || "Unknown error"
+                }
+              </td>
+            </tr>
+          `;
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("Admin page loaded");
+        initUI();
+        initAdminDashboard();
+        fetchAndRenderLoginLogs();
+
+        document
+          .getElementById("refreshLoginHistory")
+          .addEventListener("click", () => {
+            fetchAndRenderLoginLogs();
+            showToast("info", "Refreshing login history...");
+          });
+      });
+    </script>
+  </body>
 </html>

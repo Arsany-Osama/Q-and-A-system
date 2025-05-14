@@ -5,7 +5,8 @@ const {
   getPendingModerators,
   updateUserStatus,
   updateUserRole,
-  getAllUsers
+  getAllUsers,
+  deleteUser
 } = require('../controllers/adminController');
 
 router.get('/users',
@@ -34,5 +35,8 @@ router.put('/users/:userId/role',
   checkRole('ADMIN'),
   updateUserRole
 );
+
+// Delete user
+router.delete('/users/:userId', authenticateToken, checkRole('ADMIN'), deleteUser);
 
 module.exports = router;

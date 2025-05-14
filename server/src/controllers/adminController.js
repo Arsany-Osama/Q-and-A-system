@@ -138,10 +138,78 @@ const getLoginLogs = async (req, res) => {
   }
 };
 
+const deleteUser = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    console.log(`Backend: Request to delete user ID: ${userId}`);
+    
+    if (isNaN(userId)) {
+      console.error('Invalid user ID format:', req.params.userId);
+      return res.status(400).json({ success: false, message: 'Invalid user ID format' });
+    }
+    
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+    
+    if (!user) {
+      console.error(`User with ID ${userId} not found`);
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    console.log(`Deleting user: ${user.username} (ID: ${userId})`);
+    
+    // Delete user's related records first (to avoid foreign key constraints)
+    // The order matters due to database relationships
+    
+    // Delete votes by this user
+    await prisma.vote.deleteMany({
+      where: { userId }
+    });
+    
+    // Delete replies by this user
+    await prisma.reply.deleteMany({
+      where: { userId }
+    });
+    
+    // Delete answers by this user
+    await prisma.answer.deleteMany({
+      where: { userId }
+    });
+    
+    // Delete questions by this user
+    await prisma.question.deleteMany({
+      where: { userId }
+    });
+    
+    // Finally delete the user
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    
+    console.log(`Successfully deleted user ${userId}`);
+    return res.status(200).json({ 
+      success: true, 
+      message: 'User deleted successfully',
+      userId
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error when deleting user',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   getPendingModerators,
   updateUserStatus,
   updateUserRole,
   getAllUsers,
-  getLoginLogs
+  getLoginLogs,
+  deleteUser
 };

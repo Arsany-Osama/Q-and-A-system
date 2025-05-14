@@ -74,7 +74,6 @@ const updateUserRole = async (req, res) => {
   }
 };
 
-
 const getAllUsers = async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -104,9 +103,45 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const getLoginLogs = async (req, res) => {
+  try {
+    // Get all users with login data, ordered by most recent login
+    const users = await prisma.user.findMany({
+      where: {
+        lastLoginAt: { not: null }
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        lastLoginAt: true,
+        lastLoginIp: true
+      },
+      orderBy: {
+        lastLoginAt: 'desc'
+      },
+      take: 50  // Limit to most recent 50 logins
+    });
+    
+    const logs = users.map(user => ({
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      loginTime: user.lastLoginAt,
+      ipAddress: user.lastLoginIp || 'Unknown'
+    }));
+    
+    res.json({ success: true, logs });
+  } catch (error) {
+    console.error('Error fetching login logs:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   getPendingModerators,
   updateUserStatus,
   updateUserRole,
-  getAllUsers
+  getAllUsers,
+  getLoginLogs
 };

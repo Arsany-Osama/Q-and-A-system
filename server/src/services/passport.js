@@ -42,7 +42,7 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: process.env.GOOGLE_REDIRECT_URI,
-      passReqToCallback: true,
+      passReqToCallback: true, // Added to pass request object to callback
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
@@ -53,13 +53,13 @@ passport.use(
         });
         console.time('Google OAuth Strategy');
 
+        // Get formatted client IP
+        const ip = getFormattedClientIp(req);
+
         // Check if user exists by Google ID
         let user = await prisma.user.findFirst({
           where: { googleId: profile.id },
         });
-
-        // Get formatted client IP
-        const ip = getFormattedClientIp(req);
 
         if (!user) {
           // Check by email
@@ -67,8 +67,7 @@ passport.use(
             where: { email: profile.emails[0].value },
           });
 
-          if (!user) {
-            // Create new user
+          if (!user) {            // Create new user
             console.log('Creating new user for Google ID:', profile.id);
             user = await prisma.user.create({
               data: {
@@ -79,7 +78,7 @@ passport.use(
                 state: 'APPROVED',
                 twoFAEnabled: false,
                 lastLoginAt: new Date(), // Record initial login time
-                lastLoginIp: ip // Use formatted IP
+                lastLoginIp: ip // Record IP address
               },
             });
           } else {
@@ -90,7 +89,7 @@ passport.use(
               data: { 
                 googleId: profile.id,
                 lastLoginAt: new Date(), // Update login time
-                lastLoginIp: ip // Use formatted IP
+                lastLoginIp: ip // Update IP address
               },
             });
           }
@@ -100,10 +99,10 @@ passport.use(
             where: { id: user.id },
             data: {
               lastLoginAt: new Date(),
-              lastLoginIp: ip // Use formatted IP
+              lastLoginIp: ip
             }
           });
-        }
+        }        
 
         // Generate JWT token
         const token = jwt.sign(
@@ -146,10 +145,13 @@ passport.use(
     },
     async (req, accessToken, refreshToken, extraParams, profile, done) => {
       try {
+        // Get formatted client IP
+        const ip = getFormattedClientIp(req);
+
         // Check if user exists by Auth0 ID
         let user = await prisma.user.findFirst({
           where: { auth0Id: profile.id }
-        });
+        });        
         
         if (!user) {
           // Get email from profile, with fallback
@@ -166,9 +168,9 @@ passport.use(
             const rolesResponse = await getAuth0UserRoles(profile.id);
             console.log('Auth0 user roles:', rolesResponse);
             const roles = rolesResponse.data || [];
-            const isAdmin = roles.some(role => role.name === 'Admin');
+            const isAdmin = roles.some(role => role.name === 'Admin');            
             
-            // Generate username from available profile data
+            // Generate base username from available profile data
             let baseUsername = profile.displayName || 
                              profile.username || 
                              (email ? email.split('@')[0] : `user_${profile.id}`);
@@ -209,8 +211,8 @@ passport.use(
                 role: isAdmin ? 'ADMIN' : 'MODERATOR',
                 state: isAdmin ? 'APPROVED' : 'PENDING',
                 twoFAEnabled: false,
-                lastLoginAt: new Date(), // Record initial login time
-                lastLoginIp: ip // Use formatted IP
+                lastLoginAt: new Date(),
+                lastLoginIp: ip
               }
             });
           } else {
@@ -221,8 +223,8 @@ passport.use(
                 auth0Id: profile.id,
                 role: 'MODERATOR',
                 state: 'PENDING',
-                lastLoginAt: new Date(), // Update login time
-                lastLoginIp: ip // Use formatted IP
+                lastLoginAt: new Date(),
+                lastLoginIp: ip
               }
             });
           }
@@ -232,7 +234,7 @@ passport.use(
             where: { id: user.id },
             data: {
               lastLoginAt: new Date(),
-              lastLoginIp: ip // Use formatted IP
+              lastLoginIp: ip
             }
           });
         }

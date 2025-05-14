@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { sendEmail } = require('../services/emailService');
-const { getFormattedClientIp } = require('../utils/ipHelper'); // Import helper
+const { getFormattedClientIp } = require('../utils/ipHelper');
 require('dotenv').config();
 
 const prisma = new PrismaClient();

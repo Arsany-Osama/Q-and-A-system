@@ -310,6 +310,42 @@
             Answers Given: <span id="answersGiven">0</span>
           </p>
 
+          <!-- Username Change Section -->
+          <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h4 class="text-lg font-medium mb-4">Change Username</h4>
+            <form id="changeUsernameForm" class="space-y-4 max-w-md">
+              <div class="form-control">
+                <label for="newUsername" class="label">New Username</label>
+                <input
+                  type="text"
+                  id="newUsername"
+                  class="input input-bordered w-full"
+                  placeholder="Enter new username"
+                  required
+                />
+              </div>
+
+              <div class="form-control">
+                <label for="usernamePasswordConfirm" class="label"
+                  >Current Password</label
+                >
+                <input
+                  type="password"
+                  id="usernamePasswordConfirm"
+                  class="input input-bordered w-full"
+                  placeholder="Confirm with your password"
+                  required
+                />
+              </div>
+
+              <div id="usernameFeedback" class="text-sm hidden"></div>
+
+              <button type="submit" class="btn btn-primary">
+                Update Username
+              </button>
+            </form>
+          </div>
+
           <!-- Password Change Section -->
           <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
             <h4 class="text-lg font-medium mb-4">Change Password</h4>

@@ -11,7 +11,7 @@ import { renderFeed, setupFilterButtons } from './feed.js';
 import { initSecurity } from './security.js';
 import { fetchAndRenderPopularTags } from './tags.js';
 import './fileUpload.js'; // Import file upload module
-import { initPasswordChange } from './passwordChange.js';
+import { initProfileChanges } from './passwordChange.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing main.js');
@@ -302,8 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadProfileSection() {
     // Your existing profile section initialization code
     
-    // Initialize password change functionality
-    initPasswordChange();
+    // Initialize both password and username change functionality
+    initProfileChanges();
   }
 
   // Find where you show the profile section and call loadProfileSection

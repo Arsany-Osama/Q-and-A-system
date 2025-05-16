@@ -11,6 +11,7 @@ import { renderFeed, setupFilterButtons } from './feed.js';
 import { initSecurity } from './security.js';
 import { fetchAndRenderPopularTags } from './tags.js';
 import './fileUpload.js'; // Import file upload module
+import { initPasswordChange } from './passwordChange.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing main.js');
@@ -296,4 +297,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Setup popup close buttons
   document.getElementById('closeQuestionFormBtn')?.addEventListener('click', hideQuestionFormPopup);
   document.getElementById('closeAnswerFormBtn')?.addEventListener('click', hideAnswerFormPopup);
+
+  // This function gets called when profile section is loaded
+  function loadProfileSection() {
+    // Your existing profile section initialization code
+    
+    // Initialize password change functionality
+    initPasswordChange();
+  }
+
+  // Find where you show the profile section and call loadProfileSection
+  const profileNav = document.getElementById('profileNav');
+  if (profileNav) {
+    const originalClickHandler = profileNav.onclick;
+    
+    profileNav.onclick = function(e) {
+      // Call the original handler if it exists
+      if (originalClickHandler) {
+        originalClickHandler.call(this, e);
+      }
+      
+      // Then initialize our password change functionality
+      setTimeout(loadProfileSection, 100); // Small delay to ensure DOM is updated
+    };
+  }
 });

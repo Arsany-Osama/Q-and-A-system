@@ -11,6 +11,7 @@ const voteRoutes = require('./routes/voteRoutes');
 const replyRoutes = require('./routes/replyRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const documentRoutes = require('./routes/documentRoutes'); // Added
+const userRoutes = require('./routes/userRoutes');
 const passport = require('./services/passport');
 const https = require('https');
 const fs = require('fs');
@@ -47,6 +48,7 @@ app.use('/replies', replyRoutes);
 app.use('/admin', adminRoutes);
 app.use('/auth/2fa', twoFaRoutes);
 app.use('/documents', documentRoutes); // Added
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

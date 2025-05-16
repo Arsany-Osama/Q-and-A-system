@@ -1,8 +1,3 @@
-// For development only: Disable SSL certificate verification
-if (process.env.NODE_ENV !== 'production') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -17,19 +12,14 @@ const replyRoutes = require('./routes/replyRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const documentRoutes = require('./routes/documentRoutes'); // Added
 const passport = require('./services/passport');
+const https = require('https');
+const fs = require('fs');
 
 const app = express();
 
-// Create upload directory if it doesn't exist
-const fs = require('fs');
-const uploadDir = path.join(__dirname, '../Uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
@@ -39,7 +29,7 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   cookie: {
-    secure: false, // set to true if using https
+    secure: true, //https only
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -47,8 +37,6 @@ app.use(passport.initialize());
 
 // Serve static files from client folder
 app.use(express.static(path.join(__dirname, '../..', 'client')));
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, '../Uploads')));
 
 // Routes
 app.use('/auth', authRoutes);
@@ -76,6 +64,17 @@ app.get('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+
+// Load SSL cert and key
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem')),
+};
+
+https.createServer(sslOptions, app).listen(PORT, () => {
+  console.log(`HTTPS server running at https://localhost:${PORT}`);
 });
+
+// app.listen(PORT, () => {
+//   console.log(`Server running at http://localhost:${PORT}`);
+// });

@@ -130,9 +130,9 @@ export function renderUserUI() {
       role: localStorage.getItem('role'),
       state: localStorage.getItem('state')
     });
-    const username = localStorage.getItem('username') || 'User';
-    const role = getUserRole();
-    const state = getUserState();
+    const username = decodeURIComponent(localStorage.getItem('username') || 'User');
+    const role = decodeURIComponent(localStorage.getItem('role') || 'unauthorized');
+    const state = decodeURIComponent(localStorage.getItem('state') || 'unauthenticated');
     console.log('Final values:', { username, role, state });
 
     userStatus.innerHTML = `

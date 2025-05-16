@@ -145,23 +145,26 @@ const signDocument = (buffer) => {
 };
 
 // Verify signature using OpenSSL
-const verifySignature = (buffer, signature) => {
+const verifySignature = (buffer, signature, publicKeyPem) => {
   try {
     console.log('Verifying signature with OpenSSL');
     // Write buffer and signature to temporary files
     const tempDir = process.env.TEMP || '/tmp';
     const tempFile = path.join(tempDir, `doc_${Date.now()}.bin`);
     const sigFile = path.join(tempDir, `sig_${Date.now()}.bin`);
-    fs.writeFileSync(tempFile, buffer);
-    // Decode base64 signature to binary
-    fs.writeFileSync(sigFile, Buffer.from(signature, 'base64'));
+    const tempPublicKeyFile = path.join(tempDir, `pubkey_${Date.now()}.pem`);
 
-    // Verify with OpenSSL
-    execSync(`openssl dgst -sha256 -verify "${PUBLIC_KEY_PATH}" -signature "${sigFile}" "${tempFile}"`);
+    fs.writeFileSync(tempFile, buffer);
+    fs.writeFileSync(sigFile, Buffer.from(signature, 'base64'));
+    fs.writeFileSync(tempPublicKeyFile, publicKeyPem);
+
+    // Verify with OpenSSL using the temporary public key file
+    execSync(`openssl dgst -sha256 -verify "${tempPublicKeyFile}" -signature "${sigFile}" "${tempFile}"`);
 
     // Clean up
     fs.unlinkSync(tempFile);
     fs.unlinkSync(sigFile);
+    fs.unlinkSync(tempPublicKeyFile);
     console.log('OpenSSL signature verified');
     return true;
   } catch (error) {
@@ -200,6 +203,10 @@ class DocumentService {
       // Sign document
       const signature = signDocument(file.buffer);
 
+      // Read the public key from the file
+      const publicKeyPem = fs.readFileSync(PUBLIC_KEY_PATH, 'utf8');
+      //console.log('Public key read for storage:', publicKeyPem);
+
       // Upload encrypted file to Firebase Storage with .aes extension
       const firebasePath = `documents/${userId}/${Date.now()}_${file.originalname}.aes`;
       const firebaseFile = bucket.file(firebasePath);
@@ -214,7 +221,7 @@ class DocumentService {
       });
       console.log('Generated signed URL:', firebaseUrl);
 
-      // Store document metadata in Prisma
+      // Store document metadata in Prisma, including the public key
       const document = await prisma.document.create({
         data: {
           filename: file.originalname,
@@ -229,6 +236,7 @@ class DocumentService {
           encryptionKey: key.toString('hex'),
           encryptionIv: iv.toString('hex'),
           authTag: authTag.toString('hex'),
+          publicKey: publicKeyPem, // Store the public key in PEM format
           userId,
           questionId: metadata.questionId ? parseInt(metadata.questionId) : null,
         },
@@ -286,8 +294,8 @@ class DocumentService {
         throw new Error('Document integrity check failed: hash mismatch');
       }
 
-      // Verify signature
-      if (!verifySignature(decryptedBuffer, document.signature)) {
+      // Verify signature using the stored public key
+      if (!verifySignature(decryptedBuffer, document.signature, document.publicKey)) {
         throw new Error('Document signature verification failed');
       }
 

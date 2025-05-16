@@ -2,12 +2,58 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { sendEmail } = require('../services/emailService');
+const crypto = require('crypto');
 const { getFormattedClientIp } = require('../utils/ipHelper');
 require('dotenv').config();
 
 const prisma = new PrismaClient();
 const secretKey = process.env.JWT_SECRET;
 const otpStore = new Map(); // Temporary storage for OTPs
+
+// Derive an encryption key from JWT_SECRET using PBKDF2
+const deriveKey = (saltHex) => {
+  const salt = saltHex ? Buffer.from(saltHex, 'hex') : crypto.randomBytes(16); // Use provided salt or generate new
+  console.log('Deriving key with salt:', saltHex || salt.toString('hex'));
+  const key = crypto.pbkdf2Sync(process.env.JWT_SECRET, salt, 100000, 32, 'sha256');
+  return {
+    key: key,
+    salt: salt.toString('hex')
+  };
+};
+
+// Encrypt OTP
+const encryptOTP = (otp) => {
+  const { key, salt } = deriveKey(); // Generate new key with new salt
+  console.log('Encrypting OTP:', otp, 'with salt:', salt);
+  const iv = crypto.randomBytes(12); // 96 bits IV for AES-GCM
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  let encrypted = cipher.update(otp, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag();
+  console.log('Encrypted OTP:', encrypted);
+  return {
+    encryptedOTP: encrypted,
+    iv: iv.toString('hex'),
+    authTag: authTag.toString('hex'),
+    salt: salt // Store the salt for decryption
+  };
+};
+
+// Decrypt OTP
+const decryptOTP = (encryptedData) => {
+  const { key } = deriveKey(encryptedData.salt); // Use the stored salt
+  console.log('Decrypting with salt:', encryptedData.salt, 'iv:', encryptedData.iv, 'authTag:', encryptedData.authTag);
+  const decipher = crypto.createDecipheriv(
+    'aes-256-gcm',
+    key,
+    Buffer.from(encryptedData.iv, 'hex')
+  );
+  decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
+  let decrypted = decipher.update(encryptedData.encryptedOTP, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  console.log('Decrypted OTP:', decrypted);
+  return decrypted;
+};
 
 const register = async (req, res) => {
   const { username, email, password } = req.body;
@@ -16,19 +62,41 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email already exists' });
     }
+    const existingUsername = await prisma.user.findUnique({ where: { username } });
+    if (existingUsername) {
+      return res.status(400).json({ success: false, message: 'Username already exists' });
+    }
+
+    // Check for existing OTP
+    const existingOTP = otpStore.get(email);
+    if (existingOTP && existingOTP.type === 'registration') {
+      if (Date.now() < existingOTP.expires) {
+        // Reuse existing OTP if still valid
+        await sendEmail(email, 'Verify Your Email', `Your OTP is ${decryptOTP({ encryptedOTP: existingOTP.encryptedOTP, iv: existingOTP.iv, authTag: existingOTP.authTag, salt: existingOTP.salt })}. It expires in 5 minutes.`);
+        return res.json({ success: true });
+      } else {
+        // Delete expired OTP
+        otpStore.delete(email);
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-    otpStore.set(email, { 
-      username, 
-      email, 
-      password: hashedPassword, 
-      otp, 
+    const { encryptedOTP, iv, authTag, salt } = encryptOTP(otp);
+    otpStore.set(email, {
+      username,
+      email,
+      password: hashedPassword,
+      encryptedOTP,
+      iv,
+      authTag,
+      salt,
       type: 'registration',
       role: 'USER',
       state: 'APPROVED',
-      expires: Date.now() + 10 * 60 * 1000 
+      expires: Date.now() + 5 * 60 * 1000
     });
-    await sendEmail(email, 'Verify Your Email', `Your OTP is ${otp}. It expires in 10 minutes.`);
+    await sendEmail(email, 'Verify Your Email', `Your OTP is ${otp}. It expires in 5 minutes.`);
     res.json({ success: true });
   } catch (error) {
     console.error('Register error:', error);
@@ -39,7 +107,7 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await prisma.user.findUnique({ 
+    const user = await prisma.user.findUnique({
       where: { email }
     });
     if (!user) {
@@ -49,37 +117,37 @@ const login = async (req, res) => {
     if (!match) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
-    
+
     if (user.state === 'PENDING') {
       return res.status(403).json({ success: false, message: 'Your account is pending approval' });
     }
     if (user.state === 'REJECTED') {
       return res.status(403).json({ success: false, message: 'Your account has been rejected' });
     }
-    
+
     // Get formatted client IP
     const ip = getFormattedClientIp(req);
-    
+
     // Update the user's last login information
     await prisma.user.update({
       where: { id: user.id },
-      data: { 
+      data: {
         lastLoginAt: new Date(),
         lastLoginIp: ip
       }
     });
-    
+
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, state: user.state },
-      secretKey, 
+      secretKey,
       { expiresIn: '1h' }
     );
-    res.json({ 
-      success: true, 
-      token, 
-      username: user.username, 
-      role: user.role, 
-      state: user.state 
+    res.json({
+      success: true,
+      token,
+      username: user.username,
+      role: user.role,
+      state: user.state
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -139,7 +207,7 @@ const getTopContributors = async (req, res) => {
           where: { id: item.userId },
           select: { id: true, username: true }
         });
-        
+
         return {
           id: user.id,
           username: user.username,
@@ -158,22 +226,38 @@ const getTopContributors = async (req, res) => {
 const verifyOTP = async (req, res) => {
   const { email, otp, type } = req.body;
   const storedData = otpStore.get(email);
-  if (!storedData || storedData.otp !== otp || storedData.type !== type || Date.now() > storedData.expires) {
+  console.log('Verifying OTP for email:', email, 'type:', type, 'storedData:', storedData);
+  if (!storedData || storedData.type !== type || Date.now() > storedData.expires) {
+    console.log('Validation failed:', !storedData ? 'No stored data' : 'Type mismatch or expired', 'expires:', storedData?.expires, 'now:', Date.now());
     return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
-  }  if (type === 'registration') {
+  }
+  
+  const decryptedOTP = decryptOTP({
+    encryptedOTP: storedData.encryptedOTP,
+    iv: storedData.iv,
+    authTag: storedData.authTag,
+    salt: storedData.salt
+  });
+
+  console.log('Provided OTP:', otp, 'Decrypted OTP:', decryptedOTP);
+  if (decryptedOTP !== otp) {
+    console.log('OTP mismatch detected');
+    return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+  }
+  if (type === 'registration') {
     const { username, email, password, role, state } = storedData;
     const user = await prisma.user.create({
       data: { username, email, password, role, state, twoFAEnabled: false },
     });
-    const token = jwt.sign({ 
-      id: user.id, 
+    const token = jwt.sign({
+      id: user.id,
       username: user.username,
       role: user.role,
-      state: user.state 
+      state: user.state
     }, secretKey, { expiresIn: '1h' });
     otpStore.delete(email);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       token,
       username: user.username,
       role: user.role,
@@ -208,8 +292,9 @@ const forgotPassword = async (req, res) => {
     }
     // Generate and send a new OTP if no valid or verified OTP exists
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore.set(email, { otp, type: 'forgot-password', expires: Date.now() + 10 * 60 * 1000 });
-    await sendEmail(email, 'Password Reset OTP', `Your OTP to reset your password is ${otp}. It expires in 10 minutes.`);
+    const { encryptedOTP, iv, authTag, salt } = encryptOTP(otp);
+    otpStore.set(email, { encryptedOTP, iv, authTag, salt, type: 'forgot-password', expires: Date.now() + 5 * 60 * 1000 });
+    await sendEmail(email, 'Password Reset OTP', `Your OTP to reset your password is ${otp}. It expires in 5 minutes.`);
     res.json({ success: true });
   } catch (error) {
     console.error('Forgot password error:', error);

@@ -99,6 +99,7 @@ model Document {
   encryptionKey String // AES encryption key (encrypted with user's public key)
   encryptionIv  String // AES initialization vector
   authTag       String // AES-GCM authentication tag
+  publicKey     String // Public key in PEM format for signature verification
   createdAt     DateTime  @default(now())
   userId        Int
   questionId    Int? // Optional link to a question

@@ -138,7 +138,7 @@ export function renderUserUI() {
     userStatus.innerHTML = `
       <div class="flex items-center">
         <span class="text-gray-700 dark:text-gray-300 truncate max-w-[150px] sm:max-w-[200px]">${username}</span>
-        <span class="ml-2 px-2 py-1 text-xs rounded ${role === 'ADMIN' ? 'bg-red-100 text-red-800' : role === 'MODERATOR' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'} dark:bg-opacity-20">
+        <span class="ml-2 px-2 py-1 text-xs rounded ${role === 'ADMIN' ? 'bg-red-100 text-red-800' : role === 'MODERATOR' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-800 text-white-800 fw-bolder'} ">
           ${role}
         </span>
         ${state !== 'APPROVED' ? `<span class="ml-2 px-2 py-1 text-xs rounded bg-gray-100 text-gray-800 dark:bg-opacity-20">${state}</span>` : ''}

@@ -5,11 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard - Q&A System</title>
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/components.css" />
-    <link rel="stylesheet" href="/css/animations.css" />
-    <link rel="stylesheet" href="/css/pages.css" />
-    <link rel="stylesheet" href="/css/admin.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+    <link rel="stylesheet" href="css/pages.css" />
+    <link rel="stylesheet" href="css/feed-style.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <link rel="icon" href="assets/admin_Q.png" type="image/png">
   </head>
   <body>
@@ -32,7 +36,17 @@
                 Q&A System
               </span>
             </a>
-            <div id="userStatus"></div>
+            <div class="flex items-center space-x-4">
+              <button id="darkModeToggle" class="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </button>
+              <div id="userStatus"></div>
+            </div>
           </div>
         </div>
       </header>
@@ -56,12 +70,16 @@
                 <option value="APPROVED">Approved</option>
                 <option value="REJECTED">Rejected</option>
               </select>
-            </div>
-
-            <!-- Users List -->
+            </div>            <!-- Users List -->
             <section class="admin-section">
-              <div class="admin-section-header">
+              <div class="admin-section-header flex justify-between items-center">
                 <h2 class="text-xl font-semibold">User Management</h2>
+                <button id="showAddUserModal" class="admin-btn admin-btn-primary flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add New User
+                </button>
               </div>
               <div class="overflow-x-auto">
                 <table class="admin-table">
@@ -199,14 +217,9 @@
           </div>
         </form>
       </div>
-    </div>
-
-    <!-- Add a button to open the modal -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold">User Management</h2>
-      <button id="showAddUserModal" class="btn btn-primary">
-        Add New User
-      </button>
+    </div>    <!-- Analytics dashboard will be added here in the future -->
+    <div id="analytics-placeholder" class="hidden">
+      <!-- Reserved for future analytics features -->
     </div>
 
     <!-- Ensure these imports are present in your script section -->
@@ -322,6 +335,12 @@
             } catch (error) {
               showToast("error", `Failed to create user: ${error.message}`);
             }
+          });
+
+        document
+          .getElementById("darkModeToggle")
+          .addEventListener("click", () => {
+            document.documentElement.classList.toggle("dark");
           });
       });
     </script>

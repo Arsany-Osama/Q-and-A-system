@@ -99,6 +99,9 @@ export function showSection(sectionId) {
     btn.classList.remove('active');
   });
   document.getElementById(`${sectionId.replace('Section', '')}Nav`)?.classList.add('active');
+  
+  // Track the current section in session storage for state management
+  sessionStorage.setItem('currentSection', sectionId);
 }
 
 export function showToast(type, message) {

@@ -222,12 +222,12 @@
       <!-- Reserved for future analytics features -->
     </div>
 
-    <!-- Ensure these imports are present in your script section -->
-    <script type="module">
+    <!-- Ensure these imports are present in your script section -->    <script type="module">
       import { initUI } from "/js/ui.js";
       import { initAdminDashboard } from "/js/admin.js";
       import { admin as adminApi } from "/js/utils/api.js";
       import { showToast } from "/js/ui.js";
+      import { checkAdminAccess } from "/js/adminAuth.js";
 
       async function fetchAndRenderLoginLogs() {
         try {

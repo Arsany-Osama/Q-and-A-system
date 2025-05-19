@@ -10,6 +10,7 @@ import { initSidebar } from './sidebar.js';
 import { renderFeed, setupFilterButtons } from './feed.js';
 import { initSecurity } from './security.js';
 import { fetchAndRenderPopularTags } from './tags.js';
+import { navigateToSection, hasPermission, checkPageAccess } from './routeProtection.js'; // Import route protection
 import './fileUpload.js'; // Import file upload module
 import { initProfileChanges } from './passwordChange.js';
 
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSecurity();
   initFacebookLikeFeedUI();
   setupAdminNav();
+  setupProtectedRoutes(); // Setup route protection
 
   // Function to close the sidebar
   const sidebar = document.getElementById('sidebar');
@@ -175,8 +177,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup sidebar ask question button
     document.getElementById('sidebarAskQuestion')?.addEventListener('click', () => {
-      if (!isLoggedIn()) {
-        showPopup('login');
+      if (!hasPermission('questionForm')) {
+        if (!isLoggedIn()) {
+          showPopup('login');
+        } else {
+          showToast('error', 'You do not have permission to post questions');
+        }
         return;
       }
       showSection('questionForm');
@@ -237,6 +243,87 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/admin.html';
         closeSidebar();
       });
+    }
+  }
+
+  // Setup protected navigation between sections
+  function setupProtectedRoutes() {
+    // Get current page path for page-level protection
+    const currentPath = window.location.pathname;
+      // Check if the current page is protected
+    if (currentPath.includes('/admin.html') || currentPath.includes('/test-security.html')) {
+      (async () => {
+        await checkPageAccess(currentPath);
+      })();
+    }
+      // Handle all navigation buttons with route protection
+    document.getElementById('feedNav')?.addEventListener('click', () => {
+      // Feed section is public, no need for async
+      navigateToSection('feedSection', showSection);
+    });
+    
+    document.getElementById('profileNav')?.addEventListener('click', async () => {
+      const success = await navigateToSection('profileSection', showSection);
+      if (!success) {
+        if (!isLoggedIn()) {
+          showPopup('login');
+        }
+      } else {
+        renderProfile();
+      }
+    });
+    
+    document.getElementById('postQuestionNav')?.addEventListener('click', async () => {
+      const success = await navigateToSection('questionForm', showSection);
+      if (!success) {
+        if (!isLoggedIn()) {
+          showPopup('login');
+        }
+      }
+    });
+    
+    document.getElementById('answerQuestionNav')?.addEventListener('click', async () => {
+      const success = await navigateToSection('answerQuestionSection', showSection);
+      if (!success) {
+        if (!isLoggedIn()) {
+          showPopup('login');
+        }
+      }
+    });
+    
+    // Handle main content buttons that navigate to sections
+    document.getElementById('postQuestionBtn')?.addEventListener('click', () => {
+      if (!hasPermission('questionForm')) {
+        if (!isLoggedIn()) {
+          showPopup('login');
+        } else {
+          showToast('error', 'You must be an approved user to post questions');
+        }
+        return;
+      }
+      showSection('questionForm');
+    });
+    
+    document.getElementById('answerQuestionBtn')?.addEventListener('click', () => {
+      if (!hasPermission('answerQuestionSection')) {
+        if (!isLoggedIn()) {
+          showPopup('login');
+        } else {
+          showToast('error', 'You must be an approved user to answer questions');
+        }
+        return;
+      }
+      showSection('answerQuestionSection');
+    });
+    
+    // Restore previous section from session storage if available
+    const previousSection = sessionStorage.getItem('currentSection');
+    if (previousSection) {
+      if (hasPermission(previousSection)) {
+        showSection(previousSection);
+      } else {
+        showSection('feedSection'); // Default to feed if no permission
+      }
     }
   }
 

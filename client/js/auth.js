@@ -33,6 +33,43 @@ export function isApproved() {
   return getUserState() === 'APPROVED';
 }
 
+/**
+ * Verify if the current auth token is still valid
+ * @returns {Promise<boolean>} - Promise resolving to true if token is valid
+ */
+export async function verifyAuthToken() {
+  if (!isLoggedIn()) return false;
+  
+  try {
+    // Call getUserStats as a lightweight way to verify token validity
+    const response = await authApi.getUserStats();
+    return response.success === true;
+  } catch (error) {
+    console.error('Token verification error:', error);
+    // If we get an invalid token error, clear auth data
+    if (error.message && (
+      error.message.includes('Invalid token') || 
+      error.message.includes('jwt expired') ||
+      error.message.includes('Unauthorized')
+    )) {
+      // Clear all auth-related data
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      localStorage.removeItem('state');
+      localStorage.removeItem('has2fa');
+      sessionStorage.removeItem('currentSection');
+      
+      // Update the UI to show login/register buttons
+      renderUserUI();
+      
+      // Show a message to the user
+      showToast('error', 'Your session has expired. Please log in again.');
+    }
+    return false;
+  }
+}
+
 export async function fetchTopContributors() {
   try {
     const data = await authApi.getTopContributors();
@@ -43,15 +80,30 @@ export async function fetchTopContributors() {
   }
 }
 
+/**
+ * Log out the current user, reset all permissions and redirect to homepage
+ * This function will:
+ * 1. Clear all authentication data from localStorage
+ * 2. Send a logout request to the server if a token exists
+ * 3. Reset the UI to show login/register buttons
+ * 4. Redirect to the homepage
+ */
 export function logout() {
   console.log('Logging out');
   const token = getToken();
+  
+  // First clear all auth data from localStorage regardless of token state
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  localStorage.removeItem('role');
+  localStorage.removeItem('state');
+  localStorage.removeItem('has2fa');
+  
   if (!token) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('has2fa');
     showToast('success', 'Logged out successfully');
     renderUserUI();
+    // Redirect to homepage
+    window.location.href = '/';
     return;
   }
 
@@ -67,10 +119,14 @@ export function logout() {
       showToast('success', 'Logged out successfully');
     })
     .finally(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      localStorage.removeItem('has2fa');
+      // Clear session data
+      sessionStorage.removeItem('currentSection');
+      
+      // Update UI to show login/register buttons
       renderUserUI();
+      
+      // Redirect to the homepage
+      window.location.href = '/';
     });
 }
 

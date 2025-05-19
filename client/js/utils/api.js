@@ -78,6 +78,22 @@ async function fetchWithAuth(endpoint, options = {}, isBinary = false) {
     }
 
     const data = await response.json();
+    
+    // Check for token expiration errors
+    if (!response.ok && (
+        data.message?.includes('jwt expired') || 
+        data.message?.includes('Invalid token') ||
+        response.status === 401 || 
+        response.status === 403
+      )) {
+      console.error('Token validation error:', data.message);
+      // Import handleTokenExpiration dynamically to avoid circular imports
+      import('../auth.js').then(auth => {
+        if (typeof auth.handleTokenExpiration === 'function') {
+          auth.handleTokenExpiration();
+        }
+      });
+    }
 
     if (!response.ok) {
       console.error(`API request failed:`, {

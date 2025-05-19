@@ -52,23 +52,87 @@ export async function verifyAuthToken() {
       error.message.includes('jwt expired') ||
       error.message.includes('Unauthorized')
     )) {
-      // Clear all auth-related data
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      localStorage.removeItem('role');
-      localStorage.removeItem('state');
-      localStorage.removeItem('has2fa');
-      sessionStorage.removeItem('currentSection');
-      
-      // Update the UI to show login/register buttons
-      renderUserUI();
-      
-      // Show a message to the user
-      showToast('error', 'Your session has expired. Please log in again.');
+      // Handle expired token by logging out the user
+      handleTokenExpiration();
     }
     return false;
   }
 }
+
+/**
+ * Handle expired JWT token by logging out the user and redirecting
+ * @export
+ */
+export function handleTokenExpiration() {
+  console.log('Token expired, performing automatic logout');
+  
+  // Clear verification interval if it exists
+  if (window.tokenVerificationInterval) {
+    clearInterval(window.tokenVerificationInterval);
+    window.tokenVerificationInterval = null;
+  }
+  
+  // Clear all auth-related data
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  localStorage.removeItem('role');
+  localStorage.removeItem('state');
+  localStorage.removeItem('has2fa');
+  localStorage.removeItem('tempToken');
+  localStorage.removeItem('tempUsername');
+  sessionStorage.removeItem('currentSection');
+  
+  // Update the UI to show login/register buttons
+  renderUserUI();
+  
+  // Show a message to the user
+  showToast('error', 'Your session has expired. Please log in again.');
+  
+  // Redirect to homepage only if not already there
+  if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+    window.location.href = '/';
+  }
+}
+
+/**
+ * Set up automatic token verification to run periodically
+ * This checks if the token is still valid every few minutes
+ */
+export function setupAutoTokenVerification() {
+  // Only set up verification if user is logged in
+  if (!isLoggedIn()) return;
+  
+  console.log('Setting up automatic token verification');
+  
+  // Check token validity every 5 minutes
+  const intervalMinutes = 5;
+  const interval = setInterval(async () => {
+    console.log('Performing automatic token verification');
+    const isValid = await verifyAuthToken();
+    
+    // If token is invalid, the verifyAuthToken function will handle the cleanup
+    if (!isValid) {
+      console.log('Token verification failed, clearing interval');
+      clearInterval(interval);
+    }
+  }, intervalMinutes * 60 * 1000);
+  
+  // Store interval ID in case we need to clear it later
+  window.tokenVerificationInterval = interval;
+  
+  // Also verify immediately on page load
+  verifyAuthToken();
+}
+
+// Automatically check token validity on page load
+document.addEventListener('DOMContentLoaded', () => {
+  if (isLoggedIn()) {
+    // Verify the token on page load
+    verifyAuthToken();
+    // Set up automatic verification for future checks
+    setupAutoTokenVerification();
+  }
+});
 
 export async function fetchTopContributors() {
   try {
@@ -92,12 +156,20 @@ export function logout() {
   console.log('Logging out');
   const token = getToken();
   
+  // Clear verification interval if it exists
+  if (window.tokenVerificationInterval) {
+    clearInterval(window.tokenVerificationInterval);
+    window.tokenVerificationInterval = null;
+  }
+  
   // First clear all auth data from localStorage regardless of token state
   localStorage.removeItem('token');
   localStorage.removeItem('username');
   localStorage.removeItem('role');
   localStorage.removeItem('state');
   localStorage.removeItem('has2fa');
+  localStorage.removeItem('tempToken');
+  localStorage.removeItem('tempUsername');
   
   if (!token) {
     showToast('success', 'Logged out successfully');
@@ -131,6 +203,9 @@ export function logout() {
 }
 
 export function initAuth() {
+  // Set up automatic token verification for logged-in users
+  setupAutoTokenVerification();
+  
   const form = document.getElementById('authForm');
   if (!form) {
     console.error('Auth form not found');

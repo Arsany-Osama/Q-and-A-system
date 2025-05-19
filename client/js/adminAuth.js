@@ -1,4 +1,4 @@
-import { isAdmin, verifyAuthToken } from './auth.js';
+import { isAdmin, verifyAuthToken, handleTokenExpiration } from './auth.js';
 import { showToast } from './ui.js';
 
 /**
@@ -10,19 +10,25 @@ export async function checkAdminAccess() {
   try {
     const isValid = await verifyAuthToken();
     if (!isValid) {
-      showToast('error', 'Your session has expired. Please log in again.');
-      // Redirect to homepage after a brief delay
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1500);
+      // Use centralized token expiration handler
+      handleTokenExpiration();
       return false;
     }
   } catch (error) {
     console.error('Error verifying auth token:', error);
-    showToast('error', 'Authentication error. Please log in again.');
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 1500);
+    // Check if it's an expiration error
+    if (error.message && (
+      error.message.includes('Invalid token') || 
+      error.message.includes('jwt expired') ||
+      error.message.includes('Unauthorized')
+    )) {
+      handleTokenExpiration();
+    } else {
+      showToast('error', 'Authentication error. Please log in again.');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+    }
     return false;
   }
   

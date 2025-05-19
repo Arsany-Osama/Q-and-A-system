@@ -1,4 +1,4 @@
-import { initAuth, isLoggedIn, isAdmin } from './auth.js';
+import { initAuth, isLoggedIn, isAdmin, setupAutoTokenVerification } from './auth.js';
 import { initUI, showSection, showPopup, showToast, hidePopup, showQuestionFormPopup, showAnswerFormPopup, hideQuestionFormPopup, hideAnswerFormPopup } from './ui.js';
 import { setupQuestionForm } from './question.js';
 import { setupAnswerForm } from './answer.js';
@@ -13,10 +13,17 @@ import { fetchAndRenderPopularTags } from './tags.js';
 import { navigateToSection, hasPermission, checkPageAccess } from './routeProtection.js'; // Import route protection
 import './fileUpload.js'; // Import file upload module
 import { initProfileChanges } from './passwordChange.js';
+import { initFetchInterceptor } from './utils/fetchInterceptor.js'; // Import fetch interceptor for global token handling
 
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing main.js');
+  // Initialize fetch interceptor to catch all expired tokens
+  initFetchInterceptor();
+  // Initialize authentication
   initAuth();
+  // Set up automatic token verification
+  setupAutoTokenVerification();
+  
   initUI();
   initSidebar();
   setupQuestionForm();

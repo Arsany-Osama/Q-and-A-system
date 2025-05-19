@@ -1,4 +1,4 @@
-import { getToken, isLoggedIn, logout } from './auth.js'; // Added logout import
+import { getToken, isLoggedIn, logout, handleTokenExpiration } from './auth.js'; // Added handleTokenExpiration
 import { showToast, showPopup } from './ui.js'; // Added showPopup import
 import { auth } from './utils/api.js';
 
@@ -13,10 +13,10 @@ export async function fetchUserStats() {
     const result = await auth.getUserStats();
     
     if (!result.success) {
-      if (result.message === 'Invalid token: jwt expired') {
-        showToast('error', 'Session expired, please log in again');
-        logout(); // Clear token and update UI
-        showPopup('login'); // Prompt user to log in
+      // Handle token expiration specifically
+      if (result.message?.includes('jwt expired') || result.message?.includes('Invalid token')) {
+        // Use the central token expiration handler
+        handleTokenExpiration();
         return { questionsCount: 0, answersCount: 0 };
       }
       throw new Error(result.message || 'Failed to fetch user stats');
@@ -24,7 +24,13 @@ export async function fetchUserStats() {
     return result.stats;
   } catch (err) {
     console.error('Error fetching user stats:', err);
-    showToast('error', err.message === 'Invalid token: jwt expired' ? 'Session expired, please log in again' : 'Network error loading profile');
+    
+    // Check for token expiration in error messages
+    if (err.message?.includes('jwt expired') || err.message?.includes('Invalid token')) {
+      handleTokenExpiration();
+    } else {
+      showToast('error', 'Network error loading profile');
+    }
     return { questionsCount: 0, answersCount: 0 };
   }
 }

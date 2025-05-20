@@ -413,6 +413,16 @@ export const admin = {
   },
 };
 
+// Reports API
+export const reports = {
+  reportContent: async (contentId, type, reason) => {
+    return fetchWithAuth('/report/report', {
+      method: 'POST',
+      body: JSON.stringify({ id: contentId, type, reason })
+    });
+  }
+};
+
 // Default export of all API modules
 export default {
   auth,
@@ -421,7 +431,8 @@ export default {
   votes,
   replies,
   documents,
-  admin
+  admin,
+  reports
 };
 
 // Expose isApproved globally for use in other scripts

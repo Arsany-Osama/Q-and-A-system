@@ -1,7 +1,7 @@
-const { Prisma } = require("@prisma/client")
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-export const report = async (req, res) => {
+const report = async (req, res) => {
     const { id, reason, type } = req.body;
 
     if (!id || !reason || !type) {
@@ -9,12 +9,11 @@ export const report = async (req, res) => {
     }
 
     //vadlidate the type of the id
-    const parsedId = parseInt(id);
-    if (isNaN(parsedId)) {
+    const parsedId = parseInt(id);    if (isNaN(parsedId)) {
         return res.status(400).json({ success: false, message: 'Invalid ID' });
     }
 
-    if (!["question", "answer"].includes(type.tolowerCase())) {
+    if (!["question", "answer"].includes(type.toLowerCase())) {
         return res.status(400).json({ success: false, message: 'Invalid type' });
     }
 
@@ -44,7 +43,7 @@ export const report = async (req, res) => {
     }
 };
 
-export const getReports = async (req, res) => {
+const getReports = async (req, res) => {
     try {
         const reports = await prisma.report.findMany({
             where:{
@@ -67,7 +66,7 @@ export const getReports = async (req, res) => {
     }
 };
 
-export const deleteReportedAnswerOrQuestion = async (req, res) => {
+const deleteReportedAnswerOrQuestion = async (req, res) => {
 
     const {reportId} = req.body;
     try{
@@ -97,7 +96,7 @@ export const deleteReportedAnswerOrQuestion = async (req, res) => {
     }
 }
 
-export const RejectReport = async (req, res) => {
+const RejectReport = async (req, res) => {
 
     const { reportId } = req.body;
 
@@ -117,3 +116,10 @@ export const RejectReport = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Server error' });
     }
 }
+
+module.exports = {
+    report,
+    getReports,
+    deleteReportedAnswerOrQuestion,
+    RejectReport
+};

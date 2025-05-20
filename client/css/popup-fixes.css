@@ -1,0 +1,34 @@
+/* Popup fixes */
+#questionFormPopup,
+#answerFormPopup,
+#authPopup,
+#twoFactorPopup,
+#forgotPasswordPopup {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.popup-content {
+  position: relative;
+  z-index: 1001;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Prevent background scrolling when popup is open */
+body.overflow-hidden {
+  overflow: hidden;
+}
+
+/* Ensure popup has proper focus styling */
+.popup-content:focus {
+  outline: none;
+}
+
+/* Ensure popup has proper stacking context */
+.popup-content {
+  margin: 2rem auto;
+}

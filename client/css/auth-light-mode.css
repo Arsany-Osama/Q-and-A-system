@@ -1,0 +1,125 @@
+/* Auth popup light mode improvements */
+:root:not(.dark) #authPopup .popup-content {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+:root:not(.dark) #authPopup .input {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) #authPopup .input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+}
+
+:root:not(.dark) #authPopup .input:hover {
+  border-color: #94a3b8;
+}
+
+:root:not(.dark) #authPopup .input::placeholder {
+  color: #64748b;
+}
+
+/* Label styling for light mode */
+:root:not(.dark) #authPopup .label {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* Button styling improvements for light mode */
+:root:not(.dark) #authPopup .btn-primary {
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 2px 4px rgba(var(--primary-rgb), 0.3);
+}
+
+:root:not(.dark) #authPopup .btn-primary:hover {
+  background-color: #1e3a8a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(var(--primary-rgb), 0.4);
+}
+
+/* OAuth buttons */
+:root:not(.dark) #googleLoginBtn,
+:root:not(.dark) #auth0LoginBtn {
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) #googleLoginBtn:hover,
+:root:not(.dark) #auth0LoginBtn:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Toggle tabs for login/register */
+:root:not(.dark) #authPopup .bg-gray-100 {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+:root:not(.dark) #loginTab,
+:root:not(.dark) #registerTab {
+  color: #0f172a;
+}
+
+:root:not(.dark) #loginTab.bg-primary,
+:root:not(.dark) #registerTab.bg-primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+:root:not(.dark) #forgotPasswordBtn {
+  color: var(--primary);
+}
+
+:root:not(.dark) #forgotPasswordBtn:hover {
+  text-decoration: underline;
+}
+
+/* Password visibility toggle button */
+:root:not(.dark) #togglePassword {
+  color: #64748b;
+}
+
+:root:not(.dark) #togglePassword:hover {
+  color: #0f172a;
+}
+
+/* Password requirements list */
+:root:not(.dark) #passwordRequirements {
+  color: #64748b;
+}
+
+:root:not(.dark) #passwordRequirements .text-red-500 {
+  color: #ef4444;
+}
+
+:root:not(.dark) #passwordRequirements .text-green-500 {
+  color: #10b981;
+}
+
+/* Error message */
+:root:not(.dark) #authMessage {
+  color: #ef4444;
+}
+
+/* Or continue with divider */
+:root:not(.dark) #authPopup .border-t {
+  border-color: #e2e8f0;
+}
+
+:root:not(.dark) #authPopup .bg-white {
+  background-color: #ffffff;
+}
+
+:root:not(.dark) #authPopup .text-gray-500 {
+  color: #64748b;
+}

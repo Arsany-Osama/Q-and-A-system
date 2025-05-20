@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard - Q&A System</title>
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
+    <link rel="stylesheet" href="css/light-mode.css">
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/animations.css" />
@@ -222,12 +223,12 @@
       <!-- Reserved for future analytics features -->
     </div>
 
-    <!-- Ensure these imports are present in your script section -->
-    <script type="module">
+    <!-- Ensure these imports are present in your script section -->    <script type="module">
       import { initUI } from "/js/ui.js";
       import { initAdminDashboard } from "/js/admin.js";
       import { admin as adminApi } from "/js/utils/api.js";
       import { showToast } from "/js/ui.js";
+      import { checkAdminAccess } from "/js/adminAuth.js";
 
       async function fetchAndRenderLoginLogs() {
         try {

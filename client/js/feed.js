@@ -172,24 +172,23 @@ export async function renderFeed() {
             <div class="flex-1">
               <div class="flex justify-between items-start">
                 <div>
-                  <h3 class="card-title font-semibold text-base sm:text-lg hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">${q.title}</h3>
+                  <h3 class="card-title font-semibold text-base sm:text-lg hover:text-blue-600 hover:underline dark:hover:text-blue-400 transition-colors cursor-pointer">${q.title}</h3>
                   <div class="meta flex items-center text-xs text-gray-600 dark:text-gray-400">
                     <span class="author font-medium">${q.username || 'Anonymous'}</span>
                     <span class="mx-1">•</span>
                     <span class="date">${new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                     ${q.tags && q.tags.length ? `<span class="mx-1">•</span><span class="primary-tag text-blue-600 dark:text-blue-400">${q.tags[0]}</span>` : ''}
                   </div>
-                </div>
-                <div class="dropdown relative">
-                  <button class="dropdown-toggle p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                </div>                <div class="dropdown relative">
+                  <button class="dropdown-toggle p-1 rounded-full hover:bg-blue-50 hover:shadow-sm dark:hover:bg-gray-700">
                     <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
                     </svg>
                   </button>
                   <div class="dropdown-menu hidden absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10">
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Save question</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Report</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Not interested</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-700">Save question</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-700">Report</a>
+                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-700">Not interested</a>
                   </div>
                 </div>
               </div>
@@ -216,36 +215,33 @@ export async function renderFeed() {
                 <span>Trending</span>
               </div>` : ''}
             <div class="reaction-bar flex justify-between items-center">
-              <div class="vote-section flex items-center space-x-2">
-                <button class="reaction-btn upvote-btn ${upvoteClass} hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-md transition-colors" data-question-id="${q.id}" aria-label="Like question">
+              <div class="vote-section flex items-center space-x-2">                <button class="reaction-btn upvote-btn ${upvoteClass} hover:bg-blue-50 hover:shadow-sm dark:hover:bg-gray-700 p-1 rounded-md transition-colors" data-question-id="${q.id}" aria-label="Like question">
                   <svg class="w-5 h-5 mr-1 text-blue-600 dark:text-blue-400" fill="${upvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                   </svg>
                   <span class="vote-count text-gray-700 dark:text-gray-300">${q.upvotes || 0}</span>
                 </button>
-                <button class="reaction-btn downvote-btn ${downvoteClass} hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded-md transition-colors" data-question-id="${q.id}" aria-label="Dislike question">
+                <button class="reaction-btn downvote-btn ${downvoteClass} hover:bg-red-50 hover:shadow-sm dark:hover:bg-gray-700 p-1 rounded-md transition-colors" data-question-id="${q.id}" aria-label="Dislike question">
                   <svg class="w-5 h-5 mr-1 text-red-500 dark:text-red-400" fill="${downvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
                   </svg>
                   <span class="vote-count text-gray-700 dark:text-gray-300">${q.downvotes || 0}</span>
                 </button>
-              </div>
-
-              <div class="action-buttons flex items-center">
-                <button class="action-btn answers-counter flex items-center mr-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" aria-label="View answers">
+              </div>              <div class="action-buttons flex items-center">
+                <button class="action-btn answers-counter flex items-center mr-2 text-gray-600 dark:text-gray-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-700 dark:hover:text-blue-400 p-1 rounded-md transition-colors" aria-label="View answers">
                   <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                   <span>${q.answers.length}</span>
                 </button>
 
-                <button class="action-btn share-btn flex items-center mr-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" aria-label="Share question">
+                <button class="action-btn share-btn flex items-center mr-2 text-gray-600 dark:text-gray-400 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-700 dark:hover:text-blue-400 p-1 rounded-md transition-colors" aria-label="Share question">
                   <svg class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
                 </button>
 
-                <button class="answer-btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-xs px-3 py-1.5 flex items-center rounded-md transition-colors" data-question-id="${q.id}">
+                <button class="answer-btn bg-blue-600 hover:bg-blue-700 hover:shadow dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-xs px-3 py-1.5 flex items-center rounded-md transition-colors" data-question-id="${q.id}">
                   <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                   </svg>
@@ -254,9 +250,8 @@ export async function renderFeed() {
               </div>
             </div>
 
-            <div class="answers-section mt-3">
-              <div class="toggle-answers-container mb-2">
-                <button class="toggle-answers flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm" aria-expanded="false" aria-controls="answers-${q.id}">
+            <div class="answers-section mt-3">                <div class="toggle-answers-container mb-2">
+                <button class="toggle-answers flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:bg-blue-50 hover:shadow-sm hover:rounded-md dark:hover:text-blue-300 text-sm p-1" aria-expanded="false" aria-controls="answers-${q.id}">
                   <svg class="w-4 h-4 mr-1 toggle-icon transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                   </svg>
@@ -290,20 +285,19 @@ export async function renderFeed() {
                         </div>
                         <div class="answer-content ml-9">
                           <p class="text-sm text-gray-700 dark:text-gray-300">${a.content}</p>
-                          <div class="answer-footer mt-1 flex items-center">
-                            <button class="reaction-btn reaction-btn-sm upvote-answer-btn ${answerUpvoteClass} text-blue-600 dark:text-blue-400" data-answer-id="${a.id}" aria-label="Like answer">
+                          <div class="answer-footer mt-1 flex items-center">                            <button class="reaction-btn reaction-btn-sm upvote-answer-btn ${answerUpvoteClass} text-blue-600 hover:bg-blue-50 hover:shadow-sm rounded-md dark:text-blue-400 dark:hover:bg-gray-700" data-answer-id="${a.id}" aria-label="Like answer">
                               <svg class="w-4 h-4 mr-1" fill="${answerUpvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                               </svg>
                               <span class="vote-count text-xs">${a.upvotes || 0}</span>
                             </button>
-                            <button class="reaction-btn reaction-btn-sm downvote-answer-btn ${answerDownvoteClass} text-red-500 dark:text-red-400" data-answer-id="${a.id}" aria-label="Dislike answer">
+                            <button class="reaction-btn reaction-btn-sm downvote-answer-btn ${answerDownvoteClass} text-red-500 hover:bg-red-50 hover:shadow-sm rounded-md dark:text-red-400 dark:hover:bg-gray-700" data-answer-id="${a.id}" aria-label="Dislike answer">
                               <svg class="w-4 h-4 mr-1" fill="${answerDownvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l-3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
                               </svg>
                               <span class="vote-count text-xs">${a.downvotes || 0}</span>
                             </button>
-                            <button class="reply-btn text-xs text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors">
+                            <button class="reply-btn text-xs text-gray-500 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm hover:rounded-md dark:hover:bg-gray-700 dark:hover:text-blue-400 flex items-center transition-colors p-1">
                               <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                               </svg>
@@ -322,9 +316,8 @@ export async function renderFeed() {
                       You
                     </div>
                   </div>
-                  <div class="quick-answer-input-container flex-1 relative">
-                    <input type="text" class="quick-answer-input w-full rounded-full pl-4 pr-10 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-400 text-gray-700 dark:text-gray-200" placeholder="Write a quick answer..." data-question-id="${q.id}">
-                    <button class="send-answer-btn absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                  <div class="quick-answer-input-container flex-1 relative">                    <input type="text" class="quick-answer-input w-full rounded-full pl-4 pr-10 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-300 focus:border-blue-500 dark:focus:border-blue-400 text-gray-700 dark:text-gray-200 hover:border-blue-300 transition-colors" placeholder="Write a quick answer..." data-question-id="${q.id}">
+                    <button class="send-answer-btn absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:scale-110 dark:hover:text-blue-300 transition-all">
                       <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11h2v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
                       </svg>
@@ -399,7 +392,7 @@ export async function renderFeed() {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <p class="mt-3 text-gray-600 dark:text-gray-400">Error loading questions.</p>
-        <button class="retry-btn bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors mt-3">Retry</button>
+        <button class="retry-btn bg-blue-600 hover:bg-blue-700 hover:shadow dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-all mt-3">Retry</button>
       </div>
     `;
     showToast('Failed to load questions', 'error');

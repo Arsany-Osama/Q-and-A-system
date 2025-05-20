@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Security Features Test</title>
+  <title>Security Features Test</title>  <link rel="stylesheet" href="css/light-mode.css">
+  <link rel="stylesheet" href="css/light-mode-fixes.css">
+  <link rel="stylesheet" href="css/light-mode-enhancements.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/animations.css">
@@ -258,6 +260,7 @@
   <script type="module">
     import { showTwoFactorPopup, showSecurityQuestionsPopup, showForgotPasswordPopup, showToast } from './js/ui.js';
     import { validatePassword } from './js/security.js';
+    import { checkSecurityAccess } from './js/securityAuth.js';
     
     document.addEventListener('DOMContentLoaded', () => {
       // Test 2FA

@@ -16,12 +16,17 @@ const passport = require('./services/passport');
 const https = require('https');
 const fs = require('fs');
 
+// Allow self-signed certificates for development
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'https://localhost:3000',
-  credentials: true
+  origin: ['https://localhost:3000', 'https://127.0.0.1:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

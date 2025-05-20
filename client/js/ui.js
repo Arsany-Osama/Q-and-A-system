@@ -99,6 +99,13 @@ export function showSection(sectionId) {
     btn.classList.remove('active');
   });
   document.getElementById(`${sectionId.replace('Section', '')}Nav`)?.classList.add('active');
+  
+  // Track the current section in session storage for state management
+  sessionStorage.setItem('currentSection', sectionId);
+  
+  // Dispatch a custom event that can be listened to for section-specific initialization
+  const event = new CustomEvent('sectionChanged', { detail: { sectionId } });
+  document.dispatchEvent(event);
 }
 
 export function showToast(type, message) {
@@ -131,8 +138,8 @@ export function renderUserUI() {
       state: localStorage.getItem('state')
     });
     const username = decodeURIComponent(localStorage.getItem('username') || 'User');
-    const role = decodeURIComponent(localStorage.getItem('role') || 'unauthorized');
-    const state = decodeURIComponent(localStorage.getItem('state') || 'unauthenticated');
+    const role = getUserRole(); // Use the function from auth.js instead of direct localStorage access
+    const state = getUserState(); // Use the function from auth.js instead of direct localStorage access
     console.log('Final values:', { username, role, state });
 
     userStatus.innerHTML = `
@@ -312,6 +319,10 @@ function setupFocusTrap(popupId) {
 export function showQuestionFormPopup() {
   const popup = document.getElementById('questionFormPopup');
   popup.classList.remove('hidden');
+  
+  // Do not call showSection here as it hides all other sections
+  // Just ensure the form is ready for input
+  
   document.getElementById('questionTitle').focus();
   document.getElementById('postQuestionForm').reset();
 }
@@ -321,11 +332,20 @@ export function hideQuestionFormPopup() {
   if (popup.classList.contains('hidden')) return;
   popup.classList.add('hidden');
   document.getElementById('postQuestionForm').reset();
+  
+  // Ensure the feed section stays visible
+  const feedSection = document.getElementById('feedSection');
+  if (feedSection) {
+    feedSection.classList.remove('hidden');
+  }
 }
 
 export function showAnswerFormPopup(questionId = null) {
   const popup = document.getElementById('answerFormPopup');
   popup.classList.remove('hidden');
+  
+  // Do not call showSection here as it hides all other sections
+  // Just handle the popup independently
   
   if (questionId) {
     fetchQuestions().then(questions => {
@@ -347,4 +367,10 @@ export function hideAnswerFormPopup() {
   if (popup.classList.contains('hidden')) return;
   popup.classList.add('hidden');
   document.getElementById('postAnswerForm').reset();
+  
+  // Ensure the feed section stays visible
+  const feedSection = document.getElementById('feedSection');
+  if (feedSection) {
+    feedSection.classList.remove('hidden');
+  }
 }

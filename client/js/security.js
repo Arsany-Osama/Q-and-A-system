@@ -1,4 +1,4 @@
-import { showToast, hidePopup, showPopup } from './ui.js';
+import { showToast, hidePopup, showPopup, hideTwoFactorPopup } from './ui.js';
 import { getToken, isLoggedIn } from './auth.js';
 import { auth } from './utils/api.js';
 
@@ -161,11 +161,9 @@ async function verify2FA() {
       body: JSON.stringify({ token: code })
     });
 
-    const result = await response.json();
-
-    if (result.success) {
+    const result = await response.json();    if (result.success) {
       showToast('success', '2FA enabled successfully');
-      hidePopup();
+      hideTwoFactorPopup();
     } else {
       showToast('error', result.message || 'Invalid verification code');
     }

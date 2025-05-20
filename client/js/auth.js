@@ -1,6 +1,8 @@
 import { showToast, hidePopup, renderUserUI, showSection } from './ui.js';
 import { validatePassword, updatePasswordRequirements } from './security.js';
 import { auth as authApi, fetchWithAuth } from './utils/api.js';  
+import { preloadUserStats } from './profile.js';
+
 const pendingUsers = new Map();
 
 export function isLoggedIn() {
@@ -33,6 +35,107 @@ export function isApproved() {
   return getUserState() === 'APPROVED';
 }
 
+/**
+ * Verify if the current auth token is still valid
+ * @returns {Promise<boolean>} - Promise resolving to true if token is valid
+ */
+export async function verifyAuthToken() {
+  if (!isLoggedIn()) return false;
+  
+  try {
+    // Call getUserStats as a lightweight way to verify token validity
+    const response = await authApi.getUserStats();
+    return response.success === true;
+  } catch (error) {
+    console.error('Token verification error:', error);
+    // If we get an invalid token error, clear auth data
+    if (error.message && (
+      error.message.includes('Invalid token') || 
+      error.message.includes('jwt expired') ||
+      error.message.includes('Unauthorized')
+    )) {
+      // Handle expired token by logging out the user
+      handleTokenExpiration();
+    }
+    return false;
+  }
+}
+
+/**
+ * Handle expired JWT token by logging out the user and redirecting
+ * @export
+ */
+export function handleTokenExpiration() {
+  console.log('Token expired, performing automatic logout');
+  
+  // Clear verification interval if it exists
+  if (window.tokenVerificationInterval) {
+    clearInterval(window.tokenVerificationInterval);
+    window.tokenVerificationInterval = null;
+  }
+  
+  // Clear all auth-related data
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  localStorage.removeItem('role');
+  localStorage.removeItem('state');
+  localStorage.removeItem('has2fa');
+  localStorage.removeItem('tempToken');
+  localStorage.removeItem('tempUsername');
+  sessionStorage.removeItem('currentSection');
+  
+  // Update the UI to show login/register buttons
+  renderUserUI();
+  
+  // Show a message to the user
+  showToast('error', 'Your session has expired. Please log in again.');
+  
+  // Redirect to homepage only if not already there
+  if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+    window.location.href = '/';
+  }
+}
+
+/**
+ * Set up automatic token verification to run periodically
+ * This checks if the token is still valid every few minutes
+ */
+export function setupAutoTokenVerification() {
+  // Only set up verification if user is logged in
+  if (!isLoggedIn()) return;
+  
+  console.log('Setting up automatic token verification');
+  
+  // Check token validity every 5 minutes
+  const intervalMinutes = 5;
+  const interval = setInterval(async () => {
+    console.log('Performing automatic token verification');
+    const isValid = await verifyAuthToken();
+    
+    // If token is invalid, the verifyAuthToken function will handle the cleanup
+    if (!isValid) {
+      console.log('Token verification failed, clearing interval');
+      clearInterval(interval);
+    }
+  }, intervalMinutes * 60 * 1000);
+  
+  // Store interval ID in case we need to clear it later
+  window.tokenVerificationInterval = interval;
+  
+  // Also verify immediately on page load
+  verifyAuthToken();
+}
+
+// Automatically check token validity on page load
+document.addEventListener('DOMContentLoaded', () => {
+  if (isLoggedIn()) {
+    // Verify the token on page load
+    verifyAuthToken();
+    // Set up automatic verification for future checks
+    setupAutoTokenVerification();
+  }
+});
+
 export async function fetchTopContributors() {
   try {
     const data = await authApi.getTopContributors();
@@ -43,15 +146,38 @@ export async function fetchTopContributors() {
   }
 }
 
+/**
+ * Log out the current user, reset all permissions and redirect to homepage
+ * This function will:
+ * 1. Clear all authentication data from localStorage
+ * 2. Send a logout request to the server if a token exists
+ * 3. Reset the UI to show login/register buttons
+ * 4. Redirect to the homepage
+ */
 export function logout() {
   console.log('Logging out');
   const token = getToken();
+  
+  // Clear verification interval if it exists
+  if (window.tokenVerificationInterval) {
+    clearInterval(window.tokenVerificationInterval);
+    window.tokenVerificationInterval = null;
+  }
+  
+  // First clear all auth data from localStorage regardless of token state
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  localStorage.removeItem('role');
+  localStorage.removeItem('state');
+  localStorage.removeItem('has2fa');
+  localStorage.removeItem('tempToken');
+  localStorage.removeItem('tempUsername');
+  
   if (!token) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    localStorage.removeItem('has2fa');
     showToast('success', 'Logged out successfully');
     renderUserUI();
+    // Redirect to homepage
+    window.location.href = '/';
     return;
   }
 
@@ -67,14 +193,21 @@ export function logout() {
       showToast('success', 'Logged out successfully');
     })
     .finally(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-      localStorage.removeItem('has2fa');
+      // Clear session data
+      sessionStorage.removeItem('currentSection');
+      
+      // Update UI to show login/register buttons
       renderUserUI();
+      
+      // Redirect to the homepage
+      window.location.href = '/';
     });
 }
 
 export function initAuth() {
+  // Set up automatic token verification for logged-in users
+  setupAutoTokenVerification();
+  
   const form = document.getElementById('authForm');
   if (!form) {
     console.error('Auth form not found');
@@ -154,7 +287,6 @@ export function initAuth() {
       } else {
         const result = await handleAuth(action, username, email, password);
         if (result.success) {
-          showToast('success', 'Logged in successfully');
 
           if (result.requires2FA) {
             handleTwoFactorAuth(result);
@@ -166,8 +298,9 @@ export function initAuth() {
             localStorage.setItem('state', result.state);
             if (result.has2fa) localStorage.setItem('has2fa', 'true');
             renderUserUI();
-            showSection('profileSection');
-            setTimeout(() => window.location.reload(), 100);
+            
+            // Preload profile data in background but don't redirect
+            preloadUserStats();
           }
         } else {
           showToast('error', result.message || 'Authentication failed');
@@ -219,19 +352,26 @@ export function initAuth() {
       '/auth/auth0',
       'Auth0',
       `width=${width},height=${height},left=${left},top=${top}`
-    );
-
-    window.addEventListener('message', (event) => {
+    );    window.addEventListener('message', (event) => {
       if (event.data.type === 'auth0-auth') {
         authWindow.close();
         if (event.data.success) {
-          localStorage.setItem('token', event.data.token);
-          localStorage.setItem('username', event.data.username);
-          localStorage.setItem('role', event.data.role);
-          localStorage.setItem('state', event.data.state);
-          hidePopup();
-          renderUserUI();
-          showToast('success', 'Logged in successfully with Auth0');
+          const requires2FA = event.data.has2fa === true || event.data.has2fa === 'true' || event.data.requires2FA;
+
+          if (requires2FA) {
+            handleTwoFactorAuth(event.data);
+          } else {
+            localStorage.setItem('token', event.data.token);
+            localStorage.setItem('username', event.data.username);
+            localStorage.setItem('role', event.data.role);
+            localStorage.setItem('state', event.data.state);
+            if (event.data.has2fa) localStorage.setItem('has2fa', 'true');
+            hidePopup();
+            renderUserUI();
+            // Preload profile data in background
+            preloadUserStats();
+            showToast('success', 'Logged in successfully with Auth0');
+          }
         } else {
           showToast('error', 'Auth0 login failed');
         }
@@ -267,26 +407,84 @@ export function handleTwoFactorAuth(result) {
   }
 
   const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-  modal.innerHTML = `
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
-      <h2 class="text-xl font-bold mb-4">Two-Factor Authentication</h2>
-      <p class="mb-4">Please enter the verification code from your authenticator app.</p>
-      <form id="twoFactorForm" class="space-y-4">
-        <input type="text" id="twoFactorCode" pattern="[0-9]{6}" maxlength="6" class="input w-full" placeholder="000000" required>
-        <button type="submit" class="btn btn-primary w-full">Verify</button>
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';  modal.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full relative">
+      <button type="button" id="closeModal" class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      
+      <div class="flex justify-center mb-4">
+        <div class="p-3 rounded-full bg-primary bg-opacity-10 dark:bg-opacity-20">
+          <svg class="w-12 h-12 text-primary dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+      </div>
+      
+      <h2 class="text-xl font-bold mb-2 text-gray-800 dark:text-gray-100 text-center">Two-Factor Authentication</h2>
+      <p class="mb-6 text-gray-600 dark:text-gray-300 text-center">Please enter the verification code from your authenticator app.</p>
+      
+      <form id="twoFactorForm" class="space-y-6">
+        <div class="space-y-1">
+          <input type="text" id="twoFactorCode" pattern="[0-9]{6}" maxlength="6" class="input w-full text-center text-lg font-mono tracking-widest focus:ring-2 focus:ring-primary" placeholder="000000" required>
+          <p class="text-xs text-center text-gray-500 dark:text-gray-400">Enter 6-digit code from your authenticator app</p>
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-full py-3 rounded-lg transition-all group relative overflow-hidden flex items-center justify-center">
+          <span class="relative z-10">Verify</span>
+          <span class="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
+        </button>
       </form>
     </div>
-  `;
-  document.body.appendChild(modal);
-
+  `;document.body.appendChild(modal);
+  // Focus on the code input field
   setTimeout(() => document.getElementById('twoFactorCode').focus(), 100);
+  
+  // Add event listener to close button
+  document.getElementById('closeModal').addEventListener('click', () => {
+    modal.remove();
+    // Clear temporary authentication data
+    localStorage.removeItem('tempToken');
+    localStorage.removeItem('tempUsername');
+    showToast('info', 'Two-factor authentication canceled');
+  });
+  
+  // Improve input field handling
+  const twoFactorInput = document.getElementById('twoFactorCode');
+  twoFactorInput.addEventListener('input', (e) => {
+    // Only allow numeric input
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    
+    // Auto-submit when 6 digits are entered
+    if (e.target.value.length === 6) {
+      setTimeout(() => {
+        document.getElementById('twoFactorForm').dispatchEvent(new Event('submit'));
+      }, 500);
+    }
+  });
+  
+  // Handle Escape key to close modal
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('closeModal').click();
+    }
+  });
 
   document.getElementById('twoFactorForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const code = document.getElementById('twoFactorCode').value;
-
-    try {
+    const code = document.getElementById('twoFactorCode').value;    try {
+      const submitBtn = document.querySelector('#twoFactorForm button[type="submit"]');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg> Verifying...
+      `;
+    
       const token = localStorage.getItem('tempToken') || getToken();
       
       const response = await fetchWithAuth('/auth/2fa/verify', {
@@ -305,19 +503,25 @@ export function handleTwoFactorAuth(result) {
         
         localStorage.removeItem('tempToken');
         localStorage.removeItem('tempUsername');
-        
-        showToast('success', 'Two-factor authentication successful');
+          showToast('success', 'Two-factor authentication successful');
         modal.remove();
         hidePopup();
         renderUserUI();
-        showSection('profileSection');
-        setTimeout(() => window.location.reload(), 100);
-      } else {
+        // Preload profile data in background but don't redirect or reload
+        preloadUserStats();      } else {
         showToast('error', response.message || 'Invalid verification code');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
       }
     } catch (error) {
       console.error('Error verifying 2FA:', error);
       showToast('error', error.message || 'Network error occurred');
+      
+      const submitBtn = document.querySelector('#twoFactorForm button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText || 'Verify';
+      }
     }
   });
 }function finishLogin(result) {
@@ -330,9 +534,11 @@ export function handleTwoFactorAuth(result) {
     localStorage.setItem('has2fa', 'true');
   }
   renderUserUI();
-  showSection('profileSection');
+  
+  // Preload profile data in background but don't redirect
+  preloadUserStats();
+  
   showToast('success', 'Logged in successfully');
-  setTimeout(() => window.location.reload(), 100);
 }
 
 async function handleAuth(action, username, email, password) {
@@ -357,33 +563,33 @@ async function handleRegister(username, email, password) {
 }
 
 // Updated showOTPForm to reuse initializeOTPInput
-function showOTPForm(email, type) {
-  const popup = document.createElement('div');
+function showOTPForm(email, type) {  const popup = document.createElement('div');
   popup.id = `${type}-otp-popup`;
   popup.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
   popup.innerHTML = `
-    <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+    <div class="popup-content bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in relative transform transition-all">
       <div class="text-center mb-6">
-        <h2 class="text-2xl font-bold mb-2">${type === 'registration' ? 'Verify Your Email' : 'Verify OTP'}</h2>
-        <p class="text-gray-600 dark:text-gray-400">We've sent a verification code to <span class="font-semibold">${email}</span></p>
+        <h2 class="text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">${type === 'registration' ? 'Verify Your Email' : 'Verify OTP'}</h2>
+        <p class="text-gray-600 dark:text-gray-300">We've sent a verification code to <span class="font-semibold">${email}</span></p>
       </div>
       
       <div class="flex justify-center mb-6">
-        <svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-        </svg>
+        <div class="p-3 rounded-full bg-primary bg-opacity-10 dark:bg-opacity-20">
+          <svg class="w-16 h-16 text-primary dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+          </svg>
+        </div>
       </div>
-      
-      <form id="otpForm" class="space-y-6">
+        <form id="otpForm" class="space-y-6">
         <div class="space-y-2">
-          <label for="otpCode1" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Enter 6-digit code</label>
+          <label for="otpCode1" class="label">Verification Code</label>
           <input
             type="text"
             id="otpCode1"
             name="otpCode1"
             pattern="[0-9]{6}"
             maxlength="6"
-            class="input w-full text-center text-lg font-mono tracking-widest py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="input w-full text-center text-lg font-mono tracking-widest py-3 focus:ring-2 focus:ring-primary"
             placeholder="000000"
             autocomplete="one-time-code"
             inputmode="numeric"
@@ -391,29 +597,30 @@ function showOTPForm(email, type) {
           >
         </div>
         
-        <div id="otpTimer" class="text-center text-sm text-gray-600 dark:text-gray-400">
-          Code expires in <span id="otpCountdown">5:00</span>
+        <div id="otpTimer" class="text-center text-sm text-gray-600 dark:text-gray-300">
+          Code expires in <span id="otpCountdown" class="font-semibold">5:00</span>
         </div>
         
-        <button type="submit" class="btn btn-primary w-full py-3 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center">
-          <span>Verify Code</span>
-          <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <button type="submit" class="btn btn-primary w-full py-3 rounded-lg transition-all group relative overflow-hidden flex items-center justify-center">
+          <span class="relative z-10">Verify Code</span>
+          <svg class="ml-2 w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
           </svg>
+          <span class="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
         </button>
       </form>
-      
-      <div class="mt-5 text-center">
-        <button id="resendOtpBtn" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+        <div class="mt-5 text-center">
+        <button id="resendOtpBtn" class="text-primary hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200">
           Didn't receive the code? <span class="underline">Resend</span>
         </button>
       </div>
       
-      <button id="cancelOtpBtn" class="mt-4 btn btn-secondary w-full flex items-center justify-center">
-        <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <button id="cancelOtpBtn" class="mt-4 btn btn-secondary w-full group relative overflow-hidden flex items-center justify-center">
+        <svg class="mr-2 w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
-        Cancel
+        <span class="relative z-10">Cancel</span>
+        <span class="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
       </button>
     </div>
   `;
@@ -493,14 +700,12 @@ function showOTPForm(email, type) {
   otpForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const otp = otpInput.value.trim();
-    console.log('Form submission - OTP value:', otp);
-
-    // Strict validation for OTP
+    console.log('Form submission - OTP value:', otp);    // Strict validation for OTP
     if (!otp || !/^[0-9]{6}$/.test(otp)) {
       console.log('Validation failed - OTP:', otp);
       showToast('error', 'Please enter a valid 6-digit OTP');
       otpInput.value = ''; // Clear invalid input
-      otpInput.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+      otpInput.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
       otpInput.focus();
       return;
     }
@@ -695,9 +900,7 @@ function initializeForgotPasswordOTPForm() {
 
 export async function verifyOTP(email, otp, type) {
   try {
-    const response = await authApi.verifyOTP(email, otp, type);
-
-    if (response.success) {      if (type === 'registration') {
+    const response = await authApi.verifyOTP(email, otp, type);    if (response.success) {      if (type === 'registration') {
         showToast('success', 'Registration completed successfully!');
         localStorage.setItem('token', response.token);
         localStorage.setItem('username', response.username);
@@ -705,8 +908,8 @@ export async function verifyOTP(email, otp, type) {
         localStorage.setItem('state', response.state || 'APPROVED');
         hidePopup();
         renderUserUI();
-        showSection('profileSection');
-      } else if (type === '2fa') {
+        // Preload profile data in background but don't redirect
+        preloadUserStats();      } else if (type === '2fa') {
         showToast('success', '2FA verification successful');
         localStorage.setItem('token', response.token);
         localStorage.setItem('username', response.username);
@@ -715,7 +918,8 @@ export async function verifyOTP(email, otp, type) {
         if (response.has2fa) localStorage.setItem('has2fa', 'true');
         hidePopup();
         renderUserUI();
-        showSection('profileSection');
+        // Preload profile data in background but don't redirect
+        preloadUserStats();
       }
     } else {
       showToast('error', response.message || 'OTP verification failed');
@@ -777,12 +981,10 @@ function initializeOTPInput(otpInput) {
   // Handle input event
   otpInput.addEventListener('input', (e) => {
     const cleanedValue = e.target.value.replace(/\D/g, '').slice(0, 6);
-    e.target.value = cleanedValue;
-
-    if (cleanedValue.length === 6 && /^[0-9]{6}$/.test(cleanedValue)) {
-      e.target.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+    e.target.value = cleanedValue;    if (cleanedValue.length === 6 && /^[0-9]{6}$/.test(cleanedValue)) {
+      e.target.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
     } else {
-      e.target.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+      e.target.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
     }
   });
 
@@ -791,12 +993,10 @@ function initializeOTPInput(otpInput) {
     e.preventDefault();
     const pastedData = (e.clipboardData || window.clipboardData).getData('text');
     const cleanedValue = pastedData.replace(/\D/g, '').slice(0, 6);
-    otpInput.value = cleanedValue;
-
-    if (cleanedValue.length === 6 && /^[0-9]{6}$/.test(cleanedValue)) {
-      otpInput.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+    otpInput.value = cleanedValue;    if (cleanedValue.length === 6 && /^[0-9]{6}$/.test(cleanedValue)) {
+      otpInput.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
     } else {
-      otpInput.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+      otpInput.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
     }
   });
 }

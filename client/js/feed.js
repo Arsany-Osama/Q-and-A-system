@@ -179,15 +179,41 @@ export async function renderFeed() {
                     <span class="date">${new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                     ${q.tags && q.tags.length ? `<span class="mx-1">•</span><span class="primary-tag text-blue-600 dark:text-blue-400">${q.tags[0]}</span>` : ''}
                   </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  
-                  <!-- Report icon for non-owners -->
-                  ${(isLoggedIn() && getCurrentUsername() !== q.username) ? `<button class="report-btn ml-2 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900" title="Report question" aria-label="Report question" data-id="${q.id}" data-type="question">
-                    <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v16h16V4H4zm2 2h12v12H6V6zm3 3v6m6-6v6" />
-                    </svg>
-                  </button>` : ''}
+                </div>                <div class="flex items-center gap-2">
+                  <!-- Three-dot menu for actions -->
+                  ${(isLoggedIn()) ? `
+                    <div class="relative inline-block">
+                      <button class="action-menu-btn ml-2 p-1 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700" title="More actions" aria-label="More actions" data-id="${q.id}">
+                        <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                      </button>
+                      <div class="action-menu hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                        ${getCurrentUsername() === q.username ? `
+                          <button class="edit-question-btn w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Edit
+                          </button>
+                          <button class="delete-question-btn w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center border-t border-gray-200 dark:border-gray-700">
+                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Delete
+                          </button>
+                        ` : ''}
+                        ${getCurrentUsername() !== q.username ? `
+                          <button class="report-btn w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center" data-id="${q.id}" data-type="question">
+                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            Report
+                          </button>
+                        ` : ''}
+                      </div>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
             </div>
@@ -382,8 +408,56 @@ export async function renderFeed() {
       });
     });
 
-    renderPagination(questions.length, pagination);    // Add delegated event listener for report buttons (questions and answers)
+    renderPagination(questions.length, pagination);    // Add delegated event listeners for action menu and buttons
     setTimeout(() => {
+      // Action menu toggle handlers
+      document.querySelectorAll('.action-menu-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          // Close all other menus first
+          document.querySelectorAll('.action-menu').forEach(menu => {
+            if (menu !== btn.nextElementSibling) {
+              menu.classList.add('hidden');
+            }
+          });
+          // Toggle current menu
+          const menu = btn.nextElementSibling;
+          menu.classList.toggle('hidden');
+        };
+      });
+
+      // Close menus when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.action-menu') && !e.target.closest('.action-menu-btn')) {
+          document.querySelectorAll('.action-menu').forEach(menu => {
+            menu.classList.add('hidden');
+          });
+        }
+      });
+
+      // Handle edit button clicks
+      document.querySelectorAll('.edit-question-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const questionId = btn.closest('.action-menu').previousElementSibling.getAttribute('data-id');
+          // TODO: Implement edit question functionality
+          console.log('Edit question:', questionId);
+        };
+      });
+
+      // Handle delete button clicks
+      document.querySelectorAll('.delete-question-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const questionId = btn.closest('.action-menu').previousElementSibling.getAttribute('data-id');
+          // TODO: Implement delete question functionality
+          if (confirm('Are you sure you want to delete this question?')) {
+            console.log('Delete question:', questionId);
+          }
+        };
+      });
+
+      // Handle report button clicks
       document.querySelectorAll('.report-btn').forEach(btn => {
         btn.onclick = (e) => {
           e.preventDefault();

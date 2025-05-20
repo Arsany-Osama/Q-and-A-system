@@ -142,6 +142,9 @@ export function renderUserUI() {
     const state = getUserState(); // Use the function from auth.js instead of direct localStorage access
     console.log('Final values:', { username, role, state });
 
+    // Check if user is admin or moderator for reports access
+    const hasReportsAccess = isAdmin() || isModerator();
+
     userStatus.innerHTML = `
       <div class="flex items-center">
         <span class="text-gray-700 dark:text-gray-300 truncate max-w-[150px] sm:max-w-[200px]">${username}</span>
@@ -159,6 +162,11 @@ export function renderUserUI() {
             ${isAdmin() ? `
               <a href="/admin.html" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                 Admin Dashboard
+              </a>
+            ` : ''}
+            ${hasReportsAccess ? `
+              <a href="/reports.html" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                Reports Management
               </a>
             ` : ''}
             <button id="securitySettingsBtn" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -374,3 +382,9 @@ export function hideAnswerFormPopup() {
     feedSection.classList.remove('hidden');
   }
 }
+
+document.addEventListener('sectionChanged', async (event) => {
+  // Re-render user UI whenever a section changes
+  // This ensures proper user UI rendering across the system
+  renderUserUI();
+});

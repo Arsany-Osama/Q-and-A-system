@@ -163,8 +163,7 @@ export function logout() {
     clearInterval(window.tokenVerificationInterval);
     window.tokenVerificationInterval = null;
   }
-  
-  // First clear all auth data from localStorage regardless of token state
+    // First clear all auth data from localStorage regardless of token state
   localStorage.removeItem('token');
   localStorage.removeItem('username');
   localStorage.removeItem('role');
@@ -172,6 +171,10 @@ export function logout() {
   localStorage.removeItem('has2fa');
   localStorage.removeItem('tempToken');
   localStorage.removeItem('tempUsername');
+  
+  // Check current page to handle special redirects
+  const currentPage = window.location.pathname;
+  const isReportsPage = currentPage === '/reports.html';
   
   if (!token) {
     showToast('success', 'Logged out successfully');
@@ -198,8 +201,8 @@ export function logout() {
       
       // Update UI to show login/register buttons
       renderUserUI();
-      
-      // Redirect to the homepage
+        // Always redirect to the homepage when logged out from a restricted page
+      // This ensures users are sent back to the index page if they don't have permission
       window.location.href = '/';
     });
 }

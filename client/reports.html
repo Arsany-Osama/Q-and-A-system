@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Management | Q&A System</title>
+      <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+    <link rel="stylesheet" href="css/pages.css" />
+    <link rel="stylesheet" href="css/feed-style.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/reports.css" />
+    <link rel="stylesheet" href="css/dark-mode.css">
+    <link rel="stylesheet" href="css/light-mode.css">
+    <link rel="stylesheet" href="css/tailwind-components.css">
+    <link rel="stylesheet" href="css/animations-enhanced.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                            950: '#172554',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft-xl': '0 10px 25px -3px rgba(0, 0, 0, 0.08)',
+                        'soft-2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
+                    },
+                },
+            },
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollSmoother.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+  <!-- Header (admin style, with working user menu and dark mode toggle) -->
+  <header id="mainHeader" class="bg-white dark:bg-gray-800 shadow-sm" role="banner">
+    <div class="container mx-auto px-4 py-4">
+      <div class="flex justify-between items-center">
+        <a href="/" class="flex items-center space-x-2">
+          <img src="/assets/logo.svg" alt="Q&A System Logo" class="h-8 w-8" />
+          <span class="text-xl font-bold text-gray-900 dark:text-white">Q&A System</span>
+        </a>
+        <div class="flex items-center space-x-4">
+          <button id="darkModeToggle" class="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          </button>          <div id="userStatus">
+            <!-- Login button (hidden when logged in) -->
+            <button id="loginBtn" class="btn btn-primary hidden">
+              Log In
+            </button>
+            
+            <!-- User menu button (hidden when logged out) -->
+            <div class="relative">
+              <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white focus:outline-none hidden">
+                <span id="usernameDisplay" class="text-sm font-medium"></span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              
+              <!-- Dropdown menu -->
+              <div id="userDropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 hidden">
+                <!-- Dropdown content will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Nav Tabs (Admin style) -->      <div class="mt-4 border-b border-gray-200 dark:border-gray-700">
+        <ul class="flex flex-wrap -mb-px">
+          <li class="mr-2">
+            <a href="/reports.html" class="admin-tab admin-tab-active">Reports Management</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </header>
+  <!-- Reports management container -->
+    <main class="container mx-auto px-4 py-8">
+        <section class="card bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+                <div class="slide-in-right">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Report Management</h1>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Review and manage user-submitted reports of questions and answers.
+                    </p>
+                </div>
+                
+                <button id="refreshReports" class="btn btn-primary mt-4 md:mt-0 slide-in-right" style="animation-delay: 0.1s;">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh Reports
+                </button>
+            </div>
+            
+            <!-- Report statistics -->
+            <div id="reportStats" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 list-appear animate">
+                <div class="stats-card bg-white dark:bg-gray-700 hover-lift">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600 dark:text-gray-400 font-medium">Total Reports</span>
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/50">
+                            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stats-value text-blue-600 dark:text-blue-400">--</div>
+                    <span class="stats-label">Reported review</span>
+                </div>
+                
+                <div class="stats-card bg-white dark:bg-gray-700 hover-lift">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600 dark:text-gray-400 font-medium">Questions</span>
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50">
+                            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stats-value text-indigo-600 dark:text-indigo-400">--</div>
+                    <span class="stats-label">Reported</span>
+                </div>
+                
+                <div class="stats-card bg-white dark:bg-gray-700 hover-lift">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600 dark:text-gray-400 font-medium">Answers</span>
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
+                            <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stats-value text-emerald-600 dark:text-emerald-400">--</div>
+                    <span class="stats-label">Reported</span>
+                </div>
+                
+                <div class="stats-card bg-white dark:bg-gray-700 hover-lift">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-gray-600 dark:text-gray-400 font-medium">Content</span>
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
+                            <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="stats-value text-red-600 dark:text-red-400">--</div>
+                    <span class="stats-label">Inappropriate</span>
+                </div>
+            </div>            
+            <!-- State tabs -->
+            <div class="container mx-auto px-4 mb-6">
+                <div class="border-b border-gray-200 dark:border-gray-700">
+                    <div id="reportStateTabs" class="flex -mb-px">
+                        <button class="state-tab active px-6 py-3 border-b-2 font-medium text-sm" data-state="PENDING">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Pending
+                                <span id="pendingCount" class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">0</span>
+                            </span>
+                        </button>
+                        <button class="state-tab px-6 py-3 border-b-2 font-medium text-sm" data-state="REJECTED">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Rejected
+                                <span id="rejectedCount" class="ml-2 bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300">0</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports list -->
+            <div id="reportsContainer">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Reported Content</h2>
+                    <div class="filter-container w-full sm:w-auto relative">
+                        <select id="filterReports" class="form-input appearance-none w-full sm:w-auto pr-10 py-2.5">
+                            <option value="all">All Reports</option>
+                            <option value="question">Questions Only</option>
+                            <option value="answer">Answers Only</option>
+                            <option value="SPAM">Spam Reports</option>
+                            <option value="HARASSMENT">Harassment Reports</option>
+                            <option value="INAPPROPRIATE_CONTENT">Inappropriate Content</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading indicator -->
+                <div id="reportsLoading" class="text-center py-16">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-3 border-b-3 border-blue-500 mb-4"></div>
+                    <p class="text-gray-600 dark:text-gray-400 font-medium">Loading reports...</p>
+                    
+                    <!-- Skeleton loading UI -->
+                    <div class="mt-8 space-y-5">
+                        <div class="skeleton h-28 rounded-xl opacity-60"></div>
+                        <div class="skeleton h-28 rounded-xl opacity-60"></div>
+                        <div class="skeleton h-28 rounded-xl opacity-60"></div>
+                    </div>
+                </div>
+                  
+                <!-- Empty state -->
+                <div id="noReports" class="hidden bg-gray-50 dark:bg-gray-700 rounded-xl empty-state my-8 py-12">
+                    <div class="empty-state-icon bg-gray-100 dark:bg-gray-600">
+                        <svg class="h-14 w-14 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-medium text-gray-900 dark:text-gray-100 mb-3">No reports found</h3>
+                    <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
+                        There are currently no pending reports to review. All reported content has been handled.
+                    </p>
+                    <button id="refreshEmptyBtn" class="btn btn-primary">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Check Again
+                    </button>
+                </div>
+
+                <!-- Reports list container -->
+                <div id="reportsList" class="space-y-5 list-appear"></div>
+            </div>
+        </section>
+    </main><!-- Report detail modal -->
+    <div id="reportDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="relative p-6">
+                <div class="flex justify-between items-start mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Report Details
+                    </h2>
+                    <button id="closeReportModal" class="text-gray-500 hover:text-red-500 transition-colors focus:outline-none action-btn">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="reportModalContent" class="overflow-y-auto"></div>
+
+                <div class="flex justify-end gap-3 mt-8">
+                    <button id="rejectReportBtn" class="btn-outline-primary">
+                        Dismiss Report
+                    </button>
+                    <button id="deleteContentBtn" class="btn-danger">
+                        Remove Content
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 shadow-inner py-6 mt-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">© 2025 Q&A System. All rights reserved.</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
+                        Terms
+                    </a>
+                    <a href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
+                        Privacy
+                    </a>
+                    <a href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">
+                        Help
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast notification container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50"></div>
+
+    <!-- Scripts -->    <script type="module" src="js/utils/api.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/ui.js"></script>
+    <script type="module" src="js/routeProtection.js"></script>
+    <script type="module" src="js/reportAccess.js"></script>
+    <script type="module" src="js/reportsHeader.js"></script>
+    <script type="module" src="js/reports.js"></script>
+</body>
+</html>

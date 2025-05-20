@@ -1,0 +1,510 @@
+/**
+ * Reports page styles
+ */
+
+/* Report cards */
+.report-card {
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.report-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+    -webkit-transition: transform 0.6s ease;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.dark .report-card::before {
+    background: linear-gradient(to right, rgba(255,255,255,0.05), transparent);
+}
+
+.report-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.report-card:hover::before {
+    transform: translateX(100%);
+}
+
+.report-card.type-question {
+    border-left-color: #6366f1; /* indigo-500 */
+}
+
+.report-card.type-answer {
+    border-left-color: #10b981; /* emerald-500 */
+}
+
+.report-card.reason-SPAM {
+    border-left-color: #f59e0b; /* amber-500 */
+}
+
+.report-card.reason-HARASSMENT {
+    border-left-color: #ef4444; /* red-500 */
+}
+
+.report-card.reason-INAPPROPRIATE_CONTENT {
+    border-left-color: #8b5cf6; /* violet-500 */
+}
+
+/* State-specific card styles */
+.report-card.state-pending {
+    border-left-color: #f59e0b; /* amber-500 */
+}
+
+.report-card.state-accepted {
+    border-left-color: #10b981; /* emerald-500 */
+}
+
+.report-card.state-rejected {
+    border-left-color: #ef4444; /* red-500 */
+}
+
+/* Report badges */
+.report-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    -webkit-transition: all 0.2s ease;
+}
+
+.report-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.badge-with-icon {
+    padding-left: 0.4rem;
+}
+
+.badge-with-icon svg {
+    margin-right: 0.25rem;
+    height: 0.875rem;
+    width: 0.875rem;
+}
+
+/* State badges on report cards */
+.state-badge {
+    @apply text-xs font-medium px-2.5 py-1 rounded-full;
+}
+
+.state-badge.pending {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300;
+}
+
+.state-badge.accepted {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+}
+
+.state-badge.rejected {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;
+}
+
+/* State tabs and badges */
+.state-tab {
+    color: #6b7280;
+    border-color: transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.state-tab:hover {
+    color: #4b5563;
+    border-color: #d1d5db;
+}
+
+.dark .state-tab {
+    color: #9ca3af;
+}
+
+.dark .state-tab:hover {
+    color: #e5e7eb;
+    border-color: #4b5563;
+}
+
+.state-tab.active {
+    color: #2563eb;
+    border-color: #3b82f6;
+}
+
+.dark .state-tab.active {
+    color: #60a5fa;
+    border-color: #60a5fa;
+}
+
+.state-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+}
+
+.state-badge.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.dark .state-badge.pending {
+    background-color: #78350f;
+    color: #fcd34d;
+}
+
+.state-badge.accepted {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.dark .state-badge.accepted {
+    background-color: #064e3b;
+    color: #6ee7b7;
+}
+
+.state-badge.rejected {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.dark .state-badge.rejected {
+    background-color: #7f1d1d;
+    color: #fca5a5;
+}
+
+/* Modal animations */
+.animate-fade-in-up {
+    animation: fadeInUp 0.3s ease-out forwards;
+}
+
+.animate-fade-out-down {
+    animation: fadeOutDown 0.3s ease-in forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+/* Loading indicators and skeletons */
+
+/* Skeleton loading animation */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(226, 232, 240, 0.6) 25%,
+        rgba(241, 245, 249, 0.6) 37%,
+        rgba(226, 232, 240, 0.6) 63%
+    );
+    background-size: 400% 100%;
+    animation: skeleton-loading 1.4s ease infinite;
+}
+
+.dark .skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(51, 65, 85, 0.6) 25%,
+        rgba(71, 85, 105, 0.6) 37%,
+        rgba(51, 65, 85, 0.6) 63%
+    );
+    background-size: 400% 100%;
+    animation: skeleton-loading 1.4s ease infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0 50%;
+    }
+}
+
+/* Spinner animation */
+.loading-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(59, 130, 246, 0.2);
+    border-top-color: rgba(59, 130, 246, 1);
+    animation: spin 1s linear infinite;
+}
+
+.loading-pulse {
+    display: inline-block;
+    position: relative;
+    width: 12px;
+    height: 12px;
+    margin: 0 4px;
+}
+
+.loading-pulse::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: currentColor;
+    border-radius: 50%;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+.loading-pulse:nth-child(2)::before {
+    animation-delay: 0.4s;
+}
+
+.loading-pulse:nth-child(3)::before {
+    animation-delay: 0.8s;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.2;
+        transform: scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Filter and refresh controls */
+.filter-container {
+    position: relative;
+}
+
+.filter-container select {
+    border-radius: 25px;
+    padding-left: 26px;
+    appearance: none;
+    padding-right: 2rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.filter-container select:focus {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+    outline: none;
+}
+
+.filter-container::after {
+    content: '';
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.75rem;
+    height: 0.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+}
+
+.filter-container:hover::after {
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+}
+
+.empty-state-icon {
+    margin: 0 auto;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+}
+
+.empty-state:hover .empty-state-icon {
+    transform: scale(1.1);
+}
+
+/* Stats cards */
+.stats-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+}
+
+.dark .stats-card {
+    border-color: #374151;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.stats-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s ease;
+    -webkit-transition: all 0.2s ease;
+}
+
+.stats-card:hover .stats-value {
+    transform: scale(1.05);
+}
+
+.stats-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.dark .stats-label {
+    color: #9ca3af;
+}
+
+/* Line clamp utilities with standard properties */
+.line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    display: -moz-box;
+    -moz-box-orient: vertical;
+    -moz-line-clamp: 1;
+}
+
+.line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    display: -moz-box;
+    -moz-box-orient: vertical;
+    -moz-line-clamp: 2;
+}
+
+/* Action buttons */
+.action-btn {
+    transition: all 0.2s ease;
+    -webkit-transition: all 0.2s ease;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+    -webkit-transition: transform 0.3s ease;
+    z-index: -1;
+}
+
+.dark .action-btn::before {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.action-btn:hover::before {
+    transform: translateY(0);
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+/* State tabs */
+.state-tab {
+    @apply text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border-transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.state-tab:hover {
+    @apply border-gray-300 dark:border-gray-600;
+}
+
+.state-tab.active {
+    @apply text-blue-600 dark:text-blue-400 border-blue-500 dark:border-blue-400;
+}
+
+/* Report modal */
+.modal-backdrop {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+}
+
+.modal-content {
+    max-height: 80vh;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s ease;
+    -webkit-transition: all 0.3s ease;
+}
+
+/* Report content container */
+.report-content {
+    word-break: break-word;
+}

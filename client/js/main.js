@@ -23,6 +23,17 @@ document.addEventListener('DOMContentLoaded', () => {
   initAuth();
   // Set up automatic token verification
   setupAutoTokenVerification();
+
+  // Check URL parameters for error messages
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('error')) {
+    const error = params.get('error');
+    if (error === 'unauthorized') {
+      showToast('error', 'Access denied: You do not have permission to access that page');
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
   
   initUI();
   initSidebar();
@@ -265,8 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function setupProtectedRoutes() {
     // Get current page path for page-level protection
     const currentPath = window.location.pathname;
-      // Check if the current page is protected
-    if (currentPath.includes('/admin.html') || currentPath.includes('/test-security.html')) {
+    // Check if the current page is protected
+    if (currentPath.includes('/admin.html') || currentPath.includes('/reports.html') || currentPath.includes('/test-security.html')) {
       (async () => {
         await checkPageAccess(currentPath);
       })();

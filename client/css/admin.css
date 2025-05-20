@@ -4,6 +4,45 @@
   transition: background 0.3s ease;
 }
 
+/* Admin tabs styling */
+.admin-tab {
+  inline-size: max-content;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  color: #6b7280;
+  display: inline-flex;
+  transition: all 0.2s ease;
+}
+
+.admin-tab:hover {
+  color: #4f46e5;
+  border-color: #a5b4fc;
+}
+
+.admin-tab-active {
+  inline-size: max-content;
+  border-bottom: 2px solid #4f46e5;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  color: #4f46e5;
+  display: inline-flex;
+}
+
+.dark .admin-tab {
+  color: #9ca3af;
+}
+
+.dark .admin-tab:hover {
+  color: #818cf8;
+  border-color: #6366f1;
+}
+
+.dark .admin-tab-active {
+  color: #818cf8;
+  border-color: #6366f1;
+}
+
 .dark .admin-dashboard {
   background: linear-gradient(135deg, #1a1d2d, #111827);
   color-scheme: dark;

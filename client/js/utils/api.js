@@ -420,6 +420,24 @@ export const reports = {
       method: 'POST',
       body: JSON.stringify({ id: contentId, type, reason })
     });
+  },
+  
+  getAllReports: async () => {
+    return fetchWithAuth('/report/');
+  },
+  
+  rejectReport: async (reportId) => {
+    return fetchWithAuth('/report/reject', {
+      method: 'PATCH',
+      body: JSON.stringify({ reportId })
+    });
+  },
+  
+  deleteReportedContent: async (reportId) => {
+    return fetchWithAuth('/report/delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ reportId })
+    });
   }
 };
 

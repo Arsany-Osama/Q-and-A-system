@@ -1,4 +1,3 @@
-const { Prisma } = require('@prisma/client');
 const express = require('express');
 const { getReports, report, deleteReportedAnswerOrQuestion, RejectReport } = require('../controllers/reportController');
 const { authenticateToken, checkRole } = require('../middleware/authMiddleware');

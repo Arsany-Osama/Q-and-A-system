@@ -488,33 +488,33 @@ async function handleRegister(username, email, password) {
 }
 
 // Updated showOTPForm to reuse initializeOTPInput
-function showOTPForm(email, type) {
-  const popup = document.createElement('div');
+function showOTPForm(email, type) {  const popup = document.createElement('div');
   popup.id = `${type}-otp-popup`;
   popup.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
   popup.innerHTML = `
-    <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
+    <div class="popup-content bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md animate-scale-in relative transform transition-all">
       <div class="text-center mb-6">
-        <h2 class="text-2xl font-bold mb-2">${type === 'registration' ? 'Verify Your Email' : 'Verify OTP'}</h2>
-        <p class="text-gray-600 dark:text-gray-400">We've sent a verification code to <span class="font-semibold">${email}</span></p>
+        <h2 class="text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">${type === 'registration' ? 'Verify Your Email' : 'Verify OTP'}</h2>
+        <p class="text-gray-600 dark:text-gray-300">We've sent a verification code to <span class="font-semibold">${email}</span></p>
       </div>
       
       <div class="flex justify-center mb-6">
-        <svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-        </svg>
+        <div class="p-3 rounded-full bg-primary bg-opacity-10 dark:bg-opacity-20">
+          <svg class="w-16 h-16 text-primary dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+          </svg>
+        </div>
       </div>
-      
-      <form id="otpForm" class="space-y-6">
+        <form id="otpForm" class="space-y-6">
         <div class="space-y-2">
-          <label for="otpCode1" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Enter 6-digit code</label>
+          <label for="otpCode1" class="label">Verification Code</label>
           <input
             type="text"
             id="otpCode1"
             name="otpCode1"
             pattern="[0-9]{6}"
             maxlength="6"
-            class="input w-full text-center text-lg font-mono tracking-widest py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="input w-full text-center text-lg font-mono tracking-widest py-3 focus:ring-2 focus:ring-primary"
             placeholder="000000"
             autocomplete="one-time-code"
             inputmode="numeric"
@@ -522,29 +522,30 @@ function showOTPForm(email, type) {
           >
         </div>
         
-        <div id="otpTimer" class="text-center text-sm text-gray-600 dark:text-gray-400">
-          Code expires in <span id="otpCountdown">5:00</span>
+        <div id="otpTimer" class="text-center text-sm text-gray-600 dark:text-gray-300">
+          Code expires in <span id="otpCountdown" class="font-semibold">5:00</span>
         </div>
         
-        <button type="submit" class="btn btn-primary w-full py-3 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center">
-          <span>Verify Code</span>
-          <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <button type="submit" class="btn btn-primary w-full py-3 rounded-lg transition-all group relative overflow-hidden flex items-center justify-center">
+          <span class="relative z-10">Verify Code</span>
+          <svg class="ml-2 w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
           </svg>
+          <span class="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
         </button>
       </form>
-      
-      <div class="mt-5 text-center">
-        <button id="resendOtpBtn" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+        <div class="mt-5 text-center">
+        <button id="resendOtpBtn" class="text-primary hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors duration-200">
           Didn't receive the code? <span class="underline">Resend</span>
         </button>
       </div>
       
-      <button id="cancelOtpBtn" class="mt-4 btn btn-secondary w-full flex items-center justify-center">
-        <svg class="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <button id="cancelOtpBtn" class="mt-4 btn btn-secondary w-full group relative overflow-hidden flex items-center justify-center">
+        <svg class="mr-2 w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
-        Cancel
+        <span class="relative z-10">Cancel</span>
+        <span class="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
       </button>
     </div>
   `;
@@ -624,14 +625,12 @@ function showOTPForm(email, type) {
   otpForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const otp = otpInput.value.trim();
-    console.log('Form submission - OTP value:', otp);
-
-    // Strict validation for OTP
+    console.log('Form submission - OTP value:', otp);    // Strict validation for OTP
     if (!otp || !/^[0-9]{6}$/.test(otp)) {
       console.log('Validation failed - OTP:', otp);
       showToast('error', 'Please enter a valid 6-digit OTP');
       otpInput.value = ''; // Clear invalid input
-      otpInput.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+      otpInput.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
       otpInput.focus();
       return;
     }
@@ -908,12 +907,10 @@ function initializeOTPInput(otpInput) {
   // Handle input event
   otpInput.addEventListener('input', (e) => {
     const cleanedValue = e.target.value.replace(/\D/g, '').slice(0, 6);
-    e.target.value = cleanedValue;
-
-    if (cleanedValue.length === 6 && /^[0-9]{6}$/.test(cleanedValue)) {
-      e.target.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+    e.target.value = cleanedValue;    if (cleanedValue.length === 6 && /^[0-9]{6}$/.test(cleanedValue)) {
+      e.target.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
     } else {
-      e.target.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+      e.target.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
     }
   });
 
@@ -922,12 +919,10 @@ function initializeOTPInput(otpInput) {
     e.preventDefault();
     const pastedData = (e.clipboardData || window.clipboardData).getData('text');
     const cleanedValue = pastedData.replace(/\D/g, '').slice(0, 6);
-    otpInput.value = cleanedValue;
-
-    if (cleanedValue.length === 6 && /^[0-9]{6}$/.test(cleanedValue)) {
-      otpInput.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+    otpInput.value = cleanedValue;    if (cleanedValue.length === 6 && /^[0-9]{6}$/.test(cleanedValue)) {
+      otpInput.classList.add('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
     } else {
-      otpInput.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500');
+      otpInput.classList.remove('bg-green-50', 'dark:bg-green-900', 'border-green-500', 'dark:border-green-400');
     }
   });
 }

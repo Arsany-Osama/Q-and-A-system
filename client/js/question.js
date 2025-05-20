@@ -167,9 +167,19 @@ export function setupQuestionForm() {
         const fileUploadContainer = document.getElementById('fileUploadContainer');
         if (fileUploadContainer) {
           fileUploadContainer.classList.remove('bg-gray-50', 'dark:bg-gray-800', 'border-primary', 'drag-over');
+        }        document.getElementById('questionFormPopup').classList.add('hidden');
+        
+        // Ensure the feed section is visible
+        const feedSection = document.getElementById('feedSection');
+        if (feedSection) {
+          document.querySelectorAll('main > section').forEach(section => {
+            if (section !== feedSection) {
+              section.classList.add('hidden');
+            }
+          });
+          feedSection.classList.remove('hidden');
         }
-
-        document.getElementById('questionFormPopup').classList.add('hidden');
+        
         const { renderFeed } = await import('./feed.js');
         renderFeed();
       } else {

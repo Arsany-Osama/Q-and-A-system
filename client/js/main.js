@@ -333,22 +333,44 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
-
   document.getElementById('postQuestionBtn')?.addEventListener('click', () => {
     console.log('Post Question button clicked');
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
+      // First make sure the feed section is visible
+      const feedSection = document.getElementById('feedSection');
+      if (feedSection) {
+        document.querySelectorAll('main > section').forEach(section => {
+          if (section !== feedSection) {
+            section.classList.add('hidden');
+          }
+        });
+        feedSection.classList.remove('hidden');
+      }
+      
+      // Then show the popup
       showQuestionFormPopup();
       closeSidebar();
     }
   });
-
   document.getElementById('answerQuestionBtn')?.addEventListener('click', () => {
     console.log('Answer Question button clicked');
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
+      // First make sure the feed section is visible
+      const feedSection = document.getElementById('feedSection');
+      if (feedSection) {
+        document.querySelectorAll('main > section').forEach(section => {
+          if (section !== feedSection) {
+            section.classList.add('hidden');
+          }
+        });
+        feedSection.classList.remove('hidden');
+      }
+      
+      // Then show the popup
       showAnswerFormPopup();
       closeSidebar();
     }
@@ -367,22 +389,40 @@ document.addEventListener('DOMContentLoaded', () => {
     await renderProfile();
     closeSidebar();
   });
-
   document.getElementById('postQuestionNav')?.addEventListener('click', () => {
     console.log('Post Question nav clicked');
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
+      // First make sure the feed section is visible
+      const feedSection = document.getElementById('feedSection');
+      if (feedSection) {
+        document.querySelectorAll('main > section').forEach(section => {
+          if (section !== feedSection) {
+            section.classList.add('hidden');
+          }
+        });
+        feedSection.classList.remove('hidden');
+      }
       showQuestionFormPopup();
       closeSidebar();
     }
   });
-
   document.getElementById('answerQuestionNav')?.addEventListener('click', () => {
     console.log('Answer Question nav clicked');
     if (!isLoggedIn()) {
       showPopup('login');
     } else {
+      // First make sure the feed section is visible
+      const feedSection = document.getElementById('feedSection');
+      if (feedSection) {
+        document.querySelectorAll('main > section').forEach(section => {
+          if (section !== feedSection) {
+            section.classList.add('hidden');
+          }
+        });
+        feedSection.classList.remove('hidden');
+      }
       showAnswerFormPopup();
       closeSidebar();
     }

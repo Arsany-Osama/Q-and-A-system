@@ -5,8 +5,7 @@
   box-sizing: border-box;
 }
 
-:root {
-  --primary: #3182ce; /* Blue */
+:root {  --primary: #3182ce; /* Blue */
   --primary-rgb: 49, 130, 206; /* RGB values for blue */
   --secondary: #805ad5; /* Purple */
   --secondary-rgb: 128, 90, 213; /* RGB values for purple */
@@ -18,6 +17,8 @@
   --text-primary: #2d3748; /* Dark Text */
   --text-secondary: #718096; /* Gray Text */
   --border: #e2e8f0; /* Light Border */
+  --color-primary: #3182ce; /* Same as primary for consistency */
+  --color-primary-rgb: 49, 130, 206; /* Same as primary-rgb for consistency */
 }
 
 .dark {

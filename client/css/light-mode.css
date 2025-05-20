@@ -1,0 +1,1093 @@
+/* Light Mode Improvements
+   These styles enhance readability and visual consistency for light mode ONLY
+   They should NOT affect dark mode styling */
+
+/* Root variable overrides for light mode ONLY */
+:root:not(.dark) {
+  /* Improved primary colors with better contrast */
+  --primary: #1e40af; /* Darker blue for enhanced contrast on light backgrounds */
+  --primary-rgb: 30, 64, 175; /* RGB values for the darker blue */
+  --secondary: #6b21a8; /* Darker purple for enhanced contrast */
+  --secondary-rgb: 107, 33, 168; /* RGB values for the darker purple */
+  
+  /* Improved background colors */
+  --bg-primary: #f1f5f9; /* Softer, warmer light gray */
+  --surface: #ffffff; /* Keep white for main surfaces */
+  
+  /* Enhanced text colors for improved readability */
+  --text-primary: #0f172a; /* Even darker text for maximum contrast */
+  --text-secondary: #475569; /* Darker secondary text for better readability */
+  
+  /* Refined border color */
+  --border: #cbd5e1; /* Slightly darker for better definition */
+}
+
+/* Apply light mode by default for users with prefers-color-scheme: light */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Use all the same variable settings as defined in the main light mode */
+    --primary: #1e40af;
+    --primary-rgb: 30, 64, 175;
+    --secondary: #6b21a8;
+    --secondary-rgb: 107, 33, 168;
+    --bg-primary: #f1f5f9;
+    --bg-secondary: #e2e8f0;
+    --surface: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --border: #cbd5e1;
+  }
+  
+  /* Auto-apply light mode unless dark mode is explicitly enabled */
+  :root:not(.dark) body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+  }
+}
+
+/* Light mode specific improvements - light mode only */
+:root:not(.dark) body {
+  /* Improved background gradient for better visual experience */
+  background-color: var(--bg-primary);
+  color: var(--text-primary); /* Ensure base text color is applied */
+}
+
+/* Card and component improvements - light mode only */
+:root:not(.dark) .sidebar-card, 
+:root:not(.dark) .question-thread, 
+:root:not(.dark) .popup-content,
+:root:not(.dark) .answer-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(203, 213, 225, 0.5);
+  color: var(--text-primary); /* Ensure text in cards uses primary text color */
+  background: white;
+}
+
+/* Enhanced popup styling for improved user experience - light mode */
+:root:not(.dark) .popup-content {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 1.25rem;
+  transform: translateY(0);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root:not(.dark) .popup-content:hover {
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12), 0 15px 25px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+:root:not(.dark) .hero h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  color: white;
+  font-weight: 700;
+}
+:root:not(.dark) .reply-form-container {
+  background-color:#FAFAFA;
+  border:none;
+  box-shadow: #00000033 1px 2px 0 1px;
+}
+:root:not(.dark) .send-reply-btn {
+  color:#3b82f6;
+}
+:root:not(.dark) .hero p {
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  color: #f8fafc;
+  font-weight: 500;
+}
+
+
+/* More defined input fields - light mode only */
+:root:not(.dark) .input {
+  border-color: #cbd5e1;
+  background-color: #ffffff;
+  color: var(--text-primary); /* Ensure input text is visible */
+}
+
+:root:not(.dark) .input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+}
+
+/* Form styling enhancements for light mode */
+:root:not(.dark) input,
+:root:not(.dark) select,
+:root:not(.dark) textarea {
+  /* border-color: #e2e8f0; */
+  background-color: #f1f5f9;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  /* box-shadow: inset #e2e8f0 1px 1px 49px 3px; */
+}
+
+:root:not(.dark) input:focus,
+:root:not(.dark) select:focus,
+:root:not(.dark) textarea:focus {
+  /* border-color: var(--primary); */
+  /* background-color: #ffffff; */
+  /* box-shadow: inset #e2e8f0 1px 1px 49px 3px; */
+  /* box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15); */
+  /* transform: translateY(-1px); */
+}
+
+/* Filter buttons with improved contrast - light mode only */
+:root:not(.dark) .filter-btn {
+  background-color: #e2e8f0;
+  color: var(--text-primary); /* Ensure button text is visible */
+}
+
+:root:not(.dark) .filter-btn:hover, 
+:root:not(.dark) .filter-btn.active {
+  background-color: #cbd5e1;
+}
+
+/* Tags with better visibility - light mode only */
+:root:not(.dark) .tag {
+  background-color: #e2e8f0;
+  color: #1e293b; /* Darker text for better contrast on light background */
+  border: 1px solid #cbd5e1;
+}
+
+/* Enhanced header appearance - light mode only */
+:root:not(.dark) #mainHeader {
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #e2e8f0;
+  color: var(--text-primary);
+}
+
+/* Improved search input - light mode only */
+:root:not(.dark) #globalSearch {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: var(--text-primary); /* Ensure search text is visible */
+}
+
+:root:not(.dark) #globalSearch:focus {
+  background-color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+}
+
+/* Theme toggle button with better contrast - light mode only */
+:root:not(.dark) #themeToggle {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: var(--text-primary); /* Ensure toggle button text is visible */
+}
+
+/* Improved button styles - light mode only */
+:root:not(.dark) .btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  color: var(--text-primary); /* Default text color for buttons */
+}
+
+/* Add specific button variants with proper contrast */
+:root:not(.dark) .btn-primary {
+  background-color: var(--primary);
+  color: white; /* White text on blue background for better contrast */
+}
+
+:root:not(.dark) .btn-secondary {
+  background-color: var(--secondary);
+  color: white; /* White text on purple background for better contrast */
+}
+
+:root:not(.dark) .btn:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Drop shadow and soft glow for buttons in light mode */
+:root:not(.dark) .btn.btn-primary {
+  box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .btn.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.4);
+  transform: translateY(-2px);
+}
+
+:root:not(.dark) .btn.btn-secondary {
+  box-shadow: 0 4px 14px rgba(var(--secondary-rgb), 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .btn.btn-secondary:hover {
+  box-shadow: 0 6px 20px rgba(var(--secondary-rgb), 0.4);
+  transform: translateY(-2px);
+}
+
+/* Enhanced sidebar styling - light mode only */
+:root:not(.dark) .sidebar {
+  border-right: 1px solid #e2e8f0;
+  color: var(--text-primary);
+  background: #ffffff;
+}
+
+:root:not(.dark) .sidebar-btn:not(.active) {
+  color: #1e293b;
+}
+
+:root:not(.dark) .sidebar-btn:hover:not(.active) {
+  background-color: #f1f5f9;
+}
+
+:root:not(.dark) .sidebar-btn.active {
+  color: var(--primary);
+  background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+/* Enhanced text styles in light mode - general content */
+:root:not(.dark) p,
+:root:not(.dark) h1, 
+:root:not(.dark) h2, 
+:root:not(.dark) h3, 
+:root:not(.dark) h4, 
+:root:not(.dark) h5, 
+:root:not(.dark) h6 {
+  color: var(--text-primary);
+}
+
+:root:not(.dark) .text-secondary,
+:root:not(.dark) .subtitle,
+:root:not(.dark) .metadata {
+  color: var(--text-secondary); 
+  font-weight: 500; /* Slightly bolder for better readability */
+}
+
+/* Ensure link colors are visible in light mode */
+:root:not(.dark) a:not(.btn) {
+  color: var(--primary);
+}
+:root:not(.dark) .document-attachment {
+  background-color: #e0ecff;
+  border: none;
+}
+:root:not(.dark) .no-answers {
+  background-color: #ffffff;
+  border: none;
+  box-shadow: #4d4d4d57 1px 1px 7px -3px;
+}
+:root:not(.dark) a:not(.btn):hover {
+  color: #1e40af; /* Slightly darker shade for hover state */
+  text-decoration: underline;
+}
+
+
+/* Question Details Popup - light mode enhancements */
+:root:not(.dark) #questionDetailsPopup .popup-content {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12), 0 15px 25px rgba(0, 0, 0, 0.07);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: 1.5rem;
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+}
+
+:root:not(.dark) #questionDetailsPopup .question-title {
+  color: var(--text-primary);
+  font-weight: 700;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+}
+
+:root:not(.dark) #questionDetailsPopup .question-body {
+  color: var(--text-primary);
+  line-height: 1.8;
+}
+
+:root:not(.dark) #questionDetailsPopup .answer-card {
+  background-color: #f8fafc;
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+:root:not(.dark) #questionDetailsPopup .answer-card:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Authentication popup enhancements for light mode */
+:root:not(.dark) #authPopup .popup-content {
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1), 0 10px 20px rgba(15, 23, 42, 0.05);
+}
+
+:root:not(.dark) #authPopup .tab {
+  background-color: #f1f5f9;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+:root:not(.dark) #authPopup .tab.active,
+:root:not(.dark) #authPopup .tab:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* Security dialogs styling - light mode */
+:root:not(.dark) #twoFactorPopup .popup-content,
+:root:not(.dark) #securityQuestionsPopup .popup-content,
+:root:not(.dark) #forgotPasswordPopup .popup-content {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+}
+
+/* Form popups styling for light mode */
+:root:not(.dark) #questionFormPopup .popup-content,
+:root:not(.dark) #answerFormPopup .popup-content {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.1), 0 15px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  overflow: hidden;
+}
+
+:root:not(.dark) #questionFormPopup h2,
+:root:not(.dark) #answerFormPopup h2 {
+  color: var(--text-primary);
+  font-weight: 700;
+  position: relative;
+}
+
+:root:not(.dark) #questionFormPopup h2::after,
+:root:not(.dark) #answerFormPopup h2::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background-color: var(--primary);
+  border-radius: 3px;
+}
+
+:root:not(.dark) .step-indicator {
+  background-color: #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+:root:not(.dark) .step-indicator.active {
+  background-color: var(--primary);
+}
+
+/* Toast notifications for light mode */
+:root:not(.dark) .toast {
+  background-color: #ffffff;
+  border-left: 4px solid var(--primary);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+  border-radius: 0.5rem;
+}
+
+:root:not(.dark) .toast-success {
+  border-left-color: #10b981;
+}
+
+:root:not(.dark) .toast-error {
+  border-left-color: #ef4444;
+}
+
+/* Dropdown styling for light mode */
+:root:not(.dark) .dropdown-menu,
+:root:not(.dark) #userMenu {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+}
+
+/* User menu specific styling */
+:root:not(.dark) #userMenu a,
+:root:not(.dark) #userStatus span,
+:root:not(.dark) #userMenu button {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+:root:not(.dark) #userMenu a:hover,
+:root:not(.dark) #userMenu button:hover {
+  background-color: var(--bg-primary);
+}
+
+/* Enhanced modal styling for light mode */
+:root:not(.dark) .modal {
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+:root:not(.dark) .modal-box {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+}
+
+/* Question card enhancements for light mode */
+:root:not(.dark) .question-card {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border-radius: 1rem;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+:root:not(.dark) .question-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.04);
+  transform: translateY(-3px);
+}
+
+:root:not(.dark) .question-card .question-title {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Profile section improvements for light mode */
+:root:not(.dark) #profileSection .profile-card {
+  background: linear-gradient(145deg, #ffffff, #fafafa);
+  border-radius: 1.2rem;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+:root:not(.dark) #profileSection .profile-card:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.07), 0 5px 15px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+
+:root:not(.dark) #profileSection .stats-card {
+  background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+}
+
+/* User badges and indicators for light mode */
+:root:not(.dark) .user-badge {
+  background-color: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
+}
+
+:root:not(.dark) .reputation-badge {
+  background: linear-gradient(45deg, #f59e0b, #f97316);
+  color: white;
+  font-weight: 600;
+}
+
+/* File upload elements in light mode */
+:root:not(.dark) #fileUploadContainer {
+  border: 2px dashed #cbd5e1;
+  background-color: #f8fafc;
+  transition: all 0.3s ease;
+}
+
+:root:not(.dark) #fileUploadContainer:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.1);
+}
+
+:root:not(.dark) #fileUploadContainer.drag-over {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  border-color: var(--primary);
+  box-shadow: 0 4px 20px rgba(var(--primary-rgb), 0.15);
+}
+
+/* Enhanced scroller for light mode */
+:root:not(.dark) ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 2px solid #f1f5f9;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+:root:not(.dark) #logoutBtn.text-red-600 {
+  color: #ef4444;
+  background-color: rgb(245, 220, 220);
+  padding-block-end: 5px;
+}
+
+:root:not(.dark) #userStatus span.ml-2.px-2.py-1.text-xs.rounded.bg-green-800.text-white-800.fw-bolder {
+    color: white;
+}
+:root:not(.dark) .contributors .contributor div .text-sm {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+
+/* Additional Light Mode Enhancements
+   These styles improve the appearance of specific UI elements in light mode */
+
+/* Fix form labels and fields */
+:root:not(.dark) label:not(.tab) {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+:root:not(.dark) select {
+  background-color: #ffffff;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+:root:not(.dark) select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+/* User menu button */
+:root:not(.dark) #userMenuBtn {
+  color: var(--text-primary);
+}
+
+/* Radio buttons and checkboxes */
+:root:not(.dark) input[type="radio"],
+:root:not(.dark) input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+
+/* Admin badges */
+:root:not(.dark) .admin-badge {
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
+}
+
+:root:not(.dark) .admin-badge-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #065f46;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+:root:not(.dark) .admin-badge-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+:root:not(.dark) .admin-badge-danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Form validation messages */
+:root:not(.dark) .validation-message {
+  color: #b91c1c;
+}
+
+:root:not(.dark) .validation-success {
+  color: #065f46;
+}
+
+/* Code blocks */
+:root:not(.dark) pre,
+:root:not(.dark) code {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+}
+
+/* User profile sections */
+:root:not(.dark) .profile-section h3 {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Make sidebar elements easier to see */
+:root:not(.dark) .sidebar-heading {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Specific fixes for links in various contexts */
+:root:not(.dark) .card-link,
+:root:not(.dark) .nav-link {
+  color: var(--primary);
+}
+
+:root:not(.dark) .card-link:hover,
+:root:not(.dark) .nav-link:hover {
+  color: rgba(var(--primary-rgb), 0.8);
+}
+
+/* Better styling for feed items */
+:root:not(.dark) .feed-item {
+  border-bottom: 1px solid rgba(var(--border), 0.7);
+}
+
+:root:not(.dark) .feed-item:hover {
+  background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+/* Enhanced hover effects for reaction buttons */
+:root:not(.dark) .reaction-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+:root:not(.dark) .reaction-btn.upvote-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+:root:not(.dark) .reaction-btn.downvote-btn:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Enhanced hover effects for action buttons */
+:root:not(.dark) .action-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Enhanced hover effects for dropdown items */
+:root:not(.dark) .dropdown-menu a:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+/* Enhanced hover effects for question cards */
+:root:not(.dark) .question-card:hover {
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.03);
+  transform: translateY(-3px);
+}
+
+/* Enhanced hover effects for answer cards */
+:root:not(.dark) .answer-card:hover {
+  background-color: #f8fafc;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+}
+
+/* Enhanced hover effects for reply elements */
+:root:not(.dark) .reply:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+:root:not(.dark) .reply-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Enhanced hover effects for toggle answers button */
+:root:not(.dark) .toggle-answers:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+  border-radius: 0.375rem;
+}
+
+/* Enhanced hover effects for quick answer input */
+:root:not(.dark) .quick-answer-input:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
+}
+
+:root:not(.dark) .quick-answer-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Enhanced hover effects for send button */
+:root:not(.dark) .send-answer-btn:hover {
+  color: #1d4ed8;
+  transform: scale(1.1) translateY(-50%);
+}
+
+/* Enhanced hover effects for primary buttons */
+:root:not(.dark) .btn-primary:hover,
+:root:not(.dark) .answer-btn:hover {
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Enhanced hover effects for tag items */
+:root:not(.dark) .tag:hover {
+  background-color: #e0e7ff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+  color: #4f46e5;
+}
+
+/* Enhanced hover effects for pagination buttons */
+:root:not(.dark) #pagination button:hover {
+  background-color: #eff6ff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+/* Enhanced hover effects for filter buttons */
+:root:not(.dark) .filter-btn:hover {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
+:root:not(.dark) .contributor.flex.items-center.p-2.rounded-md.hover\:bg-gray-100.dark\:hover\:bg-gray-700.transition-colors:hover {
+  background-color: #f8fafc;
+  color: var(--text-primary);
+  border-radius: 0.375rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+/* Additional Light Mode Fixes 
+   These styles ensure proper text/background contrast for light mode */
+
+/* Question list specific styling */
+:root:not(.dark) .question-list {
+  background-color: var(--surface);
+  border-color: var(--border);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .question-list li {
+  color: var(--text-primary);
+  border-bottom-color: var(--border);
+}
+
+:root:not(.dark) .question-list li:hover {
+  transform: translateX(5px);
+  background-color: var(--bg-primary);
+  border-left: 3px solid var(--primary);
+  padding-left: calc(0.75rem - 3px);
+}
+
+/* Tags with proper contrast */
+:root:not(.dark) .tag {
+  color: var(--text-primary);
+  background-color: rgba(var(--primary-rgb), 0.1);
+  border-color: rgba(var(--primary-rgb), 0.2);
+}
+
+/* Label and text input contrast fixes */
+:root:not(.dark) .label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Make sure all text areas have proper contrast */
+:root:not(.dark) textarea {
+  /* background-color: #ffffff; */
+  /* color: var(--text-primary); */
+  /* border-color: var(--border); */
+}
+
+:root:not(.dark) textarea:focus {
+  /* border-color: var(--primary); */
+  /* box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2); */
+}
+
+/* Fix for search suggestions */
+:root:not(.dark) .search-suggestions {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) .search-suggestion {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+:root:not(.dark) .search-suggestion:hover {
+  background-color: var(--bg-primary);
+}
+
+/* Table styling for light mode */
+:root:not(.dark) table {
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+:root:not(.dark) th {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border);
+}
+
+:root:not(.dark) td {
+  border-color: var(--border);
+}
+
+:root:not(.dark) tr:hover {
+  background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+/* Auth popup fixes */
+:root:not(.dark) #authPopup .popup-content {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  color: var(--text-primary);
+}
+
+/* Sidebar overlay */
+:root:not(.dark) #sidebarOverlay {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Question Details Popup - Light Mode Fixes */
+:root:not(.dark) #questionDetailsPopup {
+  color-scheme: light;
+}
+
+/* Main content area */
+:root:not(.dark) #questionDetailsPopup .popup-content {
+  background-color: #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  border-radius: 0.75rem;
+}
+
+/* Header area */
+:root:not(.dark) #questionDetailsPopup .popup-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Accessibility focus styles */
+:root:not(.dark) #questionDetailsPopup button:focus-visible,
+:root:not(.dark) #questionDetailsPopup a:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Text colors */
+:root:not(.dark) #questionDetailsPopup h2 {
+  color: #0f172a;
+}
+
+:root:not(.dark) #questionDetailsPopup .text-gray-900 {
+  color: #0f172a !important;
+}
+
+:root:not(.dark) #questionDetailsPopup .text-gray-700 {
+  color: #334155 !important;
+}
+
+:root:not(.dark) #questionDetailsPopup .text-gray-600 {
+  color: #475569 !important;
+}
+
+:root:not(.dark) #questionDetailsPopup .text-gray-500 {
+  color: #64748b !important;
+}
+
+:root:not(.dark) #questionDetailsPopup .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+/* Background color fixes */
+:root:not(.dark) #questionDetailsPopup .bg-gray-50 {
+  background-color: #f8fafc !important;
+}
+
+:root:not(.dark) #questionDetailsPopup .bg-gray-100 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Document attachment area */
+:root:not(.dark) #questionDetailsPopup .document-attachment {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+:root:not(.dark) #questionDetailsPopup .document-attachment:hover {
+  background-color: #f1f5f9;
+}
+
+:root:not(.dark) #questionDetailsPopup .view-document-btn {
+  background-color: #2563eb;
+}
+
+:root:not(.dark) #questionDetailsPopup .view-document {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+/* Answer cards */
+:root:not(.dark) #questionDetailsPopup .answer-item {
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+}
+
+/* Buttons and interactive elements */
+:root:not(.dark) #questionDetailsPopup .btn-vote:hover {
+  background-color: #f1f5f9;
+}
+
+:root:not(.dark) #questionDetailsPopup .reply-input {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+
+:root:not(.dark) #questionDetailsPopup .answer-btn {
+  background-color: #2563eb;
+  border: 1px solid #1e40af;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) #questionDetailsPopup .answer-btn:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) #questionDetailsPopup #submitDetailAnswer {
+  background-color: #2563eb;
+  border: 1px solid #1e40af;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) #questionDetailsPopup #submitDetailAnswer:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) #questionDetailsPopup .reply-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Dividers and borders */
+:root:not(.dark) #questionDetailsPopup .border-gray-100 {
+  border-color: #e2e8f0 !important;
+}
+
+:root:not(.dark) #questionDetailsPopup .border-gray-200 {
+  border-color: #e2e8f0 !important;
+}
+
+:root:not(.dark) #questionDetailsPopup .border-t,
+:root:not(.dark) #questionDetailsPopup .border-b {
+  border-color: #e2e8f0;
+}
+
+/* Reply section */
+:root:not(.dark) #questionDetailsPopup .replies-list-container {
+  border-left: 2px solid #e2e8f0 !important;
+}
+
+:root:not(.dark) #questionDetailsPopup .reply-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.15);
+  outline: none;
+}
+
+:root:not(.dark) #questionDetailsPopup .reply {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+}
+
+:root:not(.dark) #questionDetailsPopup .reply:hover {
+  background-color: #f8fafc;
+}
+
+:root:not(.dark) #questionDetailsPopup .reply:last-child {
+  margin-bottom: 0;
+}
+
+/* Question input area */
+:root:not(.dark) #questionDetailsPopup textarea {
+  color: #0f172a;
+}
+
+:root:not(.dark) #questionDetailsPopup textarea::placeholder {
+  color: #64748b;
+}
+
+/* Tags */
+:root:not(.dark) #questionDetailsPopup .tag {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid rgba(3, 105, 161, 0.15);
+}
+
+:root:not(.dark) #questionDetailsPopup .tag:hover {
+  background-color: #bae6fd;
+  border-color: rgba(3, 105, 161, 0.25);
+}
+
+/* Fix for dropdown menus */
+:root:not(.dark) #questionDetailsPopup .dropdown-menu {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Fix for answer section sorting tabs */
+:root:not(.dark) #questionDetailsPopup .bg-gray-100 {
+  background-color: #f1f5f9;
+}
+
+:root:not(.dark) #questionDetailsPopup .bg-white {
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Fix for active and hover states */
+:root:not(.dark) #questionDetailsPopup .btn-vote.active {
+  background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+:root:not(.dark) #questionDetailsPopup .upvote-btn.active svg,
+:root:not(.dark) #questionDetailsPopup .upvote-answer-btn.active svg {
+  fill: #2563eb;
+}
+
+:root:not(.dark) #questionDetailsPopup .downvote-btn.active svg,
+:root:not(.dark) #questionDetailsPopup .downvote-answer-btn.active svg {
+  fill: #dc2626;
+}
+
+/* Improve avatar contrast for light mode */
+:root:not(.dark) #questionDetailsPopup .avatar {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Add better styling for the textarea in light mode */
+:root:not(.dark) #questionDetailsPopup #questionDetailAnswer {
+  /* background-color: #ffffff; */
+  /* border: 1px solid transparent; */
+  /* border-radius: 0.375rem; */
+}
+
+:root:not(.dark) #questionDetailsPopup #questionDetailAnswer:focus {
+  /* box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.15); */
+  outline: none;
+}
+
+/* Style pre and code elements for light mode */
+:root:not(.dark) #questionDetailsPopup pre {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+:root:not(.dark) #questionDetailsPopup code {
+  background-color: #f1f5f9;
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  color: #1e40af;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875em;
+}

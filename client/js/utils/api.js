@@ -25,7 +25,9 @@ async function fetchWithAuth(endpoint, options = {}, isBinary = false) {
     headers: {
       ...(!isFormData && { 'Content-Type': 'application/json' }),
       'Authorization': `Bearer ${getToken()}`,
-    }
+    },
+    // Allow self-signed certificates in development
+    credentials: 'include'
   };
 
   const mergedOptions = {

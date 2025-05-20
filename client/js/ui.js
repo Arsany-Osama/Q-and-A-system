@@ -315,6 +315,10 @@ function setupFocusTrap(popupId) {
 export function showQuestionFormPopup() {
   const popup = document.getElementById('questionFormPopup');
   popup.classList.remove('hidden');
+  
+  // Do not call showSection here as it hides all other sections
+  // Just ensure the form is ready for input
+  
   document.getElementById('questionTitle').focus();
   document.getElementById('postQuestionForm').reset();
 }
@@ -324,11 +328,20 @@ export function hideQuestionFormPopup() {
   if (popup.classList.contains('hidden')) return;
   popup.classList.add('hidden');
   document.getElementById('postQuestionForm').reset();
+  
+  // Ensure the feed section stays visible
+  const feedSection = document.getElementById('feedSection');
+  if (feedSection) {
+    feedSection.classList.remove('hidden');
+  }
 }
 
 export function showAnswerFormPopup(questionId = null) {
   const popup = document.getElementById('answerFormPopup');
   popup.classList.remove('hidden');
+  
+  // Do not call showSection here as it hides all other sections
+  // Just handle the popup independently
   
   if (questionId) {
     fetchQuestions().then(questions => {
@@ -350,4 +363,10 @@ export function hideAnswerFormPopup() {
   if (popup.classList.contains('hidden')) return;
   popup.classList.add('hidden');
   document.getElementById('postAnswerForm').reset();
+  
+  // Ensure the feed section stays visible
+  const feedSection = document.getElementById('feedSection');
+  if (feedSection) {
+    feedSection.classList.remove('hidden');
+  }
 }

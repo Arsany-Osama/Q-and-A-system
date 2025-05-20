@@ -87,13 +87,24 @@ export function setupAnswerForm() {
 
     try {
       const result = await answersApi.create(questionId, content);
-      
-      if (result.success) {
+        if (result.success) {
         showToast('success', 'Answer submitted successfully');
         form.reset();
         questionSearch.value = '';
         questionSelect.value = '';
         questionSelect.removeAttribute('required');
+        
+        // Hide the answer form popup
+        const answerFormPopup = document.getElementById('answerFormPopup');
+        if (answerFormPopup) {
+          answerFormPopup.classList.add('hidden');
+        }
+        
+        // Ensure feed is visible
+        const feedSection = document.getElementById('feedSection');
+        if (feedSection) {
+          feedSection.classList.remove('hidden');
+        }
       } else {
         showToast('error', result.message || 'Failed to submit answer');
       }

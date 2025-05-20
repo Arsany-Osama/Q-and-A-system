@@ -39,7 +39,7 @@ main > section {
 
 .hero::before {
   content: '';
-  @apply absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-20;
+  @apply absolute inset-0  from-indigo-500 to-purple-600 opacity-20;
   animation: gradientShift 8s ease-in-out infinite;
   border-radius: 1.5rem;
 }
@@ -50,7 +50,7 @@ main > section {
 
 .dark .hero::before {
   content: '';
-  @apply absolute inset-0 bg-gradient-to-r from-violet-800 to-indigo-600 opacity-30;
+  @apply absolute inset-0  from-violet-800 to-indigo-600 opacity-30;
   animation: gradientShift 8s ease-in-out infinite;
   border-radius: 1.5rem;
 }
@@ -141,7 +141,7 @@ main > section {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 0rem 1rem 0rem;
 }
 
 /* Profile Section */

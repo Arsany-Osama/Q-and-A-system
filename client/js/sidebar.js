@@ -17,7 +17,6 @@ export function initSidebar() {
   const overlay = document.createElement('div');
   overlay.id = 'sidebarOverlay';
   document.body.appendChild(overlay);
-
   function toggleSidebar() {
     isOpen = !isOpen;
     logoBtn.setAttribute('aria-expanded', isOpen);
@@ -29,29 +28,15 @@ export function initSidebar() {
       ease: 'power2.out',
     });
 
-    // Adjust main content and header on desktop
-    if (window.innerWidth >= 768) { // md breakpoint
-      gsap.to([header, content], {
-        marginLeft: isOpen ? sidebar.offsetWidth : 0,
-        duration: 0.3,
-        ease: 'power2.out',
-      });
-    }
-
-    // Handle overlay for mobile
-    if (window.innerWidth < 768) {
-      gsap.to(overlay, {
-        opacity: isOpen ? 1 : 0,
-        duration: 0.3,
-        ease: 'power2.out',
-        onComplete: () => {
-          overlay.classList.toggle('open', isOpen);
-        },
-      });
-    } else {
-      overlay.classList.remove('open');
-      gsap.set(overlay, { opacity: 0 });
-    }
+    // Handle overlay for all screen sizes to create the drawer effect
+    gsap.to(overlay, {
+      opacity: isOpen ? 1 : 0,
+      duration: 0.3,
+      ease: 'power2.out',
+      onComplete: () => {
+        overlay.classList.toggle('open', isOpen);
+      },
+    });
   }
 
   // Event listeners
@@ -90,18 +75,15 @@ export function initSidebar() {
       toggleSidebar();
     }
   });
-
-  // Update layout on resize
+  // Update layout on resize - now we don't need to adjust margins
   window.addEventListener('resize', () => {
-    if (isOpen && window.innerWidth >= 768) {
-      gsap.set([header, content], { marginLeft: sidebar.offsetWidth });
-    } else {
-      gsap.set([header, content], { marginLeft: 0 });
+    // If sidebar is closing on resize, update the overlay
+    if (isOpen && window.innerWidth < 768) {
+      gsap.set(overlay, { opacity: 1 });
     }
   });
 
   // Initialize state
   gsap.set(sidebar, { x: '-100%' }); // Start closed
-  gsap.set([header, content], { marginLeft: 0 }); // No initial shift
   gsap.set(overlay, { opacity: 0 }); // Overlay hidden
 }

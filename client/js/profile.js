@@ -2,8 +2,18 @@ import { getToken, isLoggedIn, logout, handleTokenExpiration } from './auth.js';
 import { showToast, showPopup } from './ui.js'; // Added showPopup import
 import { auth } from './utils/api.js';
 
-export async function fetchUserStats() {
+// Store user stats in memory to avoid redundant API calls
+let cachedUserStats = null;
+
+export async function fetchUserStats(forceRefresh = false) {
   console.log('Fetching user stats');
+  
+  // If we have cached stats and don't need to refresh, return them immediately
+  if (cachedUserStats && !forceRefresh) {
+    console.log('Using cached user stats');
+    return cachedUserStats;
+  }
+  
   if (!isLoggedIn()) {
     showToast('error', 'Please log in to view profile');
     return { questionsCount: 0, answersCount: 0 };
@@ -21,7 +31,10 @@ export async function fetchUserStats() {
       }
       throw new Error(result.message || 'Failed to fetch user stats');
     }
-    return result.stats;
+    
+    // Cache the stats
+    cachedUserStats = result.stats;
+    return cachedUserStats;
   } catch (err) {
     console.error('Error fetching user stats:', err);
     
@@ -32,6 +45,19 @@ export async function fetchUserStats() {
       showToast('error', 'Network error loading profile');
     }
     return { questionsCount: 0, answersCount: 0 };
+  }
+}
+
+// Add a function to preload user stats in the background without showing any UI
+export async function preloadUserStats() {
+  if (isLoggedIn()) {
+    console.log('Preloading user stats');
+    try {
+      await fetchUserStats(true); // Force refresh
+      console.log('User stats preloaded successfully');
+    } catch (err) {
+      console.error('Failed to preload user stats:', err);
+    }
   }
 }
 
@@ -47,7 +73,9 @@ export async function renderProfile() {
   }
 
   const username = localStorage.getItem('username') || 'User';
-  const stats = await fetchUserStats();
+  // First check if we have cached stats (should be there from preloading)
+  // If not, fetch them
+  const stats = await fetchUserStats(false); // false = use cache if available
 
   profileUsername.textContent = username;
   questionsAsked.textContent = stats.questionsCount || 0;

@@ -1,6 +1,8 @@
 import { showToast, hidePopup, renderUserUI, showSection } from './ui.js';
 import { validatePassword, updatePasswordRequirements } from './security.js';
 import { auth as authApi, fetchWithAuth } from './utils/api.js';  
+import { preloadUserStats } from './profile.js';
+
 const pendingUsers = new Map();
 
 export function isLoggedIn() {
@@ -285,7 +287,6 @@ export function initAuth() {
       } else {
         const result = await handleAuth(action, username, email, password);
         if (result.success) {
-          showToast('success', 'Logged in successfully');
 
           if (result.requires2FA) {
             handleTwoFactorAuth(result);
@@ -297,8 +298,9 @@ export function initAuth() {
             localStorage.setItem('state', result.state);
             if (result.has2fa) localStorage.setItem('has2fa', 'true');
             renderUserUI();
-            showSection('profileSection');
-            setTimeout(() => window.location.reload(), 100);
+            
+            // Preload profile data in background but don't redirect
+            preloadUserStats();
           }
         } else {
           showToast('error', result.message || 'Authentication failed');
@@ -350,19 +352,26 @@ export function initAuth() {
       '/auth/auth0',
       'Auth0',
       `width=${width},height=${height},left=${left},top=${top}`
-    );
-
-    window.addEventListener('message', (event) => {
+    );    window.addEventListener('message', (event) => {
       if (event.data.type === 'auth0-auth') {
         authWindow.close();
         if (event.data.success) {
-          localStorage.setItem('token', event.data.token);
-          localStorage.setItem('username', event.data.username);
-          localStorage.setItem('role', event.data.role);
-          localStorage.setItem('state', event.data.state);
-          hidePopup();
-          renderUserUI();
-          showToast('success', 'Logged in successfully with Auth0');
+          const requires2FA = event.data.has2fa === true || event.data.has2fa === 'true' || event.data.requires2FA;
+
+          if (requires2FA) {
+            handleTwoFactorAuth(event.data);
+          } else {
+            localStorage.setItem('token', event.data.token);
+            localStorage.setItem('username', event.data.username);
+            localStorage.setItem('role', event.data.role);
+            localStorage.setItem('state', event.data.state);
+            if (event.data.has2fa) localStorage.setItem('has2fa', 'true');
+            hidePopup();
+            renderUserUI();
+            // Preload profile data in background
+            preloadUserStats();
+            showToast('success', 'Logged in successfully with Auth0');
+          }
         } else {
           showToast('error', 'Auth0 login failed');
         }
@@ -398,26 +407,84 @@ export function handleTwoFactorAuth(result) {
   }
 
   const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-  modal.innerHTML = `
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
-      <h2 class="text-xl font-bold mb-4">Two-Factor Authentication</h2>
-      <p class="mb-4">Please enter the verification code from your authenticator app.</p>
-      <form id="twoFactorForm" class="space-y-4">
-        <input type="text" id="twoFactorCode" pattern="[0-9]{6}" maxlength="6" class="input w-full" placeholder="000000" required>
-        <button type="submit" class="btn btn-primary w-full">Verify</button>
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';  modal.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full relative">
+      <button type="button" id="closeModal" class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      
+      <div class="flex justify-center mb-4">
+        <div class="p-3 rounded-full bg-primary bg-opacity-10 dark:bg-opacity-20">
+          <svg class="w-12 h-12 text-primary dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+      </div>
+      
+      <h2 class="text-xl font-bold mb-2 text-gray-800 dark:text-gray-100 text-center">Two-Factor Authentication</h2>
+      <p class="mb-6 text-gray-600 dark:text-gray-300 text-center">Please enter the verification code from your authenticator app.</p>
+      
+      <form id="twoFactorForm" class="space-y-6">
+        <div class="space-y-1">
+          <input type="text" id="twoFactorCode" pattern="[0-9]{6}" maxlength="6" class="input w-full text-center text-lg font-mono tracking-widest focus:ring-2 focus:ring-primary" placeholder="000000" required>
+          <p class="text-xs text-center text-gray-500 dark:text-gray-400">Enter 6-digit code from your authenticator app</p>
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-full py-3 rounded-lg transition-all group relative overflow-hidden flex items-center justify-center">
+          <span class="relative z-10">Verify</span>
+          <span class="absolute inset-0 bg-white bg-opacity-20 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></span>
+        </button>
       </form>
     </div>
-  `;
-  document.body.appendChild(modal);
-
+  `;document.body.appendChild(modal);
+  // Focus on the code input field
   setTimeout(() => document.getElementById('twoFactorCode').focus(), 100);
+  
+  // Add event listener to close button
+  document.getElementById('closeModal').addEventListener('click', () => {
+    modal.remove();
+    // Clear temporary authentication data
+    localStorage.removeItem('tempToken');
+    localStorage.removeItem('tempUsername');
+    showToast('info', 'Two-factor authentication canceled');
+  });
+  
+  // Improve input field handling
+  const twoFactorInput = document.getElementById('twoFactorCode');
+  twoFactorInput.addEventListener('input', (e) => {
+    // Only allow numeric input
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    
+    // Auto-submit when 6 digits are entered
+    if (e.target.value.length === 6) {
+      setTimeout(() => {
+        document.getElementById('twoFactorForm').dispatchEvent(new Event('submit'));
+      }, 500);
+    }
+  });
+  
+  // Handle Escape key to close modal
+  modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('closeModal').click();
+    }
+  });
 
   document.getElementById('twoFactorForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const code = document.getElementById('twoFactorCode').value;
-
-    try {
+    const code = document.getElementById('twoFactorCode').value;    try {
+      const submitBtn = document.querySelector('#twoFactorForm button[type="submit"]');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg> Verifying...
+      `;
+    
       const token = localStorage.getItem('tempToken') || getToken();
       
       const response = await fetchWithAuth('/auth/2fa/verify', {
@@ -436,19 +503,25 @@ export function handleTwoFactorAuth(result) {
         
         localStorage.removeItem('tempToken');
         localStorage.removeItem('tempUsername');
-        
-        showToast('success', 'Two-factor authentication successful');
+          showToast('success', 'Two-factor authentication successful');
         modal.remove();
         hidePopup();
         renderUserUI();
-        showSection('profileSection');
-        setTimeout(() => window.location.reload(), 100);
-      } else {
+        // Preload profile data in background but don't redirect or reload
+        preloadUserStats();      } else {
         showToast('error', response.message || 'Invalid verification code');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
       }
     } catch (error) {
       console.error('Error verifying 2FA:', error);
       showToast('error', error.message || 'Network error occurred');
+      
+      const submitBtn = document.querySelector('#twoFactorForm button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText || 'Verify';
+      }
     }
   });
 }function finishLogin(result) {
@@ -461,9 +534,11 @@ export function handleTwoFactorAuth(result) {
     localStorage.setItem('has2fa', 'true');
   }
   renderUserUI();
-  showSection('profileSection');
+  
+  // Preload profile data in background but don't redirect
+  preloadUserStats();
+  
   showToast('success', 'Logged in successfully');
-  setTimeout(() => window.location.reload(), 100);
 }
 
 async function handleAuth(action, username, email, password) {
@@ -825,9 +900,7 @@ function initializeForgotPasswordOTPForm() {
 
 export async function verifyOTP(email, otp, type) {
   try {
-    const response = await authApi.verifyOTP(email, otp, type);
-
-    if (response.success) {      if (type === 'registration') {
+    const response = await authApi.verifyOTP(email, otp, type);    if (response.success) {      if (type === 'registration') {
         showToast('success', 'Registration completed successfully!');
         localStorage.setItem('token', response.token);
         localStorage.setItem('username', response.username);
@@ -835,8 +908,8 @@ export async function verifyOTP(email, otp, type) {
         localStorage.setItem('state', response.state || 'APPROVED');
         hidePopup();
         renderUserUI();
-        showSection('profileSection');
-      } else if (type === '2fa') {
+        // Preload profile data in background but don't redirect
+        preloadUserStats();      } else if (type === '2fa') {
         showToast('success', '2FA verification successful');
         localStorage.setItem('token', response.token);
         localStorage.setItem('username', response.username);
@@ -845,7 +918,8 @@ export async function verifyOTP(email, otp, type) {
         if (response.has2fa) localStorage.setItem('has2fa', 'true');
         hidePopup();
         renderUserUI();
-        showSection('profileSection');
+        // Preload profile data in background but don't redirect
+        preloadUserStats();
       }
     } else {
       showToast('error', response.message || 'OTP verification failed');

@@ -39,9 +39,11 @@ body {
   margin: 0 auto;
 }
 
-/* Sidebar */
+/* Sidebar - Overlay style */
 .sidebar {
   transition: transform 0.3s ease;
+  height: 100vh; /* Full height */
+  overflow-y: auto; /* Enable scrolling if needed */
 }
 
 .sidebar-btn {

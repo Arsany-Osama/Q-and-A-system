@@ -69,9 +69,9 @@ router.get(
     
     try {
       const { token, user } = req.user;
-      const safeUsername = encodeURIComponent(user.username);
-      const safeRole = encodeURIComponent(user.role);
+      const safeUsername = encodeURIComponent(user.username);      const safeRole = encodeURIComponent(user.role);
       const safeState = encodeURIComponent(user.state);
+      const has2fa = user.twoFAEnabled ? 'true' : 'false';
       
       res.send(`
         <script>
@@ -82,7 +82,8 @@ router.get(
               token: '${token}',
               username: '${safeUsername}',
               role: '${safeRole}',
-              state: '${safeState}'
+              state: '${safeState}',
+              has2fa: '${has2fa}'
             }, '*');
           } catch (e) {
             console.error('Post message error:', e);

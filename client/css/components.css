@@ -587,10 +587,13 @@ textarea.input {
   @apply outline-none ring-2 ring-primary ring-opacity-50;
 }
 
-/* Main Content and Header */
+/* Main Content and Header - Fixed position without margin transitions */
 #mainContent,
 #mainHeader {
-  transition: margin-left 0.3s ease-in-out;
+  /* No margin transitions needed as sidebar now overlays content */
+  position: relative;
+  width: 100%;
+  left: 0;
 }
 
 /* Overlay for mobile when sidebar is open */
@@ -601,7 +604,7 @@ textarea.input {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 45;
+  z-index: 45; /* Under sidebar(z-50) but above other content */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease-in-out;
@@ -713,18 +716,6 @@ input[type="text"][pattern] {
   box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.4);
 }
 
-/* Profile Card */
-#profileSection .bg-white {
-  border-radius: 1rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-  padding: 2rem;
-  border: 1px solid rgba(226, 232, 240, 0.5);
-  background: linear-gradient(145deg, #ffffff, #f7fafc);
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-}
 
 /* Question Details */
 #questionDetailsSection > div {

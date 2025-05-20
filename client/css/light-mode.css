@@ -364,6 +364,9 @@
   border-radius: 3px;
 }
 
+:root:not(.dark) .bg-white.dark\:bg-gray-800.p-6.rounded-lg.shadow-xl.max-w-md.w-full.relative {
+    background-color: white;
+}
 :root:not(.dark) .step-indicator {
   background-color: #e2e8f0;
   transition: all 0.3s ease;

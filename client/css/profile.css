@@ -1,0 +1,214 @@
+/* Profile Section Styles */
+
+/* Tab Navigation */
+.tab-btn {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: transparent;
+  transition: background-color 0.3s ease;
+}
+
+.tab-btn.active::after {
+  background-color: var(--primary);
+}
+
+/* Light Mode Styles */
+:root:not(.dark) .tab-btn {
+  color: var(--text-secondary);
+}
+
+:root:not(.dark) .tab-btn:hover {
+  color: var(--text-primary);
+}
+
+:root:not(.dark) .tab-btn.active {
+  color: var(--primary);
+}
+
+:root:not(.dark) .tab-panel {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .stat-card {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+:root:not(.dark) .avatar {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode Styles */
+:root.dark .tab-btn {
+  color: #94a3b8;
+}
+
+:root.dark .tab-btn:hover {
+  color: #e2e8f0;
+}
+
+:root.dark .tab-btn.active {
+  color: #60a5fa;
+}
+
+:root.dark .tab-panel {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark .stat-card {
+  background-color: #0f172a;
+  border: 1px solid #334155;
+}
+
+:root.dark .avatar {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* Light Mode Form Styles */
+:root:not(.dark) .form-group label {
+  color: var(--text-primary);
+}
+
+:root:not(.dark) .input {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: var(--text-primary);
+}
+
+:root:not(.dark) .input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+/* Dark Mode Form Styles */
+:root.dark .form-group label {
+  color: #e2e8f0;
+}
+
+:root.dark .input {
+  /* background-color: #1e293b; */
+  border: 1px solid #334155;
+  color: #e2e8f0;
+}
+
+:root.dark .input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+/* Light Mode Button Styles */
+:root:not(.dark) .btn-primary {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+:root:not(.dark) .btn-primary:hover {
+  background-color: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode Button Styles */
+:root.dark .btn-primary {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+:root.dark .btn-primary:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Password Requirements List */
+.password-requirements {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Light Mode Requirements */
+:root:not(.dark) .password-requirements {
+  color: var(--text-secondary);
+}
+
+:root:not(.dark) .password-requirements li.valid {
+  color: #059669;
+}
+
+:root:not(.dark) .password-requirements li.invalid {
+  color: #dc2626;
+}
+
+/* Dark Mode Requirements */
+:root.dark .password-requirements {
+  color: #94a3b8;
+}
+
+:root.dark .password-requirements li.valid {
+  color: #34d399;
+}
+
+:root.dark .password-requirements li.invalid {
+  color: #f87171;
+}
+
+/* Feedback Messages */
+.feedback {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Light Mode Feedback */
+:root:not(.dark) .feedback.success {
+  color: #059669;
+}
+
+:root:not(.dark) .feedback.error {
+  color: #dc2626;
+}
+
+/* Dark Mode Feedback */
+:root.dark .feedback.success {
+  color: #34d399;
+}
+
+:root.dark .feedback.error {
+  color: #f87171;
+} 

@@ -135,9 +135,7 @@ const login = async (req, res) => {
         lastLoginAt: new Date(),
         lastLoginIp: ip
       }
-    });
-
-    const token = jwt.sign(
+    });    const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, state: user.state },
       secretKey,
       { expiresIn: '1h' }
@@ -147,7 +145,9 @@ const login = async (req, res) => {
       token,
       username: user.username,
       role: user.role,
-      state: user.state
+      state: user.state,
+      has2fa: user.twoFAEnabled || false,
+      requires2FA: user.twoFAEnabled || false
     });
   } catch (error) {
     console.error('Login error:', error);

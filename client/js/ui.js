@@ -102,6 +102,10 @@ export function showSection(sectionId) {
   
   // Track the current section in session storage for state management
   sessionStorage.setItem('currentSection', sectionId);
+  
+  // Dispatch a custom event that can be listened to for section-specific initialization
+  const event = new CustomEvent('sectionChanged', { detail: { sectionId } });
+  document.dispatchEvent(event);
 }
 
 export function showToast(type, message) {
@@ -134,8 +138,8 @@ export function renderUserUI() {
       state: localStorage.getItem('state')
     });
     const username = decodeURIComponent(localStorage.getItem('username') || 'User');
-    const role = decodeURIComponent(localStorage.getItem('role') || 'unauthorized');
-    const state = decodeURIComponent(localStorage.getItem('state') || 'unauthenticated');
+    const role = getUserRole(); // Use the function from auth.js instead of direct localStorage access
+    const state = getUserState(); // Use the function from auth.js instead of direct localStorage access
     console.log('Final values:', { username, role, state });
 
     userStatus.innerHTML = `

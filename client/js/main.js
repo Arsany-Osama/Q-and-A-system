@@ -38,24 +38,32 @@ document.addEventListener('DOMContentLoaded', () => {
   initFacebookLikeFeedUI();
   setupAdminNav();
   setupProtectedRoutes(); // Setup route protection
-
+  setupProfileTabs(); // Add this line to initialize profile tabs
   // Function to close the sidebar
   const sidebar = document.getElementById('sidebar');
-  const toggleIcon = document.getElementById('sidebarToggleIcon');
   function closeSidebar() {
-    if (sidebar && toggleIcon) {
+    if (sidebar) {
       gsap.to(sidebar, {
         x: '-100%',
         duration: 0.3,
         ease: 'power2.in',
-        onComplete: () => {
-          sidebar.classList.add('-translate-x-full');
-        },
       });
-      toggleIcon.innerHTML = `
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-      `;
-      document.getElementById('sidebarToggle').setAttribute('aria-expanded', 'false');
+      
+      // Also hide the overlay
+      const overlay = document.getElementById('sidebarOverlay');
+      if (overlay) {
+        gsap.to(overlay, {
+          opacity: 0,
+          duration: 0.3,
+          ease: 'power2.in',
+          onComplete: () => {
+            overlay.classList.remove('open');
+          },
+        });
+      }
+      
+      // Update aria attribute
+      document.getElementById('sidebarLogoBtn')?.setAttribute('aria-expanded', 'false');
     }
   }
 
@@ -268,14 +276,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // Feed section is public, no need for async
       navigateToSection('feedSection', showSection);
     });
-    
-    document.getElementById('profileNav')?.addEventListener('click', async () => {
+      document.getElementById('profileNav')?.addEventListener('click', async () => {
       const success = await navigateToSection('profileSection', showSection);
       if (!success) {
         if (!isLoggedIn()) {
           showPopup('login');
         }
       } else {
+        // Profile data should already be preloaded, but render it anyway
         renderProfile();
       }
     });
@@ -322,12 +330,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       showSection('answerQuestionSection');
     });
-    
-    // Restore previous section from session storage if available
+      // Restore previous section from session storage if available
     const previousSection = sessionStorage.getItem('currentSection');
     if (previousSection) {
       if (hasPermission(previousSection)) {
         showSection(previousSection);
+        
+        // If restoring the profile section, we need to load profile data as well
+        if (previousSection === 'profileSection') {
+          renderProfile(); // Load profile data when restoring from session
+          loadProfileSection(); // Initialize profile tabs and functionality
+        }
       } else {
         showSection('feedSection'); // Default to feed if no permission
       }
@@ -455,4 +468,51 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(loadProfileSection, 100); // Small delay to ensure DOM is updated
     };
   }
+
+  // Add this function before the end of the DOMContentLoaded event listener
+  function setupProfileTabs() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        // Remove active class from all buttons and panels
+        tabButtons.forEach(btn => {
+          btn.classList.remove('active', 'border-primary', 'text-primary');
+          btn.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+          btn.setAttribute('aria-selected', 'false');
+        });
+        tabPanels.forEach(panel => {
+          panel.classList.add('hidden');
+        });
+
+        // Add active class to clicked button and corresponding panel
+        button.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+        button.classList.add('active', 'border-primary', 'text-primary');
+        button.setAttribute('aria-selected', 'true');
+
+        const panelId = button.getAttribute('aria-controls');
+        const panel = document.getElementById(panelId);
+        if (panel) {
+          panel.classList.remove('hidden');
+        }
+      });
+    });
+  }
+
+  // Setup section change listener to initialize appropriate data when a section is shown
+  document.addEventListener('sectionChanged', (event) => {
+    const sectionId = event.detail.sectionId;
+    console.log(`Section changed to: ${sectionId}`);
+    
+    // Load appropriate data based on which section is being shown
+    if (sectionId === 'profileSection') {
+      renderProfile(); // Load profile data
+      loadProfileSection(); // Initialize profile tabs and functionality
+    } else if (sectionId === 'feedSection') {
+      renderFeed(); // Refresh feed data
+    }
+    // Add other section-specific initializations as needed
+  });
+
 });

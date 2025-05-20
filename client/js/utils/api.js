@@ -413,6 +413,34 @@ export const admin = {
   },
 };
 
+// Reports API
+export const reports = {
+  reportContent: async (contentId, type, reason) => {
+    return fetchWithAuth('/report/report', {
+      method: 'POST',
+      body: JSON.stringify({ id: contentId, type, reason })
+    });
+  },
+  
+  getAllReports: async () => {
+    return fetchWithAuth('/report/');
+  },
+  
+  rejectReport: async (reportId) => {
+    return fetchWithAuth('/report/reject', {
+      method: 'PATCH',
+      body: JSON.stringify({ reportId })
+    });
+  },
+  
+  deleteReportedContent: async (reportId) => {
+    return fetchWithAuth('/report/delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ reportId })
+    });
+  }
+};
+
 // Default export of all API modules
 export default {
   auth,
@@ -421,7 +449,8 @@ export default {
   votes,
   replies,
   documents,
-  admin
+  admin,
+  reports
 };
 
 // Expose isApproved globally for use in other scripts

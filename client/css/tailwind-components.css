@@ -1,0 +1,204 @@
+/* Custom Tailwind Components for Q&A System */
+
+@layer components {
+  /* Button Styles */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 inline-flex items-center justify-center;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600 
+    dark:focus:ring-blue-500 focus:ring-blue-500 shadow-sm hover:shadow-md dark:shadow-blue-800/30;
+  }
+
+  .btn-secondary {
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 
+    dark:focus:ring-indigo-500 focus:ring-indigo-500 shadow-sm hover:shadow-md;
+  }
+
+  .btn-success {
+    @apply bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 
+    dark:focus:ring-emerald-500 focus:ring-emerald-500 shadow-sm hover:shadow-md;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white dark:bg-red-500 dark:hover:bg-red-600 
+    dark:focus:ring-red-500 focus:ring-red-500 shadow-sm hover:shadow-md;
+  }
+
+  .btn-outline-primary {
+    @apply border border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 
+    dark:hover:bg-blue-900/30 focus:ring-blue-500 dark:focus:ring-blue-400;
+  }
+
+  .btn-outline-danger {
+    @apply border border-red-600 text-red-600 hover:bg-red-50 dark:border-red-400 dark:text-red-400 
+    dark:hover:bg-red-900/30 focus:ring-red-500 dark:focus:ring-red-400;
+  }
+
+  /* Card Styles */
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-gray-200 dark:border-gray-700;
+  }
+
+  /* Form Input Styles */
+  .form-input {
+    @apply w-full rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2.5 text-gray-700 dark:text-gray-300 
+    bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 transition-all duration-200;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+  }
+
+  /* Badge Styles */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-blue {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  .badge-indigo {
+    @apply bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300;
+  }
+
+  .badge-emerald {
+    @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300;
+  }
+
+  .badge-red {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;
+  }
+
+  .badge-amber {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300;
+  }
+
+  /* Dropdown Styles */
+  .dropdown-menu {
+    @apply absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-20;
+  }
+
+  .dropdown-item {
+    @apply block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors;
+  }
+
+  /* Stat Card Styles */
+  .stats-card {
+    @apply p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-md;
+  }
+
+  .stats-value {
+    @apply text-2xl font-bold mb-1;
+  }
+
+  .stats-label {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+  }
+
+  /* Report Card Styles */
+  .report-card {
+    @apply p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border-l-4 hover:-translate-y-1;
+  }
+
+  .report-card.type-question {
+    @apply border-indigo-500;
+  }
+
+  .report-card.type-answer {
+    @apply border-emerald-500;
+  }
+
+  .report-card.reason-SPAM {
+    @apply border-amber-500;
+  }
+
+  .report-card.reason-HARASSMENT {
+    @apply border-red-500;
+  }
+
+  .report-card.reason-INAPPROPRIATE_CONTENT {
+    @apply border-purple-500;
+  }
+
+  /* Modal Styles */
+  .modal {
+    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4;
+  }
+
+  .modal-content {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto;
+  }
+
+  .modal-header {
+    position: relative;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb; /* border-gray-200 */
+  }
+  .dark .modal-header {
+    border-bottom: 1px solid #374151; /* dark:border-gray-700 */
+  }
+
+  .modal-body {
+    @apply p-6 overflow-y-auto;
+  }
+
+  .modal-footer {
+    @apply p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3;
+  }
+
+  /* Toast Notification Styles */
+  .toast {
+    @apply p-4 rounded-lg shadow-lg flex items-start max-w-md w-full mb-3 
+    transform transition-all duration-300 opacity-0 translate-y-4;
+  }
+  
+  .toast-success {
+    @apply bg-emerald-50 dark:bg-emerald-900/60 border-l-4 border-emerald-500;
+  }
+  
+  .toast-error {
+    @apply bg-red-50 dark:bg-red-900/60 border-l-4 border-red-500;
+  }
+  
+  .toast-info {
+    @apply bg-blue-50 dark:bg-blue-900/60 border-l-4 border-blue-500;
+  }
+  
+  .toast-show {
+    @apply opacity-100 translate-y-0;
+  }
+
+  /* Loading/Skeleton Styles */
+  .skeleton {
+    @apply bg-gray-200 dark:bg-gray-700 animate-pulse rounded;
+  }
+
+  /* Empty State Styles */
+  .empty-state {
+    @apply flex flex-col items-center justify-center text-center p-10;
+  }
+
+  .empty-state-icon {
+    @apply h-16 w-16 rounded-full flex items-center justify-center mb-4;
+  }
+
+  /* Action Buttons */
+  .action-btn {
+    @apply p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors;
+  }
+}

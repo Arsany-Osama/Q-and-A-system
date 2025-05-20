@@ -23,9 +23,9 @@ const PAGE_CONFIG = {
   profileSection: { requiredPermission: PERMISSION_LEVELS.USER },
   questionForm: { requiredPermission: PERMISSION_LEVELS.APPROVED },
   answerQuestionSection: { requiredPermission: PERMISSION_LEVELS.APPROVED },
-  
-  // Specific HTML pages
+    // Specific HTML pages
   '/admin.html': { requiredPermission: PERMISSION_LEVELS.ADMIN },
+  '/reports.html': { requiredPermission: PERMISSION_LEVELS.MODERATOR },
   '/test-security.html': { requiredPermission: PERMISSION_LEVELS.MODERATOR }
 };
 
@@ -118,19 +118,22 @@ export async function checkPageAccess(pagePath) {
       if (!isValid) {
         // Token is invalid, handle unauthorized access
         handleUnauthorizedAccess(true);
-        return;
+        return false;
       }
     } catch (error) {
       console.error('Error verifying auth token:', error);
       handleUnauthorizedAccess(true);
-      return;
+      return false;
     }
   }
   
   // Then check permissions
   if (!hasPermission(pagePath)) {
     handleUnauthorizedAccess(true);
+    return false;
   }
+  
+  return true;
 }
 
 /**
@@ -140,21 +143,30 @@ export async function checkPageAccess(pagePath) {
 function handleUnauthorizedAccess(redirect = false) {
   if (!isLoggedIn()) {
     showToast('error', 'Please log in to access this feature');
-    // Show the login popup for better user experience
     if (typeof showPopup === 'function') {
       showPopup('login');
     }
   } else {
-    showToast('error', 'You do not have permission to access this feature');
+    const role = getUserRole();
+    const state = getUserState();
+    let message = 'Access denied: ';
+    
+    if (state !== 'APPROVED') {
+      message += 'Your account is pending approval';
+    } else if (role === 'USER') {
+      message += 'This page requires higher privileges';
+    } else {
+      message += 'You do not have permission to access this feature';
+    }
+    
+    showToast('error', message);
   }
   
-  // Redirect to homepage if on a protected page
   if (redirect) {
     setTimeout(() => {
-      window.location.href = '/'; // Redirect to homepage
+      window.location.href = '/?error=unauthorized';
     }, 1500);
   } else {
-    // If not redirecting, show the feed section as fallback
     if (typeof showSection === 'function') {
       showSection('feedSection');
     }

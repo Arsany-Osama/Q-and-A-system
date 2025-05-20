@@ -3,7 +3,7 @@ import { showPopup, showToast, showSection, showAnswerFormPopup } from './ui.js'
 import { getToken, isLoggedIn, fetchTopContributors, isApproved } from './auth.js';
 import { getUserVotes } from './vote.js';
 import { setupReplyUI, getReplies, postReply } from './reply.js';  // Import getReplies and postReply
-import { auth, answers, replies, documents } from './utils/api.js';
+import { auth, answers, replies, documents, reports } from './utils/api.js';
 
 let currentPage = 1;
 const questionsPerPage = 10;
@@ -179,17 +179,41 @@ export async function renderFeed() {
                     <span class="date">${new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                     ${q.tags && q.tags.length ? `<span class="mx-1">•</span><span class="primary-tag text-blue-600 dark:text-blue-400">${q.tags[0]}</span>` : ''}
                   </div>
-                </div>                <div class="dropdown relative">
-                  <button class="dropdown-toggle p-1 rounded-full hover:bg-blue-50 hover:shadow-sm dark:hover:bg-gray-700">
-                    <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
-                    </svg>
-                  </button>
-                  <div class="dropdown-menu hidden absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10">
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-700">Save question</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-700">Report</a>
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-gray-700">Not interested</a>
-                  </div>
+                </div>                <div class="flex items-center gap-2">
+                  <!-- Three-dot menu for actions -->
+                  ${(isLoggedIn()) ? `
+                    <div class="relative inline-block">
+                      <button class="action-menu-btn ml-2 p-1 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700" title="More actions" aria-label="More actions" data-id="${q.id}">
+                        <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                      </button>
+                      <div class="action-menu hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                        ${getCurrentUsername() === q.username ? `
+                          <button class="edit-question-btn w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Edit
+                          </button>
+                          <button class="delete-question-btn w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center border-t border-gray-200 dark:border-gray-700">
+                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Delete
+                          </button>
+                        ` : ''}
+                        ${getCurrentUsername() !== q.username ? `
+                          <button class="report-btn w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center" data-id="${q.id}" data-type="question">
+                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            Report
+                          </button>
+                        ` : ''}
+                      </div>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
             </div>
@@ -282,31 +306,33 @@ export async function renderFeed() {
                             <span class="font-medium text-xs">${a.username || 'Anonymous'}</span>
                             <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">${new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                           </div>
+                          <!-- Report icon for non-owners -->
+                          ${(isLoggedIn() && getCurrentUsername() !== a.username) ? `<button class=\"report-btn ml-2 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900\" title=\"Report answer\" aria-label=\"Report answer\" data-id=\"${a.id}\" data-type=\"answer\"><svg class=\"w-4 h-4 text-red-500\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 4v16h16V4H4zm2 2h12v12H6V6zm3 3v6m6-6v6\" /></svg></button>` : ''}
                         </div>
                         <div class="answer-content ml-9">
                           <p class="text-sm text-gray-700 dark:text-gray-300">${a.content}</p>
                           <div class="answer-footer mt-1 flex items-center">                            <button class="reaction-btn reaction-btn-sm upvote-answer-btn ${answerUpvoteClass} text-blue-600 hover:bg-blue-50 hover:shadow-sm rounded-md dark:text-blue-400 dark:hover:bg-gray-700" data-answer-id="${a.id}" aria-label="Like answer">
-                              <svg class="w-4 h-4 mr-1" fill="${answerUpvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                              </svg>
-                              <span class="vote-count text-xs">${a.upvotes || 0}</span>
-                            </button>
-                            <button class="reaction-btn reaction-btn-sm downvote-answer-btn ${answerDownvoteClass} text-red-500 hover:bg-red-50 hover:shadow-sm rounded-md dark:text-red-400 dark:hover:bg-gray-700" data-answer-id="${a.id}" aria-label="Dislike answer">
-                              <svg class="w-4 h-4 mr-1" fill="${answerDownvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l-3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
-                              </svg>
-                              <span class="vote-count text-xs">${a.downvotes || 0}</span>
-                            </button>
-                            <button class="reply-btn text-xs text-gray-500 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm hover:rounded-md dark:hover:bg-gray-700 dark:hover:text-blue-400 flex items-center transition-colors p-1">
-                              <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                              </svg>
-                              Reply
-                            </button>
-                          </div>
+                            <svg class="w-4 h-4 mr-1" fill="${answerUpvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                            </svg>
+                            <span class="vote-count text-xs">${a.upvotes || 0}</span>
+                          </button>
+                          <button class="reaction-btn reaction-btn-sm downvote-answer-btn ${answerDownvoteClass} text-red-500 hover:bg-red-50 hover:shadow-sm rounded-md dark:text-red-400 dark:hover:bg-gray-700" data-answer-id="${a.id}" aria-label="Dislike answer">
+                            <svg class="w-4 h-4 mr-1" fill="${answerDownvoteClass ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14H5.236a2 2 0 01-1.789-2.894l-3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                            </svg>
+                            <span class="vote-count text-xs">${a.downvotes || 0}</span>
+                          </button>
+                          <button class="reply-btn text-xs text-gray-500 hover:bg-blue-50 hover:text-blue-600 hover:shadow-sm hover:rounded-md dark:hover:bg-gray-700 dark:hover:text-blue-400 flex items-center transition-colors p-1">
+                            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            </svg>
+                            Reply
+                          </button>
                         </div>
                       </div>
-                    `;
+                    </div>
+                  `;
           }).join('')
         }
 
@@ -382,7 +408,79 @@ export async function renderFeed() {
       });
     });
 
-    renderPagination(questions.length, pagination);
+    renderPagination(questions.length, pagination);    // Add delegated event listeners for action menu and buttons
+    setTimeout(() => {
+      // Action menu toggle handlers
+      document.querySelectorAll('.action-menu-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          // Close all other menus first
+          document.querySelectorAll('.action-menu').forEach(menu => {
+            if (menu !== btn.nextElementSibling) {
+              menu.classList.add('hidden');
+            }
+          });
+          // Toggle current menu
+          const menu = btn.nextElementSibling;
+          menu.classList.toggle('hidden');
+        };
+      });
+
+      // Close menus when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.action-menu') && !e.target.closest('.action-menu-btn')) {
+          document.querySelectorAll('.action-menu').forEach(menu => {
+            menu.classList.add('hidden');
+          });
+        }
+      });
+
+      // Handle edit button clicks
+      document.querySelectorAll('.edit-question-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const questionId = btn.closest('.action-menu').previousElementSibling.getAttribute('data-id');
+          // TODO: Implement edit question functionality
+          console.log('Edit question:', questionId);
+        };
+      });
+
+      // Handle delete button clicks
+      document.querySelectorAll('.delete-question-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          const questionId = btn.closest('.action-menu').previousElementSibling.getAttribute('data-id');
+          // TODO: Implement delete question functionality
+          if (confirm('Are you sure you want to delete this question?')) {
+            console.log('Delete question:', questionId);
+          }
+        };
+      });
+
+      // Handle report button clicks
+      document.querySelectorAll('.report-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          
+          if (!isLoggedIn()) {
+            showToast('warning', 'Please log in to report content');
+            showPopup('login');
+            return;
+          }
+          
+          const contentId = btn.getAttribute('data-id');
+          const type = btn.getAttribute('data-type');
+          
+          if (!contentId || !type) {
+            console.error('Missing data attributes for report button:', { contentId, type, button: btn });
+            showToast('error', 'Could not report content. Missing information.');
+            return;
+          }
+          
+          showReportModal({ contentId, type });
+        };
+      });
+    }, 0);
 
   } catch (err) {
     console.error('Error rendering feed:', err);
@@ -1057,6 +1155,18 @@ export async function showQuestionDetails(questionId) {
       document.getElementById('closeQuestionPopup').click();
     }
   });
+
+  // After popup is added to DOM
+  setTimeout(() => {
+    document.querySelectorAll('.report-btn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        const contentId = btn.getAttribute('data-id');
+        const type = btn.getAttribute('data-type');
+        showReportModal({ contentId, type });
+      };
+    });
+  }, 0);
 }
 
 // Update the handleReply function to use our imported postReply function
@@ -1635,4 +1745,134 @@ function renderQuestionCard(question) {
       </div>
     </div>
   `;
+}
+
+// Helper to get current username
+function getCurrentUsername() {
+  return localStorage.getItem('username');
+}
+
+// Report modal HTML generator
+function createReportModal({ contentId, type, onSubmit, onCancel }) {
+  // Remove any existing modal
+  document.getElementById('reportModal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'reportModal';
+  modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 backdrop-blur-sm p-4 transition-all duration-300';
+  modal.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-blue-900/10 w-full max-w-md p-6 animate-scale-in relative border border-gray-200 dark:border-gray-700 dark:border-opacity-50 transition-colors duration-200">
+      <div class="absolute -inset-0.5 bg-gradient-to-r dark:from-blue-500/20 dark:to-purple-600/20 rounded-xl blur opacity-0 dark:opacity-70 -z-10"></div>
+      <button class="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200" id="closeReportModal" aria-label="Close report modal">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Report Content</h2>
+      <p class="mb-4 text-gray-700 dark:text-gray-300">Please select the reason why you are reporting this content. Your feedback helps us maintain a safe and respectful community.</p>
+      <form id="reportForm">
+        <label for="reportReason" class="block text-sm font-medium mb-2 text-gray-800 dark:text-gray-200">Reason</label>
+        <select id="reportReason" name="reason" class="input w-full mb-4 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 rounded-md transition-colors shadow-sm dark:shadow-inner" required>
+          <option value="">Select a reason...</option>
+          <option value="SPAM" class="dark:bg-gray-700 dark:text-gray-100">SPAM — Unwanted or repetitive content.</option>
+          <option value="HARASSMENT" class="dark:bg-gray-700 dark:text-gray-100">HARASSMENT — Offensive, abusive, or threatening behavior.</option>
+          <option value="INAPPROPRIATE_CONTENT" class="dark:bg-gray-700 dark:text-gray-100">INAPPROPRIATE CONTENT — Content that violates guidelines or is inappropriate.</option>
+        </select>
+        <div class="flex justify-end gap-2 mt-4">
+          <button type="button" id="cancelReportBtn" class="btn py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-md transition-all duration-200 font-medium">Cancel</button>
+          <button type="submit" id="submitReportBtn" class="btn btn-primary py-2 px-4 bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 border border-blue-600 dark:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed rounded-md transition-all duration-200 shadow-sm hover:shadow font-medium" disabled>Submit Report</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Focus trap
+  setTimeout(() => modal.querySelector('select')?.focus(), 100);
+
+  // Event listeners
+  modal.querySelector('#closeReportModal').onclick = onCancel;
+  modal.querySelector('#cancelReportBtn').onclick = onCancel;
+  modal.addEventListener('click', e => { if (e.target === modal) onCancel(); });
+
+  // Form validation
+  const reasonSelect = modal.querySelector('#reportReason');
+  const submitBtn = modal.querySelector('#submitReportBtn');
+  reasonSelect.addEventListener('change', () => {
+    submitBtn.disabled = !reasonSelect.value;
+  });
+
+  modal.querySelector('#reportForm').onsubmit = async e => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    await onSubmit(reasonSelect.value);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Report';
+  };
+}
+
+// Show report modal
+function showReportModal({ contentId, type }) {
+  // Ensure animation styles are added
+  ensureAnimationStyles();
+    // Log what we're trying to report
+  console.log(`Opening report modal for ${type} with ID: ${contentId}`);
+  
+  createReportModal({
+    contentId,
+    type,onSubmit: async (reason) => {
+      try {
+        // Show processing state in modal
+        const submitBtn = document.querySelector('#submitReportBtn');
+        if (submitBtn) {
+          submitBtn.textContent = 'Submitting...';
+          submitBtn.disabled = true;
+        }
+
+        const res = await reports.reportContent(contentId, type, reason);
+        
+        // Handle response
+        if (res && res.success) {
+          // Success - close modal with animation
+          const modal = document.getElementById('reportModal');
+          if (modal) {
+            modal.classList.add('animate-fade-out');
+            setTimeout(() => modal.remove(), 200);
+          }
+          showToast('success', 'Report submitted. Thank you for your feedback!');
+        } else {
+          // Error but API responded
+          const errorMsg = res?.message || 'Failed to submit report.';
+          console.error('Report submission error:', errorMsg);
+          
+          // Reset button state but keep modal open
+          if (submitBtn) {
+            submitBtn.textContent = 'Submit Report';
+            submitBtn.disabled = false;
+          }
+          
+          showToast('error', errorMsg);
+        }
+      } catch (err) {
+        // Complete failure (exception thrown)
+        console.error('Report submission exception:', err);
+        
+        // Reset button state
+        const submitBtn = document.querySelector('#submitReportBtn');
+        if (submitBtn) {
+          submitBtn.textContent = 'Submit Report';
+          submitBtn.disabled = false;
+        }
+        
+        showToast('error', 'Failed to submit report. Please try again later.');
+      }
+    },
+    onCancel: () => {
+      const modal = document.getElementById('reportModal');
+      if (modal) {
+        modal.classList.add('animate-fade-out');
+        setTimeout(() => modal.remove(), 200);
+      }
+    }
+  });
 }

@@ -1,5 +1,6 @@
 const documentService = require('../services/documentService');
 const { PrismaClient } = require('@prisma/client');
+const { default: logChanges } = require('../utils/auditLog');
 
 const prisma = new PrismaClient();
 
@@ -22,6 +23,8 @@ const uploadDocument = async (req, res) => {
     };
 
     const document = await documentService.uploadDocument(documentData.file, documentData.userId, documentData.metadata);
+    //log document creation
+    await logChanges(req.user.id, Action.CREATE, 'document', document.id);
     res.json({ success: true, document });
   } catch (error) {
     console.error('Document upload error:', error);

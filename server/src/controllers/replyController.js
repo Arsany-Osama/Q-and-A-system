@@ -1,17 +1,18 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Action } = require('@prisma/client');
+const { default: logChanges } = require('../utils/auditLog');
 const prisma = new PrismaClient();
 
 const createReply = async (req, res) => {
   const { answerId, content, mentionedUserId } = req.body;
   const userId = req.user.id;
-  
+
   try {
     // Check if answer exists
     const answer = await prisma.answer.findUnique({
       where: { id: parseInt(answerId) },
       include: { user: true }
     });
-    
+
     if (!answer) {
       return res.status(404).json({ success: false, message: 'Answer not found' });
     }
@@ -28,9 +29,12 @@ const createReply = async (req, res) => {
         mentionedUser: true
       }
     });
-    
-    res.json({ 
-      success: true, 
+
+    // Log the reply creation
+    await logChanges(userId, Action.CREATE, 'reply', reply.id);
+
+    res.json({
+      success: true,
       reply: {
         ...reply,
         username: reply.user.username,
@@ -45,7 +49,7 @@ const createReply = async (req, res) => {
 
 const getReplies = async (req, res) => {
   const { answerId } = req.params;
-  
+
   try {
     const replies = await prisma.reply.findMany({
       where: { answerId: parseInt(answerId) },
@@ -55,13 +59,13 @@ const getReplies = async (req, res) => {
       },
       orderBy: { createdAt: 'asc' }
     });
-    
+
     const formattedReplies = replies.map(reply => ({
       ...reply,
       username: reply.user.username,
       mentionedUsername: reply.mentionedUser?.username
     }));
-    
+
     res.json({ success: true, replies: formattedReplies });
   } catch (error) {
     console.error('Error fetching replies:', error);

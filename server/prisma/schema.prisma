@@ -27,6 +27,7 @@ model User {
   twoFAEnabled Boolean
   documents    Document[]
   Report       Report[]
+  AuditLog     AuditLog[]
 
   @@index([email])
   @@index([googleId])
@@ -118,15 +119,26 @@ model Report {
   reason    flagReason
   createdAt DateTime   @default(now())
 
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  creatorId Int
+  creator   User @relation(fields: [creatorId], references: [id])
 
   questionId Int?
   question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   answerId Int?
   answer   Answer? @relation(fields: [answerId], references: [id], onDelete: Cascade)
-  state    State @default(PENDING)
+  state    State   @default(PENDING)
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  action     Action //for example "POST", "DELETE"..
+  entityType String? //tells what entity was affected, for example "QUESTION", "ANSWER", "USER"
+  entityId   Int?
+  createdAt  DateTime @default(now())
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
 }
 
 enum flagReason {
@@ -145,4 +157,23 @@ enum State {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum Action {
+  CREATE
+
+  UPDATE
+  UNAUTHORIZED_UPDATE
+  
+  DELETE
+  UNAUTHORIZED_DELETE
+
+  VOTE_UP
+  VOTE_DOWN
+
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  
+  SIGNUP_SUCCESS
+  SIGNUP_FAILED
 }

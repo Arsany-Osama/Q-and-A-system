@@ -1,15 +1,18 @@
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Action } = require("@prisma/client");
+const { default: logChanges } = require("../utils/auditLog");
 const prisma = new PrismaClient();
 
 const report = async (req, res) => {
     const { id, reason, type } = req.body;
+    const userId = req.user.id;
 
     if (!id || !reason || !type) {
         return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
 
     //vadlidate the type of the id
-    const parsedId = parseInt(id);    if (isNaN(parsedId)) {
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId)) {
         return res.status(400).json({ success: false, message: 'Invalid ID' });
     }
 
@@ -19,8 +22,8 @@ const report = async (req, res) => {
 
     let data = {
         reason,
-        user: {
-            connect: { id: req.user.id }
+        creator: {
+            connect: { id: userId }
         }
     };
 
@@ -36,6 +39,10 @@ const report = async (req, res) => {
 
     try {
         await prisma.report.create({ data });
+
+        //log the report                                
+        await logChanges(userId, Action.CREATE, type, parsedId)
+
         return res.status(201).json({ success: true, message: 'Report submitted successfully' });
     } catch (error) {
         console.error('Error reporting:', error);
@@ -50,7 +57,7 @@ const getReports = async (req, res) => {
                 createdAt: 'desc'
             },
             include: {
-                user: true,
+                creator: true,
                 question: true,
                 answer: true
             }
@@ -63,8 +70,8 @@ const getReports = async (req, res) => {
             REJECTED: reports.filter(r => r.state === 'REJECTED')
         };
 
-        return res.status(200).json({ 
-            success: true, 
+        return res.status(200).json({
+            success: true,
             reports: groupedReports,
             totalCount: reports.length
         });
@@ -75,19 +82,19 @@ const getReports = async (req, res) => {
 };
 
 const deleteReportedAnswerOrQuestion = async (req, res) => {
-    const {reportId} = req.body;
-    
+    const { reportId } = req.body;
+
     try {
         const report = await prisma.report.findUnique({
             where: {
                 id: reportId
             }
         });
-        
+
         if (!report) {
             return res.status(404).json({ success: false, message: 'Report not found' });
         }
-        
+
         // Start a transaction to ensure all operations succeed or fail together
         await prisma.$transaction(async (tx) => {
             // First update report state to APPROVED before any deletions
@@ -124,6 +131,8 @@ const deleteReportedAnswerOrQuestion = async (req, res) => {
                         id: report.questionId
                     }
                 });
+                // log that the question got deleted with all of it's answers and replies
+                await logChanges(req.user.id, Action.DELETE, "question", report.questionId);
             }
             else if (report.answerId) {
                 // First delete all replies to this answer
@@ -139,21 +148,23 @@ const deleteReportedAnswerOrQuestion = async (req, res) => {
                         id: report.answerId
                     }
                 });
+                //log that the answer got deleted with all of it's replies 
+                await logChanges(req.user.id, Action.DELETE, "answer", report.answerId);
             } else {
                 throw new Error('Invalid report: no question or answer found');
             }
         });
-        
-        return res.status(200).json({ 
-            success: true, 
+
+        return res.status(200).json({
+            success: true,
             message: report.questionId ? 'Reported question and its answers removed successfully' : 'Reported answer removed successfully'
         });
     } catch (error) {
         console.error('Error deleting reported content:', error);
-        return res.status(500).json({ 
-            success: false, 
-            message: error.message === 'Invalid report: no question or answer found' 
-                ? error.message 
+        return res.status(500).json({
+            success: false,
+            message: error.message === 'Invalid report: no question or answer found'
+                ? error.message
                 : 'Server error'
         });
     }
@@ -168,11 +179,11 @@ const RejectReport = async (req, res) => {
                 id: reportId
             }
         });
-        
+
         if (!report) {
             return res.status(404).json({ success: false, message: 'Report not found' });
         }
-        
+
         await prisma.report.update({
             where: {
                 id: reportId
@@ -181,6 +192,8 @@ const RejectReport = async (req, res) => {
                 state: "REJECTED"
             }
         });
+
+        await logChanges(req.user.id, Action.UPDATE, "report", reportId);
 
         return res.status(200).json({ success: true, message: 'Report rejected successfully' });
     } catch (error) {
@@ -195,3 +208,8 @@ module.exports = {
     deleteReportedAnswerOrQuestion,
     RejectReport
 };
+
+
+
+
+

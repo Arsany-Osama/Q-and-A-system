@@ -1,9 +1,10 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Action } = require('@prisma/client');
 const { sendEmail } = require('../services/emailService');
 const crypto = require('crypto');
 const { getFormattedClientIp } = require('../utils/ipHelper');
+const { default: logChanges } = require('../utils/auditLog');
 require('dotenv').config();
 
 const prisma = new PrismaClient();
@@ -97,6 +98,7 @@ const register = async (req, res) => {
       expires: Date.now() + 5 * 60 * 1000
     });
     await sendEmail(email, 'Verify Your Email', `Your OTP is ${otp}. It expires in 5 minutes.`);
+
     res.json({ success: true });
   } catch (error) {
     console.error('Register error:', error);
@@ -115,6 +117,8 @@ const login = async (req, res) => {
     }
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
+      //log failed login attempt
+      await logChanges(null, Action.LOGIN_FAILED, null, null);
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
@@ -135,7 +139,11 @@ const login = async (req, res) => {
         lastLoginAt: new Date(),
         lastLoginIp: ip
       }
-    });    const token = jwt.sign(
+    });
+    // Log the successful login
+    await logChanges(user.id, Action.LOGIN_SUCCESS, null, null);
+
+    const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, state: user.state },
       secretKey,
       { expiresIn: '24h' }
@@ -231,7 +239,7 @@ const verifyOTP = async (req, res) => {
     console.log('Validation failed:', !storedData ? 'No stored data' : 'Type mismatch or expired', 'expires:', storedData?.expires, 'now:', Date.now());
     return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
   }
-  
+
   const decryptedOTP = decryptOTP({
     encryptedOTP: storedData.encryptedOTP,
     iv: storedData.iv,

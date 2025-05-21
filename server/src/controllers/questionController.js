@@ -1,5 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Action } = require('@prisma/client');
 const DocumentService = require('../services/documentService');
+const { default: logChanges } = require('../utils/auditLog');
 
 const prisma = new PrismaClient();
 
@@ -75,6 +76,9 @@ const postQuestion = async (req, res) => {
     const question = await prisma.question.create({
       data: questionData,
     });
+
+    //log question creation
+    await logChanges(userId,Action.CREATE,'question',question.id);
 
     res.json({
       success: true,
@@ -171,6 +175,9 @@ const createQuestionWithDocument = async (req, res) => {
       },
     });
 
+    //log question creation
+    await logChanges(userId, Action.CREATE, 'question', question.id);
+
     let document = null;
     if (file) {
       document = await DocumentService.uploadDocument(
@@ -183,6 +190,9 @@ const createQuestionWithDocument = async (req, res) => {
         userId,
         { questionId: question.id }
       );
+
+      //log document creation
+      await logChanges(userId, Action.CREATE, 'document', document.id);
     }
 
     res.status(201).json({
@@ -270,6 +280,9 @@ const updateQuestion = async (req, res) => {
       }
     });
 
+    //log question update
+    await logChanges(userId, Action.UPDATE, 'question', updatedQuestion.id);
+
     res.json({ success: true, question: updatedQuestion });
   } catch (error) {
     console.error('Error updating question:', error);
@@ -308,6 +321,9 @@ const deleteQuestion = async (req, res) => {
     await prisma.question.delete({
       where: { id: parseInt(questionId) }
     });
+
+    //log question deletion
+    await logChanges(userId, Action.DELETE, 'question', questionId);
 
     res.json({ success: true });
   } catch (error) {

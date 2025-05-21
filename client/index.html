@@ -15,10 +15,10 @@
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/animations.css" />
     <link rel="stylesheet" href="css/pages.css" />
-    <link rel="stylesheet" href="css/feed-style.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/feed-style.css" />    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="icon" href="assets/Q.png" type="image/png" />
   </head>
 
@@ -329,10 +329,7 @@
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- Profile Section -->
-      <section id="profileSection" class="mt-12 hidden">
+      </section>      <!-- Profile Section -->      <section id="profileSection" class="mt-12 hidden">
         <h2 class="text-2xl sm:text-3xl font-bold mb-6">Your Profile</h2>
         
         <!-- Tab Navigation -->
@@ -346,6 +343,24 @@
               aria-controls="profileInfoPanel"
             >
               Profile Info
+            </button>
+            <button
+              id="myQuestionsTab"
+              class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium"
+              role="tab"
+              aria-selected="false"
+              aria-controls="myQuestionsPanel"
+            >
+              My Questions
+            </button>
+            <button
+              id="myAnswersTab"
+              class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium"
+              role="tab"
+              aria-selected="false"
+              aria-controls="myAnswersPanel"
+            >
+              My Answers
             </button>
             <button
               id="changeUsernameTab"
@@ -366,9 +381,7 @@
               Change Password
             </button>
           </nav>
-        </div>
-
-        <!-- Tab Panels -->
+        </div>        <!-- Tab Panels -->
         <div class="tab-panels">
           <!-- Profile Info Panel -->
           <div
@@ -383,7 +396,7 @@
               </div>
               <div>
                 <h3 id="profileUsername" class="text-xl font-semibold"></h3>
-                <p class="text-gray-600 dark:text-gray-400">Member since <span id="memberSince">2024</span></p>
+                <p class="text-gray-600 dark:text-gray-400">Member since <span id="memberSince">2025</span></p>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -396,6 +409,28 @@
                 <p class="text-3xl font-bold text-secondary" id="answersGiven">0</p>
               </div>
             </div>
+          </div>
+
+          <!-- My Questions Panel -->
+          <div
+            id="myQuestionsPanel"
+            class="tab-panel hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6"
+            role="tabpanel"
+            aria-labelledby="myQuestionsTab"
+          >
+            <h3 class="text-xl font-semibold mb-6">My Questions</h3>
+            <div id="userQuestions" class="space-y-4"></div>
+          </div>
+
+          <!-- My Answers Panel -->
+          <div
+            id="myAnswersPanel"
+            class="tab-panel hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6"
+            role="tabpanel"
+            aria-labelledby="myAnswersTab"
+          >
+            <h3 class="text-xl font-semibold mb-6">My Answers</h3>
+            <div id="userAnswers" class="space-y-4"></div>
           </div>
 
           <!-- Change Username Panel -->

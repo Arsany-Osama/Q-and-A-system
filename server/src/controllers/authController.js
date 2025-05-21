@@ -138,7 +138,7 @@ const login = async (req, res) => {
     });    const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role, state: user.state },
       secretKey,
-      { expiresIn: '1h' }
+      { expiresIn: '24h' }
     );
     res.json({
       success: true,
@@ -254,7 +254,7 @@ const verifyOTP = async (req, res) => {
       username: user.username,
       role: user.role,
       state: user.state
-    }, secretKey, { expiresIn: '1h' });
+    }, secretKey, { expiresIn: '24h' });
     otpStore.delete(email);
     res.json({
       success: true,

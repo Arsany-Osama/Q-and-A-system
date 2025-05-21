@@ -202,4 +202,118 @@ const createQuestionWithDocument = async (req, res) => {
   }
 };
 
-module.exports = { getQuestions, postQuestion, getPopularTags, createQuestionWithDocument };
+const getUserQuestions = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const questions = await prisma.question.findMany({
+      where: { userId },
+      include: {
+        answers: true,
+        documents: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    const questionsWithTags = questions.map(question => ({
+      ...question,
+      tags: question.tags ? JSON.parse(question.tags) : [],
+    }));
+
+    res.json({ success: true, questions: questionsWithTags });
+  } catch (error) {
+    console.error('Error fetching user questions:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const updateQuestion = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { title, content, tags } = req.body;
+    const userId = req.user.id;
+
+    // Check if question exists and belongs to user
+    const question = await prisma.question.findUnique({
+      where: { id: parseInt(questionId) }
+    });
+
+    if (!question) {
+      return res.status(404).json({ success: false, message: 'Question not found' });
+    }
+
+    if (question.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this question' });
+    }
+
+    let tagsArray = [];
+    if (tags) {
+      if (typeof tags === 'string') {
+        try {
+          tagsArray = JSON.parse(tags);
+        } catch (e) {
+          tagsArray = tags.split(',').map(tag => tag.trim()).filter(Boolean);
+        }
+      } else if (Array.isArray(tags)) {
+        tagsArray = tags;
+      }
+    }
+
+    const updatedQuestion = await prisma.question.update({
+      where: { id: parseInt(questionId) },
+      data: {
+        title: title?.trim(),
+        content: content?.trim(),
+        tags: JSON.stringify(tagsArray)
+      }
+    });
+
+    res.json({ success: true, question: updatedQuestion });
+  } catch (error) {
+    console.error('Error updating question:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const deleteQuestion = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const userId = req.user.id;
+
+    // Check if question exists and belongs to user
+    const question = await prisma.question.findUnique({
+      where: { id: parseInt(questionId) }
+    });
+
+    if (!question) {
+      return res.status(404).json({ success: false, message: 'Question not found' });
+    }
+
+    if (question.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this question' });
+    }
+
+    // Delete all associated answers and documents first
+    await prisma.answer.deleteMany({
+      where: { questionId: parseInt(questionId) }
+    });
+
+    await prisma.document.deleteMany({
+      where: { questionId: parseInt(questionId) }
+    });
+
+    // Delete the question
+    await prisma.question.delete({
+      where: { id: parseInt(questionId) }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting question:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+module.exports = { getQuestions, postQuestion, getPopularTags, createQuestionWithDocument, getUserQuestions, updateQuestion, deleteQuestion };

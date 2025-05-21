@@ -216,6 +216,10 @@ export const questions = {
     return fetchWithAuth('/questions');
   },
 
+  getUserQuestions: async () => {
+    return fetchWithAuth('/questions/user');
+  },
+
   create: async (questionData, isFormData = false) => {
     return fetchWithAuth(isFormData ? '/questions/with-document' : '/questions', {
       method: 'POST',
@@ -225,6 +229,19 @@ export const questions = {
 
   getPopularTags: async () => {
     return fetchWithAuth('/questions/popular-tags');
+  },
+
+  updateQuestion: async (questionId, data) => {
+    return fetchWithAuth(`/questions/${questionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  deleteQuestion: async (questionId) => {
+    return fetchWithAuth(`/questions/${questionId}`, {
+      method: 'DELETE'
+    });
   }
 };
 
@@ -234,6 +251,23 @@ export const answers = {
     return fetchWithAuth('/answers', {
       method: 'POST',
       body: JSON.stringify({ questionId, content })
+    });
+  },
+
+  getUserAnswers: async () => {
+    return fetchWithAuth('/answers/user');
+  },
+
+  updateAnswer: async (answerId, data) => {
+    return fetchWithAuth(`/answers/${answerId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  deleteAnswer: async (answerId) => {
+    return fetchWithAuth(`/answers/${answerId}`, {
+      method: 'DELETE'
     });
   }
 };

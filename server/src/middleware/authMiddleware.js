@@ -25,6 +25,7 @@ const authenticateToken = (req, res, next) => {
 
 const checkRole = (allowedRoles) => {
   return (req, res, next) => {
+    console.log('checkRole - allowedRoles:', allowedRoles, 'req.user:', req.user);
     if (!req.user || !req.user.role) {
       return res.status(403).json({ success: false, message: 'Access denied: No role found' });
     }
@@ -53,5 +54,6 @@ const checkRole = (allowedRoles) => {
     next();
   };
 };
+
 
 module.exports = { authenticateToken, checkRole };

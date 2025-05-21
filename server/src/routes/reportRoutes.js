@@ -4,16 +4,16 @@ const { authenticateToken, checkRole } = require('../middleware/authMiddleware')
 
 const router = express.Router();
 
-//endpoint to get all pending reports
+// Endpoint to get all pending reports
 router.get('/', authenticateToken, checkRole(['MODERATOR', 'ADMIN']), getReports);
 
-//endpoint to report a question or answer
+// Endpoint to report a question or answer
 router.post('/report', authenticateToken, report);
 
-//endpoint to delete a reported question or answer
-router.delete('/delete', authenticateToken, checkRole(['ADMIN']), deleteReportedAnswerOrQuestion);
+// Endpoint to delete a reported question or answer
+router.delete('/delete', authenticateToken, checkRole(['MODERATOR', 'ADMIN']), deleteReportedAnswerOrQuestion);
 
-//endpoint to reject a report if it was valid
-router.patch('/reject', authenticateToken, checkRole(['ADMIN']), RejectReport);
+// Endpoint to reject a report if it was valid
+router.patch('/reject', authenticateToken, checkRole(['MODERATOR', 'ADMIN']), RejectReport);
 
 module.exports = router;

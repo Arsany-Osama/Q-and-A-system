@@ -35,19 +35,30 @@ const PAGE_CONFIG = {
  */
 function getUserPermissionLevel() {
   if (!isLoggedIn()) {
+    console.log('Permission: PUBLIC (not logged in)');
     return PERMISSION_LEVELS.PUBLIC;
   }
   
   const role = getUserRole();
   const state = getUserState();
+  console.log(`User Role: ${role}, State: ${state}`);
+  
+  if (state === 'PENDING' && role !== 'ADMIN') {
+    console.log('Permission: USER (pending state)');
+    return PERMISSION_LEVELS.USER;
+  }
   
   if (role === 'ADMIN') {
+    console.log('Permission: ADMIN');
     return PERMISSION_LEVELS.ADMIN;
-  } else if (role === 'MODERATOR') {
+  } else if (role === 'MODERATOR' && state === 'APPROVED') {
+    console.log('Permission: MODERATOR');
     return PERMISSION_LEVELS.MODERATOR;
   } else if (state === 'APPROVED') {
+    console.log('Permission: APPROVED');
     return PERMISSION_LEVELS.APPROVED;
   } else {
+    console.log('Permission: USER');
     return PERMISSION_LEVELS.USER;
   }
 }
@@ -152,14 +163,18 @@ function handleUnauthorizedAccess(redirect = false) {
     let message = 'Access denied: ';
     
     if (state !== 'APPROVED') {
-      message += 'Your account is pending approval';
+      message += 'Your account is pending approval. Please wait for admin approval.';
+      showToast('error', message);
     } else if (role === 'USER') {
-      message += 'This page requires higher privileges';
+      message += 'This page requires higher privileges (Moderator or Admin).';
+      showToast('error', message);
+    } else if (role === 'MODERATOR') {
+      message += 'This page requires Admin privileges.';
+      showToast('error', message);
     } else {
-      message += 'You do not have permission to access this feature';
+      message += 'Insufficient permissions.';
+      showToast('error', message);
     }
-    
-    showToast('error', message);
   }
   
   if (redirect) {

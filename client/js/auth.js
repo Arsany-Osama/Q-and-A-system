@@ -28,7 +28,7 @@ export function isAdmin() {
 }
 
 export function isModerator() {
-  return getUserRole() === 'MODERATOR';
+  return getUserRole() === 'MODERATOR' && getUserState() === 'APPROVED';
 }
 
 export function isApproved() {

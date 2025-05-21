@@ -836,7 +836,7 @@ function showReportDetails(report) {
         // Update button visibility and styling based on user role
         const userRole = getUserRole();
         
-        if (userRole === 'ADMIN') {
+        if (userRole === 'ADMIN' || userRole === 'MODERATOR') {
             // Admins can reject reports and delete content
             rejectReportBtn.classList.remove('hidden');
             deleteContentBtn.classList.remove('hidden');
@@ -857,20 +857,7 @@ function showReportDetails(report) {
                 </svg>
                 Remove Content
             `;
-        } else if (userRole === 'MODERATOR') {
-            // Moderators can only reject reports, not delete content
-            rejectReportBtn.classList.remove('hidden');
-            deleteContentBtn.classList.add('hidden');
-            
-            // Enhanced button styling
-            rejectReportBtn.className = 'action-btn btn-outline-primary flex items-center justify-center';
-            rejectReportBtn.innerHTML = `
-                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-                Dismiss Report
-            `;
-        } else {
+        }else {
             // This shouldn't happen due to page access control, but just in case
             rejectReportBtn.classList.add('hidden');
             deleteContentBtn.classList.add('hidden');

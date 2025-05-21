@@ -130,23 +130,44 @@ function addReplyToUI(container, reply) {
       `<span class="text-primary font-bold">@${reply.mentionedUsername}</span>`
     );
   }
-  
-  replyEl.innerHTML = `
+    replyEl.innerHTML = `
     <div class="reply-content text-sm">
       <span class="font-medium">${reply.username || 'Anonymous'}</span>
       ${displayContent}
     </div>
-    <div class="reply-footer text-xs text-gray-500 mt-1">
-      ${reply.createdAt ? 
+    <div class="reply-footer flex items-center text-xs text-gray-500 mt-1">
+      <span>${reply.createdAt ? 
         new Date(reply.createdAt).toLocaleString(undefined, {
           month: 'short',
           day: 'numeric',
           hour: '2-digit',
           minute: '2-digit'
         }) : 'Just now'
-      }
+      }</span>
+      <button class="reply-to-reply-btn ml-4 text-primary hover:text-primary-dark" 
+        data-username="${reply.username}"
+        data-user-id="${reply.userId}"
+        data-answer-id="${reply.answerId}">
+        Reply
+      </button>
     </div>
   `;
+  
+  // Add reply button event handler
+  const replyBtn = replyEl.querySelector('.reply-to-reply-btn');
+  if (replyBtn) {
+    replyBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const username = replyBtn.dataset.username;
+      const userId = replyBtn.dataset.userId;
+      const answerId = replyBtn.dataset.answerId;
+      
+      // Open reply form
+      showReplyForm(replyBtn, answerId, username, userId);
+    });
+  }
   
   container.appendChild(replyEl);
   

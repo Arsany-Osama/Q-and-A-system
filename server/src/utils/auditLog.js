@@ -1,4 +1,5 @@
-import prisma from '../db.js';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 export default async function logChanges (userId, action, entityType, entityId) {
     try {
@@ -11,7 +12,7 @@ export default async function logChanges (userId, action, entityType, entityId) 
             }
         })
     } catch (err) {
-        console.error(err);
+        console.log(err);
         throw new Error('Error while logging changes');
     }
 }

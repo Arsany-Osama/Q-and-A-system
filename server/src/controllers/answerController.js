@@ -1,19 +1,22 @@
 const { PrismaClient, Action } = require('@prisma/client');
+const { default: logChanges } = require('../utils/auditLog');
 
 const prisma = new PrismaClient();
 
 const createAnswer = async (req, res) => {
+  console.log("creating answer");
   const { questionId, content } = req.body;
   const userId = req.user.id;
+  
   try {
-    await prisma.answer.create({
+    const answer = await prisma.answer.create({
       data: {
         content,
         questionId: parseInt(questionId),
         userId,
       },
     });
-    // Log the answer creation
+    
     await logChanges(userId, Action.CREATE, 'answer', answer.id);
 
     res.json({ success: true });

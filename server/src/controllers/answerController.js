@@ -1,18 +1,24 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Action } = require('@prisma/client');
+const { default: logChanges } = require('../utils/auditLog');
 
 const prisma = new PrismaClient();
 
 const createAnswer = async (req, res) => {
+  console.log("creating answer");
   const { questionId, content } = req.body;
   const userId = req.user.id;
+  
   try {
-    await prisma.answer.create({
+    const answer = await prisma.answer.create({
       data: {
         content,
         questionId: parseInt(questionId),
         userId,
       },
     });
+    
+    await logChanges(userId, Action.CREATE, 'answer', answer.id);
+
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -57,6 +63,9 @@ const updateAnswer = async (req, res) => {
     }
 
     if (answer.userId !== userId) {
+      //log unauthorized update
+      await logChanges(userId, Action.UNAUTHORIZED_UPDATE, 'answer', answerId);
+
       return res.status(403).json({ success: false, message: 'Not authorized to update this answer' });
     }
 
@@ -64,6 +73,9 @@ const updateAnswer = async (req, res) => {
       where: { id: parseInt(answerId) },
       data: { content }
     });
+
+    // Log the answer update
+    await logChanges(userId, Action.UPDATE, 'answer', updatedAnswer.id);
 
     res.json({ success: true, answer: updatedAnswer });
   } catch (error) {
@@ -87,6 +99,9 @@ const deleteAnswer = async (req, res) => {
     }
 
     if (answer.userId !== userId) {
+      //log unauthorized deletion
+      await logChanges(userId, Action.UNAUTHORIZED_DELETE, 'answer', answerId);
+
       return res.status(403).json({ success: false, message: 'Not authorized to delete this answer' });
     }
 
@@ -99,7 +114,9 @@ const deleteAnswer = async (req, res) => {
     await prisma.answer.delete({
       where: { id: parseInt(answerId) }
     });
-
+    // Log the answer deletion
+    await logChanges(userId, Action.DELETE, 'answer', answerId);
+    
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting answer:', error);

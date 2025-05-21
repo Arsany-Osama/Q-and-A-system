@@ -1,255 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard - Q&A System</title>
-    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="css/light-mode.css">
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/components.css" />
-    <link rel="stylesheet" href="css/animations.css" />
-    <link rel="stylesheet" href="css/pages.css" />
-    <link rel="stylesheet" href="css/feed-style.css" />
-    <link rel="stylesheet" href="css/admin.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <link rel="icon" href="assets/admin_Q.png" type="image/png">
-  </head>
-  <body>
-    <div class="admin-dashboard min-h-screen">
-      <!-- Header -->
-      <header
-        id="mainHeader"
-        class="bg-white dark:bg-gray-800 shadow-sm"
-        role="banner"
-      >
-        <div class="container mx-auto px-4 py-4">
-          <div class="flex justify-between items-center">
-            <a href="/" class="flex items-center space-x-2">
-              <img
-                src="/assets/logo.svg"
-                alt="Q&A System Logo"
-                class="h-8 w-8"
-              />
-              <span class="text-xl font-bold text-gray-900 dark:text-white">
-                Q&A System
-              </span>
-            </a>
-            <div class="flex items-center space-x-4">
-              <button id="darkModeToggle" class="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              </button>
-              <div id="userStatus"></div>
-            </div>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Q&A System</title>
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
+  <link rel="stylesheet" href="css/light-mode.css">
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+  <link rel="stylesheet" href="css/feed-style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <link rel="icon" href="assets/admin_Q.png" type="image/png">
+</head>
+
+<body>
+  <div class="admin-dashboard min-h-screen">
+    <!-- Header -->
+    <header id="mainHeader" class="bg-white dark:bg-gray-800 shadow-sm" role="banner">
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex justify-between items-center">
+          <a href="/" class="flex items-center space-x-2">
+            <img src="/assets/logo.svg" alt="Q&A System Logo" class="h-8 w-8" />
+            <span class="text-xl font-bold text-gray-900 dark:text-white">
+              Q&A System
+            </span>
+          </a>
+          <div class="flex items-center space-x-4">
+            <button id="darkModeToggle"
+              class="p-2 rounded-full text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:hidden" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden dark:block" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </button>
+            <div id="userStatus"></div>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
-      <!-- Main Content -->
-      <main class="container mx-auto px-4 py-8" role="main">
-        <div class="admin-card">
-          <div class="admin-card-header">Admin Dashboard</div>
-          <div class="admin-card-body">
-            <!-- Filter Controls -->
-            <div class="admin-filter-bar mb-4">
-              <select id="roleFilter" class="admin-select">
-                <option value="ALL">All Roles</option>
-                <option value="ADMIN">Admins</option>
-                <option value="MODERATOR">Moderators</option>
-                <option value="USER">Regular Users</option>
-              </select>
-              <select id="stateFilter" class="admin-select">
-                <option value="ALL">All States</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            </div>            <!-- Admin Nav Tabs -->
-            <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
-              <ul class="flex flex-wrap -mb-px">
-                <li class="mr-2">
-                  <a href="#" id="userManagementTab" class="admin-tab-active">
-                    User Management
-                  </a>
-                </li>
-                <li class="mr-2">
-                  <a href="reports.html" class="admin-tab">
-                    Reports Management
-                  </a>
-                </li>
-              </ul>
-            </div>
-            
-            <!-- Users List -->
-            <section class="admin-section">
-              <div class="admin-section-header flex justify-between items-center">
-                <h2 class="text-xl font-semibold">User Management</h2>
-                <button id="showAddUserModal" class="admin-btn admin-btn-primary flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Add New User
-                </button>
-              </div>
-              <div class="overflow-x-auto">
-                <table class="admin-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Username</th>
-                      <th scope="col">Email</th>
-                      <th scope="col">Role</th>
-                      <th scope="col">State</th>
-                      <th scope="col">Last Login</th>
-                      <th scope="col">IP Address</th>
-                      <th scope="col">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="usersTableBody">
-                    <!-- Users will be rendered here -->
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <!-- Login History Section -->
-            <section class="admin-section">
-              <div
-                class="admin-section-header flex justify-between items-center"
-              >
-                <h2 class="text-xl font-semibold">Login History</h2>
-                <button
-                  id="refreshLoginHistory"
-                  class="admin-btn admin-btn-primary"
-                >
-                  Refresh History
-                </button>
-              </div>
-              <div class="overflow-x-auto">
-                <table class="admin-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Username</th>
-                      <th scope="col">Email</th>
-                      <th scope="col">Login Time</th>
-                      <th scope="col">IP Address</th>
-                    </tr>
-                  </thead>
-                  <tbody id="loginLogsTableBody">
-                    <tr>
-                      <td colspan="4" class="text-center py-4 text-gray-500">
-                        Loading login history...
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <!-- Loading Indicator -->
-            <div id="loadingIndicator" class="hidden mt-4">
-              <div class="flex justify-center items-center">
-                <div
-                  class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
-
-    <!-- Add User Modal -->
-    <div id="addUserModal" class="modal">
-      <div class="modal-box max-w-md">
-        <h3 class="font-bold text-lg mb-4">Add New User</h3>
-        <form id="addUserForm" class="space-y-4">
-          <div class="form-control">
-            <label class="label" for="newUsername">Username</label>
-            <input
-              type="text"
-              id="newUsername"
-              class="input input-bordered w-full"
-              placeholder="Enter username"
-              required
-            />
-          </div>
-
-          <div class="form-control">
-            <label class="label" for="newEmail">Email</label>
-            <input
-              type="email"
-              id="newEmail"
-              class="input input-bordered w-full"
-              placeholder="Enter email"
-              required
-            />
-          </div>
-
-          <div class="form-control">
-            <label class="label" for="newPassword">Password</label>
-            <input
-              type="password"
-              id="newPassword"
-              class="input input-bordered w-full"
-              placeholder="Enter password"
-              required
-            />
-          </div>
-
-          <div class="form-control">
-            <label class="label" for="newRole">Role</label>
-            <select id="newRole" class="select select-bordered w-full">
-              <option value="USER">User</option>
-              <option value="MODERATOR">Moderator</option>
-              <option value="ADMIN">Admin</option>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8" role="main">
+      <div class="admin-card">
+        <div class="admin-card-header">Admin Dashboard</div>
+        <div class="admin-card-body">
+          <!-- Filter Controls -->
+          <div class="admin-filter-bar mb-4">
+            <select id="roleFilter" class="admin-select">
+              <option value="ALL">All Roles</option>
+              <option value="ADMIN">Admins</option>
+              <option value="MODERATOR">Moderators</option>
+              <option value="USER">Regular Users</option>
             </select>
-          </div>
-
-          <div class="form-control">
-            <label class="label" for="newState">State</label>
-            <select id="newState" class="select select-bordered w-full">
-              <option value="APPROVED">Approved</option>
+            <select id="stateFilter" class="admin-select">
+              <option value="ALL">All States</option>
               <option value="PENDING">Pending</option>
+              <option value="APPROVED">Approved</option>
               <option value="REJECTED">Rejected</option>
             </select>
+          </div> <!-- Admin Nav Tabs -->
+          <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
+            <ul class="flex flex-wrap -mb-px">
+              <li class="mr-2">
+                <a href="#" id="userManagementTab" class="admin-tab-active">
+                  User Management
+                </a>
+              </li>
+              <li class="mr-2">
+                <a href="reports.html" class="admin-tab">
+                  Reports Management
+                </a>
+              </li>
+            </ul>
           </div>
 
-          <div class="modal-action">
-            <button type="submit" class="btn btn-primary">Create User</button>
-            <button
-              type="button"
-              id="cancelAddUser"
-              class="btn"
-              onclick="document.getElementById('addUserModal').classList.remove('modal-open')"
-            >
-              Cancel
-            </button>
+          <!-- Users List -->
+          <section class="admin-section">
+            <div class="admin-section-header flex justify-between items-center">
+              <h2 class="text-xl font-semibold">User Management</h2>
+              <button id="showAddUserModal" class="admin-btn admin-btn-primary flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New User
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Username</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">State</th>
+                    <th scope="col">Last Login</th>
+                    <th scope="col">IP Address</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <!-- Users will be rendered here -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Audit Log History Section -->
+          <section class="admin-section">
+            <div class="admin-section-header flex justify-between items-center">
+              <h2 class="text-xl font-semibold">Audit Log History</h2>
+              <button id="refreshAuditLogs" class="admin-btn admin-btn-primary">Refresh History</button>
+
+            </div>
+            <div class="overflow-x-auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Action</th>
+                    <th>Entity Type</th>
+                    <th>Entity ID</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="auditLogsTableBody">
+                  <tr>
+                    <td colspan="5" class="text-center py-4 text-gray-500">Loading audit logs...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Loading Indicator -->
+          <div id="loadingIndicator" class="hidden mt-4">
+            <div class="flex justify-center items-center">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
-    </div>    <!-- Analytics dashboard will be added here in the future -->
-    <div id="analytics-placeholder" class="hidden">
-      <!-- Reserved for future analytics features -->
+    </main>
+  </div>
+
+  <!-- Add User Modal -->
+  <div id="addUserModal" class="modal">
+    <div class="modal-box max-w-md">
+      <h3 class="font-bold text-lg mb-4">Add New User</h3>
+      <form id="addUserForm" class="space-y-4">
+        <div class="form-control">
+          <label class="label" for="newUsername">Username</label>
+          <input type="text" id="newUsername" class="input input-bordered w-full" placeholder="Enter username"
+            required />
+        </div>
+
+        <div class="form-control">
+          <label class="label" for="newEmail">Email</label>
+          <input type="email" id="newEmail" class="input input-bordered w-full" placeholder="Enter email" required />
+        </div>
+
+        <div class="form-control">
+          <label class="label" for="newPassword">Password</label>
+          <input type="password" id="newPassword" class="input input-bordered w-full" placeholder="Enter password"
+            required />
+        </div>
+
+        <div class="form-control">
+          <label class="label" for="newRole">Role</label>
+          <select id="newRole" class="select select-bordered w-full">
+            <option value="USER">User</option>
+            <option value="MODERATOR">Moderator</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+
+        <div class="form-control">
+          <label class="label" for="newState">State</label>
+          <select id="newState" class="select select-bordered w-full">
+            <option value="APPROVED">Approved</option>
+            <option value="PENDING">Pending</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
+
+        <div class="modal-action">
+          <button type="submit" class="btn btn-primary">Create User</button>
+          <button type="button" id="cancelAddUser" class="btn"
+            onclick="document.getElementById('addUserModal').classList.remove('modal-open')">
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
+  </div> <!-- Analytics dashboard will be added here in the future -->
+  <div id="analytics-placeholder" class="hidden">
+    <!-- Reserved for future analytics features -->
+  </div>
 
-    <!-- Ensure these imports are present in your script section -->    <script type="module">
-      import { initUI } from "/js/ui.js";
-      import { initAdminDashboard } from "/js/admin.js";
-      import { admin as adminApi } from "/js/utils/api.js";
-      import { showToast } from "/js/ui.js";
-      import { checkAdminAccess } from "/js/adminAuth.js";
+  <!-- Ensure these imports are present in your script section -->
+  <script type="module">
+    import { initUI } from "/js/ui.js";
+    import { initAdminDashboard } from "/js/admin.js";
+    import { admin as adminApi } from "/js/utils/api.js";
+    import { showToast } from "/js/ui.js";
+    import { checkAdminAccess } from "/js/adminAuth.js";
+    async function fetchAuditLogs() {
+      const tbody = document.getElementById('auditLogsTableBody');
+      tbody.innerHTML = `<tr>
+      <td colspan="5" class="text-center py-4 text-gray-500">Loading audit logs...</td>
+    </tr>`;
 
-      async function fetchAndRenderLoginLogs() {
-        try {
-          const tbody = document.getElementById("loginLogsTableBody");
-          tbody.innerHTML = `
+      try {
+        const response = await fetch('/logs', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = await response.json();
+
+        if (!data.success || !Array.isArray(data.logs)) {
+          throw new Error('Invalid response format');
+        }
+
+        if (data.logs.length === 0) {
+          tbody.innerHTML = `<tr>
+          <td colspan="5" class="text-center py-4 text-gray-500">No audit logs found.</td>
+        </tr>`;
+          return;
+        }
+
+        tbody.innerHTML = '';
+        data.logs.forEach(log => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+          <td>${log.user?.username || 'Unknown'}</td>
+          <td>${log.action}</td>
+          <td>${log.entityType || '-'}</td>
+          <td>${log.entityId ?? '-'}</td>
+          <td>${new Date(log.createdAt).toLocaleString()}</td>
+        `;
+          tbody.appendChild(row);
+        });
+      } catch (error) {
+        console.error('Error loading audit logs:', error);
+        tbody.innerHTML = `<tr>
+        <td colspan="5" class="text-center py-4 text-red-500">Failed to load audit logs.</td>
+      </tr>`;
+      }
+    }
+
+    document.getElementById('refreshAuditLogs').addEventListener('click', fetchAuditLogs);
+
+    // Auto-load on page load
+    fetchAuditLogs();
+
+    async function fetchAndRenderLoginLogs() {
+      try {
+        const tbody = document.getElementById("loginLogsTableBody");
+        tbody.innerHTML = `
             <tr>
               <td colspan="4" class="text-center py-4 text-gray-500">
                 Loading login history...
@@ -257,109 +279,107 @@
             </tr>
           `;
 
-          const data = await adminApi.getLoginLogs();
-          const logs = data.logs || [];
-          tbody.innerHTML = "";
+        const data = await adminApi.getLoginLogs();
+        const logs = data.logs || [];
+        tbody.innerHTML = "";
 
-          if (logs.length === 0) {
-            tbody.innerHTML = `
+        if (logs.length === 0) {
+          tbody.innerHTML = `
               <tr>
                 <td colspan="4" class="text-center py-4 text-gray-500">
                   No login history available
                 </td>
               </tr>
             `;
-            return;
-          }
+          return;
+        }
 
-          logs.forEach((log) => {
-            const tr = document.createElement("tr");
-            tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700";
+        logs.forEach((log) => {
+          const tr = document.createElement("tr");
+          tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700";
 
-            const loginTime = log.loginTime
-              ? new Date(log.loginTime).toLocaleString()
-              : "Unknown";
-            const ipAddress = log.ipAddress || "Unknown";
+          const loginTime = log.loginTime
+            ? new Date(log.loginTime).toLocaleString()
+            : "Unknown";
+          const ipAddress = log.ipAddress || "Unknown";
 
-            tr.innerHTML = `
-              <td class="px-6 py-4 whitespace-nowrap text-sm">${
-                log.username || "Unknown"
-              }</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">${
-                log.email || "Unknown"
-              }</td>
+          tr.innerHTML = `
+              <td class="px-6 py-4 whitespace-nowrap text-sm">${log.username || "Unknown"
+            }</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">${log.email || "Unknown"
+            }</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">${loginTime}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">${ipAddress}</td>
             `;
-            tbody.appendChild(tr);
-          });
-        } catch (error) {
-          console.error("Error fetching login logs:", error);
-          document.getElementById("loginLogsTableBody").innerHTML = `
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error("Error fetching login logs:", error);
+        document.getElementById("loginLogsTableBody").innerHTML = `
             <tr>
               <td colspan="4" class="text-center py-4 text-red-500">
-                Failed to load login history: ${
-                  error.message || "Unknown error"
-                }
+                Failed to load login history: ${error.message || "Unknown error"
+          }
               </td>
             </tr>
           `;
-        }
       }
+    }
 
-      document.addEventListener("DOMContentLoaded", () => {
-        console.log("Admin page loaded");
-        initUI();
-        initAdminDashboard();
-        fetchAndRenderLoginLogs();
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("Admin page loaded");
+      initUI();
+      initAdminDashboard();
+      fetchAndRenderLoginLogs();
 
-        document
-          .getElementById("refreshLoginHistory")
-          .addEventListener("click", () => {
-            fetchAndRenderLoginLogs();
-            showToast("info", "Refreshing login history...");
-          });
+      document
+        .getElementById("refreshLoginHistory")
+        .addEventListener("click", () => {
+          fetchAndRenderLoginLogs();
+          showToast("info", "Refreshing login history...");
+        });
 
-        document
-          .getElementById("showAddUserModal")
-          .addEventListener("click", () => {
-            document.getElementById("addUserModal").classList.add("modal-open");
-          });
+      document
+        .getElementById("showAddUserModal")
+        .addEventListener("click", () => {
+          document.getElementById("addUserModal").classList.add("modal-open");
+        });
 
-        document
-          .getElementById("addUserForm")
-          .addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const username = document.getElementById("newUsername").value;
-            const email = document.getElementById("newEmail").value;
-            const password = document.getElementById("newPassword").value;
-            const role = document.getElementById("newRole").value;
-            const state = document.getElementById("newState").value;
+      document
+        .getElementById("addUserForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const username = document.getElementById("newUsername").value;
+          const email = document.getElementById("newEmail").value;
+          const password = document.getElementById("newPassword").value;
+          const role = document.getElementById("newRole").value;
+          const state = document.getElementById("newState").value;
 
-            try {
-              await adminApi.createUser({
-                username,
-                email,
-                password,
-                role,
-                state,
-              });
-              showToast("success", "User created successfully");
-              document
-                .getElementById("addUserModal")
-                .classList.remove("modal-open");
-              fetchAndRenderUsers(); // Refresh the users table
-            } catch (error) {
-              showToast("error", `Failed to create user: ${error.message}`);
-            }
-          });
+          try {
+            await adminApi.createUser({
+              username,
+              email,
+              password,
+              role,
+              state,
+            });
+            showToast("success", "User created successfully");
+            document
+              .getElementById("addUserModal")
+              .classList.remove("modal-open");
+            fetchAndRenderUsers(); // Refresh the users table
+          } catch (error) {
+            showToast("error", `Failed to create user: ${error.message}`);
+          }
+        });
 
-        document
-          .getElementById("darkModeToggle")
-          .addEventListener("click", () => {
-            document.documentElement.classList.toggle("dark");
-          });
-      });
-    </script>
-  </body>
+      document
+        .getElementById("darkModeToggle")
+        .addEventListener("click", () => {
+          document.documentElement.classList.toggle("dark");
+        });
+    });
+  </script>
+</body>
+
 </html>

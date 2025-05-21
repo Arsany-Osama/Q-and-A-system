@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const bcrypt = require('bcrypt'); // Import bcrypt
+const { default: logChanges } = require('../utils/auditLog');
 
 const getPendingModerators = async (req, res) => {
   try {
@@ -41,6 +42,9 @@ const updateUserStatus = async (req, res) => {
         state: true
       }
     });
+    //log the user status change
+    await logChanges(req.user.id, 'UPDATE', 'user_State', userId);
+
     res.json({ success: true, user });
   } catch (error) {
     console.error('Error updating user status:', error);
@@ -67,6 +71,8 @@ const updateUserRole = async (req, res) => {
         state: true
       }
     });
+    //log the usrer role change
+    await logChanges(req.user.id, 'UPDATE', 'user_Role', userId);
     
     res.json({ success: true, user });
   } catch (error) {
@@ -194,6 +200,8 @@ const deleteUser = async (req, res) => {
     await prisma.user.delete({
       where: { id: userId }
     });
+
+    await logChanges(req.user.id, 'DELETE', 'user', userId);
     
     console.log(`Successfully deleted user ${userId}`);
     return res.status(200).json({ 

@@ -1,4 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Action } = require('@prisma/client');
+const { default: logChanges } = require('../utils/auditLog');
 
 const prisma = new PrismaClient();
 
@@ -21,12 +22,18 @@ const voteQuestion = async (req, res) => {
         where: { id: existingVote.id },
         data: { voteType },
       });
+
+
     } else {
       // Create new vote
       await prisma.vote.create({
         data: { userId, questionId, voteType },
       });
     }
+    
+    // log the vote
+    const action = voteType === 'upvote' ? Action.UPVOTE : Action.DOWNVOTE;
+    await logChanges(userId, action, 'question', questionId);
 
     // Update question vote counts
     const upvotes = await prisma.vote.count({ where: { questionId, voteType: 'upvote' } });
@@ -69,6 +76,8 @@ const voteAnswer = async (req, res) => {
         data: { userId, answerId, voteType },
       });
     }
+    //log the vote
+    await logVote(userId,voteType,"answer",answerId);
 
     // Update answer vote counts
     const upvotes = await prisma.vote.count({ where: { answerId, voteType: 'upvote' } });
@@ -87,3 +96,4 @@ const voteAnswer = async (req, res) => {
 };
 
 module.exports = { voteQuestion, voteAnswer };
+

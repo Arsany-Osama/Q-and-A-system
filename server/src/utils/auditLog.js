@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-export default async function logChanges (userId, action, entityType, entityId) {
+async function logChanges(userId, action, entityType, entityId) {
     try {
         await prisma.auditLog.create({
             data: {
@@ -10,9 +10,11 @@ export default async function logChanges (userId, action, entityType, entityId) 
                 entityType,
                 entityId: parseInt(entityId)
             }
-        })
+        });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         throw new Error('Error while logging changes');
     }
 }
+
+module.exports = logChanges;

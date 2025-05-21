@@ -1,5 +1,5 @@
 const { PrismaClient, Action } = require('@prisma/client');
-const { default: logChanges } = require('../utils/auditLog');
+const logChanges = require('../utils/auditLog');
 const prisma = new PrismaClient();
 
 const createReply = async (req, res) => {

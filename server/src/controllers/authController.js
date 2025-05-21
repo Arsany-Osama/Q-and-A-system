@@ -4,7 +4,7 @@ const { PrismaClient, Action } = require('@prisma/client');
 const { sendEmail } = require('../services/emailService');
 const crypto = require('crypto');
 const { getFormattedClientIp } = require('../utils/ipHelper');
-const { default: logChanges } = require('../utils/auditLog');
+const logChanges = require('../utils/auditLog');
 require('dotenv').config();
 
 const prisma = new PrismaClient();

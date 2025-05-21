@@ -1,6 +1,6 @@
 const { PrismaClient, Action } = require('@prisma/client');
 const DocumentService = require('../services/documentService');
-const { default: logChanges } = require('../utils/auditLog');
+const logChanges = require('../utils/auditLog');
 
 const prisma = new PrismaClient();
 

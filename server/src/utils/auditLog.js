@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Action } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function logChanges(userId, action, entityType, entityId) {

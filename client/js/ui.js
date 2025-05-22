@@ -12,6 +12,21 @@ export function initUI() {
       const isDark = document.documentElement.classList.toggle('dark');
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
       updateThemeIcon(isDark);
+      
+      // Apply dark mode to any active SweetAlert popups
+      if (isDark) {
+        const activePopups = document.querySelectorAll('.swal2-popup');
+        activePopups.forEach(popup => {
+          popup.style.setProperty('--swal-bg', 'linear-gradient(180deg, #1e293b, #0f172a)');
+          popup.classList.add('dark-mode-popup');
+        });
+      } else {
+        const activePopups = document.querySelectorAll('.swal2-popup');
+        activePopups.forEach(popup => {
+          popup.style.setProperty('--swal-bg', 'linear-gradient(180deg, #ffffff, #f8f9fa)');
+          popup.classList.remove('dark-mode-popup');
+        });
+      }
     });
   }
 
@@ -82,10 +97,47 @@ export function showPopup(action) {
 
 export function hidePopup() {
   const popup = document.getElementById('authPopup');
-  if (popup.classList.contains('hidden')) return;
-  popup.classList.add('hidden');
-  document.getElementById('authMessage').textContent = '';
-  document.getElementById('authForm').reset();
+  popup?.classList.add('hidden');
+  
+  // Clear any form fields
+  document.querySelectorAll('#authPopup input').forEach(input => {
+    input.value = '';
+  });
+}
+
+export function showCustomPopup(html) {
+  // Use the existing popup container or create a new one
+  let popup = document.getElementById('customPopup');
+  
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'customPopup';
+    popup.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
+    document.body.appendChild(popup);
+  }
+  
+  // Set the content and make visible
+  popup.innerHTML = `
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-auto overflow-hidden animate-fade-scale-in">
+      ${html}
+    </div>
+  `;
+  
+  popup.classList.remove('hidden');
+  
+  // Add a click handler to close when clicking outside the content
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) {
+      closePopup();
+    }
+  });
+}
+
+export function closePopup() {
+  const popup = document.getElementById('customPopup');
+  if (popup) {
+    popup.classList.add('hidden');
+  }
 }
 
 export function showSection(sectionId) {

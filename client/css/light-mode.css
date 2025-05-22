@@ -1097,3 +1097,21 @@
 :root:not(.dark) .bg-white.dark\:bg-gray-800.rounded-xl.shadow-lg.dark\:shadow-blue-900\/10.w-full.max-w-md.p-6.animate-scale-in.relative.border.border-gray-200.dark\:border-gray-700.dark\:border-opacity-50.transition-colors.duration-200 {
     background-color: white;
 }
+:root:not(.dark) .mt-2.rounded-lg.bg-white.dark\:bg-gray-800.p-3.border.border-red-200.dark\:border-red-700\/50 {
+    background-color: white;
+}
+:root:not(.dark) .bg-gray-50.dark\:bg-gray-700.p-4.rounded-lg.question-item {
+    background-color: whitesmoke;
+    box-shadow: inset #a3a3a3 0px 0px 9px 0px;
+}
+
+:root:not(.dark) .bg-gray-50.dark\:bg-gray-700.p-4.rounded-lg.answer-item {
+    background-color: whitesmoke;
+    box-shadow: inset #a3a3a3 0px 0px 9px 0px;
+}
+
+:root:not(.dark) .bg-white.dark\:bg-gray-800.rounded-lg.shadow-xl.w-full.max-w-md.mx-auto.overflow-hidden.animate-fade-scale-in {
+    background-color: white;
+}
+
+:root:not(.dark) button#cancelEditAnswer {background-color: darkred;color: white;}

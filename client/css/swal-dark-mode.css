@@ -1,0 +1,78 @@
+/* SweetAlert Dark Mode Styles */
+
+/* Dark mode popup styles */
+.dark-mode-popup {
+  color: #e2e8f0 !important;
+  border-color: rgba(75, 85, 99, 0.5) !important;
+}
+
+/* Dark mode icon color adjustments */
+.dark-mode-popup .swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+}
+
+.dark-mode-popup .swal2-icon.swal2-error {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}
+
+.dark-mode-popup .swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+}
+
+.dark-mode-popup .swal2-icon.swal2-info {
+  border-color: #3b82f6 !important;
+  color: #3b82f6 !important;
+}
+
+.dark-mode-popup .swal2-icon.swal2-question {
+  border-color: #8b5cf6 !important;
+  color: #8b5cf6 !important;
+}
+
+/* Dark mode icon rings */
+.dark-mode-popup .swal2-success-ring {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Dark mode content styles */
+.dark-mode-popup .swal2-html-container {
+  color: #d1d5db !important;
+}
+
+.dark-mode-popup .swal2-title {
+  color: #f3f4f6 !important;
+}
+
+/* Dark mode input fields */
+.dark-mode-popup .swal2-input,
+.dark-mode-popup .swal2-textarea,
+.dark-mode-popup .swal2-select {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+  border-color: #4b5563 !important;
+}
+
+.dark-mode-popup .swal2-input:focus,
+.dark-mode-popup .swal2-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5) !important;
+  border-color: #3b82f6 !important;
+}
+
+/* Dark mode actions */
+.dark-mode-popup .swal2-actions {
+  background-color: transparent !important;
+}
+
+/* Dark mode timer progress bar */
+.dark-mode-popup .swal2-timer-progress-bar {
+  background-color: rgba(99, 102, 241, 0.6) !important;
+}
+
+/* Dark mode validation message */
+.dark-mode-popup .swal2-validation-message {
+  background-color: #1f2937 !important;
+  color: #ef4444 !important;
+}

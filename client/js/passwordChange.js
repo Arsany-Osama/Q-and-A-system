@@ -4,10 +4,10 @@ import { validatePassword, updatePasswordRequirements } from './security.js';
 export function initProfileChanges() {
   // Initialize password change functionality
   initPasswordChange();
-  
+
   // Initialize username change functionality
   initUsernameChange();
-  
+
   // Initialize password toggle buttons
   initPasswordToggles();
 }
@@ -17,7 +17,7 @@ function initPasswordChange() {
   const newPasswordInput = document.getElementById('newPassword');
   const confirmNewPasswordInput = document.getElementById('confirmNewPassword');
   const passwordRequirements = document.getElementById('passwordRequirements');
-  
+
   if (!changePasswordForm) return;
 
   // Add event listener for real-time password validation
@@ -32,35 +32,35 @@ function initPasswordChange() {
 
   changePasswordForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const currentPassword = document.getElementById('currentPassword').value;
     const newPassword = newPasswordInput.value;
     const confirmNewPassword = confirmNewPasswordInput.value;
     const passwordFeedback = document.getElementById('passwordFeedback');
-    
+
     // Reset feedback
     passwordFeedback.textContent = '';
     passwordFeedback.className = 'text-sm hidden';
-    
+
     // Validate passwords
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       showPasswordFeedback('All fields are required', 'error');
       return;
     }
-    
+
     // Validate password strength using the common validator
     const validation = validatePassword(newPassword);
     if (!validation.valid) {
       showPasswordFeedback(validation.errors[0], 'error');
       return;
     }
-    
+
     // Check if passwords match
     if (newPassword !== confirmNewPassword) {
       showPasswordFeedback('New passwords do not match', 'error');
       return;
     }
-    
+
     // Submit password change request
     try {
       const response = await fetch('/api/users/change-password', {
@@ -74,9 +74,9 @@ function initPasswordChange() {
           newPassword
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         showPasswordFeedback('Password changed successfully!', 'success');
         changePasswordForm.reset();
@@ -90,13 +90,13 @@ function initPasswordChange() {
       showPasswordFeedback('An error occurred. Please try again.', 'error');
     }
   });
-  
+
   // Helper function to show password feedback
   function showPasswordFeedback(message, type) {
     const passwordFeedback = document.getElementById('passwordFeedback');
     passwordFeedback.textContent = message;
     passwordFeedback.classList.remove('hidden', 'text-red-500', 'text-green-500');
-    
+
     if (type === 'error') {
       passwordFeedback.classList.add('text-red-500');
     } else {
@@ -114,18 +114,18 @@ function initPasswordToggles() {
     { field: 'confirmNewPassword', button: document.getElementById('toggleConfirmNewPassword') },
     { field: 'usernamePasswordConfirm', button: document.getElementById('toggleUsernamePassword') }
   ];
-  
+
   // Add event listeners for each toggle button
   passwordTogglePairs.forEach(pair => {
     const field = document.getElementById(pair.field);
     const button = pair.button;
-    
+
     if (field && button) {
       button.addEventListener('click', () => {
         // Toggle between password and text
         const type = field.type === 'password' ? 'text' : 'password';
         field.type = type;
-        
+
         // Update the icon based on visibility
         if (type === 'text') {
           // Eye-off icon (password is visible)
@@ -151,36 +151,36 @@ function initPasswordToggles() {
 function initUsernameChange() {
   const changeUsernameForm = document.getElementById('changeUsernameForm');
   if (!changeUsernameForm) return;
-  
+
   changeUsernameForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const newUsername = document.getElementById('newUsername').value.trim();
     const password = document.getElementById('usernamePasswordConfirm').value;
     const usernameFeedback = document.getElementById('usernameFeedback');
-    
+
     // Reset feedback
     usernameFeedback.textContent = '';
     usernameFeedback.className = 'text-sm hidden';
-    
+
     // Validate inputs
     if (!newUsername || !password) {
       showUsernameFeedback('Both username and password are required', 'error');
       return;
     }
-    
+
     // Username validation
     if (newUsername.length < 3 || newUsername.length > 30) {
       showUsernameFeedback('Username must be between 3 and 30 characters', 'error');
       return;
     }
-    
+
     // Check for valid characters (alphanumeric and underscores)
     if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
       showUsernameFeedback('Username can only contain letters, numbers, and underscores', 'error');
       return;
     }
-    
+
     // Submit username change request
     try {
       const response = await fetch('/api/users/update-username', {
@@ -194,31 +194,38 @@ function initUsernameChange() {
           password
         })
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         showUsernameFeedback('Username updated successfully!', 'success');
-        
+
         // Update the displayed username in the profile
         const profileUsername = document.getElementById('profileUsername');
         if (profileUsername) {
           profileUsername.textContent = newUsername;
         }
-        
+
         // Update username in navbar if it exists
         const navUsername = document.getElementById('navUsername');
         if (navUsername) {
           navUsername.textContent = newUsername;
         }
-        
-        // Update username in localStorage if you store it there
-        const userData = JSON.parse(localStorage.getItem('user') || '{}');
-        if (userData) {
-          userData.username = newUsername;
-          localStorage.setItem('user', JSON.stringify(userData));
-        }
-        
+
+        // Update username in localStorage
+        localStorage.setItem('username', newUsername);
+
+        // Optionally update the user object if app still uses it
+        // let userData;
+        // try {
+        //   userData = JSON.parse(localStorage.getItem('user') || '{}');
+        // } catch (e) {
+        //   console.error('Error parsing user data from localStorage:', e);
+        //   userData = {};
+        // }
+        // userData.username = newUsername;
+        // localStorage.setItem('user', JSON.stringify(userData));
+
         // Reset the form
         changeUsernameForm.reset();
       } else {
@@ -229,13 +236,13 @@ function initUsernameChange() {
       showUsernameFeedback('An error occurred. Please try again.', 'error');
     }
   });
-  
+
   // Helper function to show username feedback
   function showUsernameFeedback(message, type) {
     const usernameFeedback = document.getElementById('usernameFeedback');
     usernameFeedback.textContent = message;
     usernameFeedback.classList.remove('hidden', 'text-red-500', 'text-green-500');
-    
+
     if (type === 'error') {
       usernameFeedback.classList.add('text-red-500');
     } else {

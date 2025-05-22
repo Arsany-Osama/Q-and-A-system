@@ -49,11 +49,14 @@ export function validatePassword(password) {
 
 // Update password requirements UI
 export function updatePasswordRequirements(password) {
-  // Check for normal registration form requirements
+  // For registration/auth popup
   updatePasswordRequirementElements(password, 'lengthReq', 'upperReq', 'lowerReq', 'numberReq', 'specialReq');
-  
-  // Check for reset password form requirements
+  // For reset password form
   updatePasswordRequirementElements(password, 'resetLengthReq', 'resetUpperReq', 'resetLowerReq', 'resetNumberReq', 'resetSpecialReq');
+  // For profile change password section
+  updatePasswordRequirementElements(password, 'lengthReq', 'upperReq', 'lowerReq', 'numberReq', 'specialReq');
+  // For auth popup (new unique id)
+  updatePasswordRequirementElements(password, 'authLengthReq', 'authUpperReq', 'authLowerReq', 'authNumberReq', 'authSpecialReq');
 }
 
 // Helper function to update either set of requirement elements

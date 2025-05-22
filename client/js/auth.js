@@ -219,9 +219,9 @@ export function initAuth() {
 
   const passwordInput = document.getElementById('password');
   const passwordRequirements = document.getElementById('passwordRequirements');
-  if (passwordRequirements) {
-    passwordRequirements.classList.add('hidden');
-  }
+  const authPasswordRequirements = document.getElementById('authPasswordRequirements');
+  if (passwordRequirements) passwordRequirements.classList.add('hidden');
+  if (authPasswordRequirements) authPasswordRequirements.classList.add('hidden');
 
   const updateFormForAction = () => {
     const action = document.getElementById('authTitle').textContent.toLowerCase();
@@ -233,15 +233,31 @@ export function initAuth() {
         passwordRequirements.classList.add('hidden');
       }
     }
+    if (authPasswordRequirements) {
+      if (action === 'register') {
+        authPasswordRequirements.classList.remove('hidden');
+        updatePasswordRequirements(passwordInput.value);
+      } else {
+        authPasswordRequirements.classList.add('hidden');
+      }
+    }
   };
 
   updateFormForAction();
 
-  const authTabs = document.querySelectorAll('.auth-tab');
+  const authTabs = document.querySelectorAll('#loginTab, #registerTab');
   if (authTabs) {
     authTabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        setTimeout(updateFormForAction, 50);
+        setTimeout(() => {
+          updateFormForAction();
+          // Always hide password requirements when switching to login
+          const action = document.getElementById('authTitle').textContent.toLowerCase();
+          if (action === 'login') {
+            if (authPasswordRequirements) authPasswordRequirements.classList.add('hidden');
+            if (passwordRequirements) passwordRequirements.classList.add('hidden');
+          }
+        }, 50);
       });
     });
   }
@@ -251,6 +267,10 @@ export function initAuth() {
     if (action === 'register') {
       if (passwordRequirements) {
         passwordRequirements.classList.remove('hidden');
+        updatePasswordRequirements(passwordInput.value);
+      }
+      if (authPasswordRequirements) {
+        authPasswordRequirements.classList.remove('hidden');
         updatePasswordRequirements(passwordInput.value);
       }
     }
@@ -391,7 +411,7 @@ export function initAuth() {
       const isPassword = passwordInput.type === 'password';
       passwordInput.type = isPassword ? 'text' : 'password';
       togglePassword.querySelector('svg').innerHTML = isPassword
-        ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-1.563 3.029" />`
+        ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.97 9.97 0 01-1.563-3.029" />`
         : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243" />`;
     });
   }
@@ -1070,7 +1090,7 @@ function showResetPasswordForm(token) {
       const isPassword = newPasswordField.type === 'password';
       newPasswordField.type = isPassword ? 'text' : 'password';
       toggleNewPassword.innerHTML = isPassword
-        ? `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>`
+        ? `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943 9.542-7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>`
         : `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>`;
     });
   }
@@ -1083,7 +1103,7 @@ function showResetPasswordForm(token) {
       const isPassword = confirmPasswordField.type === 'password';
       confirmPasswordField.type = isPassword ? 'text' : 'password';
       toggleConfirmPassword.innerHTML = isPassword
-        ? `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>`
+        ? `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268-2.943-9.542-7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>`
         : `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>`;
     });
   }

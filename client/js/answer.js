@@ -117,3 +117,47 @@ export function setupAnswerForm() {
     }
   });
 }
+
+export async function updateAnswer(answerId, content) {
+  if (!isLoggedIn()) {
+    showPopup('login');
+    return { success: false, message: 'Please log in to update your answer' };
+  }
+
+  try {
+    const result = await answersApi.updateAnswer(answerId, { content });
+    if (result.success) {
+      showToast('success', 'Answer updated successfully');
+      return { success: true, data: result.data };
+    } else {
+      showToast('error', result.message || 'Failed to update answer');
+      return { success: false, message: result.message };
+    }
+  } catch (err) {
+    console.error('Error updating answer:', err);
+    showToast('error', 'Network error updating answer');
+    return { success: false, message: 'Network error' };
+  }
+}
+
+export async function deleteAnswer(answerId) {
+  if (!isLoggedIn()) {
+    showPopup('login');
+    return { success: false, message: 'Please log in to delete your answer' };
+  }
+
+  try {
+    const result = await answersApi.deleteAnswer(answerId);
+    if (result.success) {
+      showToast('success', 'Answer deleted successfully');
+      return { success: true };
+    } else {
+      showToast('error', result.message || 'Failed to delete answer');
+      return { success: false, message: result.message };
+    }
+  } catch (err) {
+    console.error('Error deleting answer:', err);
+    showToast('error', 'Network error deleting answer');
+    return { success: false, message: 'Network error' };
+  }
+}

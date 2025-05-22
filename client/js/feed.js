@@ -1,14 +1,17 @@
 import { fetchQuestions, displayDocumentLink } from './question.js';
-import { showPopup, showToast, showSection, showAnswerFormPopup } from './ui.js';
+import { showPopup, showToast, showSection, showAnswerFormPopup, showCustomPopup, closePopup } from './ui.js';
 import { getToken, isLoggedIn, fetchTopContributors, isApproved } from './auth.js';
 import { getUserVotes } from './vote.js';
 import { setupReplyUI, getReplies, postReply } from './reply.js';  // Import getReplies and postReply
 import { auth, answers, replies, documents, reports } from './utils/api.js';
+import { editQuestionFromFeed, deleteQuestionFromFeed } from './questionActions.js';
 
 let currentPage = 1;
 const questionsPerPage = 10;
 let currentFilter = 'trending'; // Default filter
 let currentTag = null; // Add new variable for tag filtering
+// Make paginatedQuestions globally accessible for edit and delete functions
+window.paginatedQuestions = [];
 
 // Filter functions
 function applyFilter(questions, filter) {
@@ -141,11 +144,11 @@ export async function renderFeed() {
       return;
     }
 
-    questions = applyFilter(questions, currentFilter);
-
-    const start = (currentPage - 1) * questionsPerPage;
+    questions = applyFilter(questions, currentFilter);    const start = (currentPage - 1) * questionsPerPage;
     const end = start + questionsPerPage;
     const paginatedQuestions = questions.slice(start, end);
+    // Store in window object for access from questionActions.js
+    window.paginatedQuestions = paginatedQuestions;
     const userVotes = getUserVotes();
 
     container.innerHTML = '';
@@ -187,9 +190,8 @@ export async function renderFeed() {
                         <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                         </svg>
-                      </button>
-                      <div class="action-menu hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
-                        ${getCurrentUsername() === q.username ? `
+                      </button>                      <div class="action-menu hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                        ${(getCurrentUsername() === q.username || (q.userId && getCurrentUserId() && q.userId.toString() === getCurrentUserId().toString())) ? `
                           <button class="edit-question-btn w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center">
                             <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -203,7 +205,7 @@ export async function renderFeed() {
                             Delete
                           </button>
                         ` : ''}
-                        ${getCurrentUsername() !== q.username ? `
+                        ${(getCurrentUsername() !== q.username && (!q.userId || !getCurrentUserId() || q.userId.toString() !== getCurrentUserId().toString())) ? `
                           <button class="report-btn w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center" data-id="${q.id}" data-type="question">
                             <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
@@ -295,8 +297,7 @@ export async function renderFeed() {
             const answerUpvoteClass = userVotes.answers[a.id] === 'upvote' ? 'active' : '';
             const answerDownvoteClass = userVotes.answers[a.id] === 'downvote' ? 'active' : '';
             return `
-                      <div class="answer-card p-2 bg-gray-50 dark:bg-gray-800 rounded-md" data-username="${a.username}" data-user-id="${a.userId}">
-                        <div class="answer-header flex items-start mb-1">
+                      <div class="answer-card p-2 bg-gray-50 dark:bg-gray-800 rounded-md" data-username="${a.username}" data-user-id="${a.userId}">                        <div class="answer-header flex items-start mb-1">
                           <div class="avatar-container mr-2">
                             <div class="avatar bg-gradient-to-r from-gray-500 to-gray-600 text-white flex items-center justify-center rounded-full h-7 w-7 text-xs font-medium">
                               ${a.username ? a.username.charAt(0).toUpperCase() : 'A'}
@@ -306,8 +307,40 @@ export async function renderFeed() {
                             <span class="font-medium text-xs">${a.username || 'Anonymous'}</span>
                             <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">${new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                           </div>
-                          <!-- Report icon for non-owners -->
-                          ${(isLoggedIn() && getCurrentUsername() !== a.username) ? `<button class=\"report-btn ml-2 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900\" title=\"Report answer\" aria-label=\"Report answer\" data-id=\"${a.id}\" data-type=\"answer\"><svg class=\"w-4 h-4 text-red-500\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 4v16h16V4H4zm2 2h12v12H6V6zm3 3v6m6-6v6\" /></svg></button>` : ''}
+                          <!-- Three-dot menu for actions -->
+                          ${(isLoggedIn()) ? `
+                            <div class="relative inline-block">
+                              <button class="answer-action-menu-btn ml-2 p-1 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700" title="More actions" aria-label="More actions" data-id="${a.id}">
+                                <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                                </svg>
+                              </button>
+                              <div class="answer-action-menu hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                                ${(getCurrentUsername() === a.username || (a.userId && getCurrentUserId() && a.userId.toString() === getCurrentUserId().toString())) ? `
+                                  <button class="edit-answer-btn w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center" data-id="${a.id}" data-content="${a.content.replace(/"/g, '&quot;')}">
+                                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    Edit
+                                  </button>
+                                  <button class="delete-answer-btn w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center border-t border-gray-200 dark:border-gray-700" data-id="${a.id}">
+                                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                    Delete
+                                  </button>
+                                ` : ''}
+                                ${(getCurrentUsername() !== a.username && (!a.userId || !getCurrentUserId() || a.userId.toString() !== getCurrentUserId().toString())) ? `
+                                  <button class="report-btn w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center" data-id="${a.id}" data-type="answer">
+                                    <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    Report
+                                  </button>
+                                ` : ''}
+                              </div>
+                            </div>
+                          ` : ''}
                         </div>
                         <div class="answer-content ml-9">
                           <p class="text-sm text-gray-700 dark:text-gray-300">${a.content}</p>
@@ -411,11 +444,11 @@ export async function renderFeed() {
     renderPagination(questions.length, pagination);    // Add delegated event listeners for action menu and buttons
     setTimeout(() => {
       // Action menu toggle handlers
-      document.querySelectorAll('.action-menu-btn').forEach(btn => {
+      document.querySelectorAll('.action-menu-btn, .answer-action-menu-btn').forEach(btn => {
         btn.onclick = (e) => {
           e.stopPropagation();
           // Close all other menus first
-          document.querySelectorAll('.action-menu').forEach(menu => {
+          document.querySelectorAll('.action-menu, .answer-action-menu').forEach(menu => {
             if (menu !== btn.nextElementSibling) {
               menu.classList.add('hidden');
             }
@@ -428,20 +461,32 @@ export async function renderFeed() {
 
       // Close menus when clicking outside
       document.addEventListener('click', (e) => {
-        if (!e.target.closest('.action-menu') && !e.target.closest('.action-menu-btn')) {
-          document.querySelectorAll('.action-menu').forEach(menu => {
+        if (!e.target.closest('.action-menu, .answer-action-menu') && !e.target.closest('.action-menu-btn, .answer-action-menu-btn')) {
+          document.querySelectorAll('.action-menu, .answer-action-menu').forEach(menu => {
             menu.classList.add('hidden');
           });
         }
-      });
-
-      // Handle edit button clicks
+      });// Handle edit button clicks
       document.querySelectorAll('.edit-question-btn').forEach(btn => {
         btn.onclick = (e) => {
           e.preventDefault();
-          const questionId = btn.closest('.action-menu').previousElementSibling.getAttribute('data-id');
-          // TODO: Implement edit question functionality
-          console.log('Edit question:', questionId);
+          // Debug element hierarchy
+          console.log('Edit button clicked:', btn);
+          console.log('Action menu:', btn.closest('.action-menu'));
+          console.log('Previous sibling:', btn.closest('.action-menu')?.previousElementSibling);
+          
+          // Get the question ID from the correct parent element
+          const actionMenu = btn.closest('.action-menu');
+          const questionCard = actionMenu?.closest('.question-card');
+          const questionId = questionCard?.getAttribute('data-id');
+          
+          console.log('Found question ID:', questionId);
+          
+          if (questionId) {
+            editQuestionFromFeed(questionId);
+          } else {
+            console.error('Could not find question ID');
+          }
         };
       });
 
@@ -449,15 +494,23 @@ export async function renderFeed() {
       document.querySelectorAll('.delete-question-btn').forEach(btn => {
         btn.onclick = (e) => {
           e.preventDefault();
-          const questionId = btn.closest('.action-menu').previousElementSibling.getAttribute('data-id');
-          // TODO: Implement delete question functionality
-          if (confirm('Are you sure you want to delete this question?')) {
-            console.log('Delete question:', questionId);
+          // Debug element hierarchy
+          console.log('Delete button clicked:', btn);
+          
+          // Get the question ID from the correct parent element
+          const actionMenu = btn.closest('.action-menu');
+          const questionCard = actionMenu?.closest('.question-card');
+          const questionId = questionCard?.getAttribute('data-id');
+          
+          console.log('Found question ID:', questionId);
+          
+          if (questionId) {
+            deleteQuestionFromFeed(questionId);
+          } else {
+            console.error('Could not find question ID');
           }
         };
-      });
-
-      // Handle report button clicks
+      });      // Handle report button clicks
       document.querySelectorAll('.report-btn').forEach(btn => {
         btn.onclick = (e) => {
           e.preventDefault();
@@ -478,6 +531,78 @@ export async function renderFeed() {
           }
           
           showReportModal({ contentId, type });
+        };
+      });
+      
+      // Handle edit answer button clicks
+      document.querySelectorAll('.edit-answer-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.preventDefault();
+          const answerId = btn.getAttribute('data-id');
+          const content = btn.getAttribute('data-content');
+          
+          // Create a simple popup for editing the answer
+          const editHtml = `
+            <div class="edit-answer-popup p-4">
+              <h3 class="text-lg font-semibold mb-3">Edit Answer</h3>
+              <textarea id="editAnswerContent" class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" rows="5">${content}</textarea>
+              <div class="flex justify-end mt-3">
+                <button id="cancelEditAnswer" class="px-4 py-2 mr-2 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Cancel</button>
+                <button id="saveAnswerEdit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors" data-id="${answerId}">Save</button>
+              </div>
+            </div>
+          `;
+          
+          // Show the popup
+          showCustomPopup(editHtml);
+          
+          // Add event listeners
+          document.getElementById('cancelEditAnswer').addEventListener('click', () => {
+            closePopup();
+          });
+          
+          document.getElementById('saveAnswerEdit').addEventListener('click', async () => {
+            const newContent = document.getElementById('editAnswerContent').value;
+            if (!newContent.trim()) {
+              showToast('error', 'Answer cannot be empty');
+              return;
+            }
+            
+            try {
+              // Use dynamic import to avoid circular dependencies
+              const { updateAnswer } = await import('./answer.js');
+              const result = await updateAnswer(answerId, newContent);
+              
+              if (result.success) {
+                closePopup();
+                fetchAndRenderFeed();
+              }
+            } catch (err) {
+              console.error('Failed to update answer:', err);
+            }
+          });
+        };
+      });
+      
+      // Handle delete answer button clicks
+      document.querySelectorAll('.delete-answer-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+          e.preventDefault();
+          const answerId = btn.getAttribute('data-id');
+          
+          if (confirm('Are you sure you want to delete this answer? This action cannot be undone.')) {
+            try {
+              // Use dynamic import to avoid circular dependencies
+              const { deleteAnswer } = await import('./answer.js');
+              const result = await deleteAnswer(answerId);
+              
+              if (result.success) {
+                fetchAndRenderFeed();
+              }
+            } catch (err) {
+              console.error('Failed to delete answer:', err);
+            }
+          }
         };
       });
     }, 0);
@@ -1748,8 +1873,29 @@ function renderQuestionCard(question) {
 }
 
 // Helper to get current username
-function getCurrentUsername() {
+export function getCurrentUsername() {
   return localStorage.getItem('username');
+}
+
+// Helper to get current user ID from JWT token
+export function getCurrentUserId() {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  
+  try {
+    // Decode JWT token (simple decode, no verification needed on client)
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    const payload = JSON.parse(jsonPayload);
+    return payload.id; // User ID from the token
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
 }
 
 // Report modal HTML generator
@@ -1758,7 +1904,7 @@ function createReportModal({ contentId, type, onSubmit, onCancel }) {
   document.getElementById('reportModal')?.remove();
   const modal = document.createElement('div');
   modal.id = 'reportModal';
-  modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-70 backdrop-blur-sm p-4 transition-all duration-300';
+  modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 dark:bg-black dark:bg-opacity-40 p-4 transition-all duration-300';
   modal.innerHTML = `
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-blue-900/10 w-full max-w-md p-6 animate-scale-in relative border border-gray-200 dark:border-gray-700 dark:border-opacity-50 transition-colors duration-200">
       <div class="absolute -inset-0.5 bg-gradient-to-r dark:from-blue-500/20 dark:to-purple-600/20 rounded-xl blur opacity-0 dark:opacity-70 -z-10"></div>

@@ -29,10 +29,9 @@ const voteQuestion = async (req, res) => {
       await prisma.vote.create({
         data: { userId, questionId, voteType },
       });
-    }
-    
+    }    
     // log the vote
-    const action = voteType === 'upvote' ? Action.UPVOTE : Action.DOWNVOTE;
+    const action = voteType === 'upvote' ? Action.VOTE_UP : Action.VOTE_DOWN;
     await logChanges(userId, action, 'question', questionId);
 
     // Update question vote counts
@@ -69,15 +68,13 @@ const voteAnswer = async (req, res) => {
       await prisma.vote.update({
         where: { id: existingVote.id },
         data: { voteType },
-      });
-    } else {
+      });    } else {
       // Create new vote
       await prisma.vote.create({
-        data: { userId, answerId, voteType },
-      });
-    }
-    //log the vote
-    await logVote(userId,voteType,"answer",answerId);
+        data: { userId, answerId, voteType },      });    }
+    // log the vote
+    const action = voteType === 'upvote' ? Action.VOTE_UP : Action.VOTE_DOWN;
+    await logChanges(userId, action, 'answer', answerId);
 
     // Update answer vote counts
     const upvotes = await prisma.vote.count({ where: { answerId, voteType: 'upvote' } });

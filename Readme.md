@@ -1,6 +1,5 @@
 <div align="center" id="top">
   <img src="https://github.com/user-attachments/assets/ddb74ece-5ff2-4ab0-b668-5ef593f906ac" width="900" alt="Q&A System Screenshot" />
-  <a href="https://github.com/Arsany-Osama/Q-and-A-system">Demo</a>
 </div>
 
 <div align="center">
@@ -60,7 +59,7 @@ Enhance your knowledge-sharing experience with the Q&A System, a secure and feat
 </a>  
 
 <a href="https://www.prisma.io">
-  <img width="50" title="Prisma" alt="Prisma Logo" src="https://www.prisma.io/images/og-image.png">
+  <img width="50" title="Prisma" alt="Prisma Logo" src="https://w7.pngwing.com/pngs/929/464/png-transparent-prisma-hd-logo.png">
 </a>  
 
 <a href="https://developer.mozilla.org/en-US/docs/Web/HTML">

@@ -95,6 +95,7 @@ Before starting :checkered_flag:, ensure you have the following installed:
 - [Node.js](https://nodejs.org/en/) (LTS version recommended)
 - [PostgreSQL](https://www.postgresql.org)
 - [OpenSSL](https://www.openssl.org) for certificate generation
+- Dont miss to create .env file inside server folder like .env.example file in the repo
 
 ## :checkered_flag: Starting ##
 
@@ -136,6 +137,11 @@ $ npm start
 
 This project is licensed under the MIT License. For more details, please refer to the [LICENSE](https://github.com/Arsany-Osama/Q-and-A-system/blob/master/LICENSE) file.
 
-Made with :heart: by [Arsany Osama](https://github.com/Arsany-Osama)
+Made with :heart: by 
+[Arsany Osama](https://github.com/Arsany-Osama)
+[Ahmed Mohamed Bekhit](https://github.com/ahmedmohamedbekhit1)
+[Abdelrahamn Ayaman](https://github.com/AbdelrahmanAyman0011)
+[Ahmed Mohammed Adel](https://github.com/AhmedMohammedAdel)
+[yusuf Fakhry](https://github.com/jackoup1)
 
 <a href="#top">Back to top</a>

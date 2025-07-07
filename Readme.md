@@ -134,7 +134,7 @@ $ npm start
 
 ## :memo: License ##
 
-This project is licensed under the MIT License. For more details, please refer to the [LICENSE](LICENSE) file.
+This project is licensed under the MIT License. For more details, please refer to the [LICENSE](https://github.com/Arsany-Osama/Q-and-A-system/blob/master/LICENSE) file.
 
 Made with :heart: by [Arsany Osama](https://github.com/Arsany-Osama)
 

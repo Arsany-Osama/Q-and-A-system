@@ -95,7 +95,7 @@ Before starting :checkered_flag:, ensure you have the following installed:
 - [Node.js](https://nodejs.org/en/) (LTS version recommended)
 - [PostgreSQL](https://www.postgresql.org)
 - [OpenSSL](https://www.openssl.org) for certificate generation
-- Dont miss to create .env file inside server folder like .env.example file in the repo
+- Dont miss to create .env file inside server folder like .env.example
 
 ## :checkered_flag: Starting ##
 

@@ -1,10 +1,10 @@
-<div align="center" id="top">
-  <img src="https://github.com/user-attachments/assets/ddb74ece-5ff2-4ab0-b668-5ef593f906ac" width="900" alt="Q&A System Screenshot" />
-</div>
-
 <div align="center">
   <h1>Q&A System – Full-Stack Secure Knowledge Exchange Platform</h1>
   <h3>A modern, secure, and full-featured Q&A platform built with Node.js, Prisma, and PostgreSQL.</h3>
+</div>
+
+<div align="center" id="top">
+  <img src="https://github.com/user-attachments/assets/ddb74ece-5ff2-4ab0-b668-5ef593f906ac" width="900" alt="Q&A System Screenshot" />
 </div>
 
 <p align="center">

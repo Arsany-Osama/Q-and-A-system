@@ -6,7 +6,7 @@
 <div align="center" id="top">
   <img src="https://github.com/user-attachments/assets/ddb74ece-5ff2-4ab0-b668-5ef593f906ac" width="900" alt="Q&A System Screenshot" />
 </div>
-
+</br>
 <p align="center">
   <a href="https://github.com/Arsany-Osama/Q-and-A-system/fork" target="_blank">
     <img src="https://img.shields.io/github/forks/Arsany-Osama/Q-and-A-system?" alt="Badge showing the total of project forks"/>
